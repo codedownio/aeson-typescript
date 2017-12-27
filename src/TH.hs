@@ -17,6 +17,7 @@ import Data.Data
 import Data.Monoid
 import Data.String
 import Data.String.Interpolate.IsString
+import Data.Tagged
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Typeable
@@ -53,7 +54,7 @@ deriveTypeScript opts name = do
       let interfaceDeclarations = fmap getConstructorDeclaration datatypeCons
       let typeDeclaration = AppE (AppE (ConE 'TSTypeAlternatives) (LitE $ StringL $ getTypeName datatypeName)) (ListE [LitE $ StringL $ getConstructorName x | x <- fmap constructorName datatypeCons])
 
-      return $ NormalB $ ListE (typeDeclaration : interfaceDeclarations)
+      return $ NormalB $ AppE (ConE 'Tagged) (ListE (typeDeclaration : interfaceDeclarations))
 
     A.UntaggedValue -> error [i|UntaggedValue not implemented|]
     A.ObjectWithSingleField -> error [i|ObjectWithSingleField not implemented|]
@@ -69,16 +70,18 @@ lastNameComponent x = T.unpack $ last $ T.splitOn "." (T.pack x)
 lastNameComponent' :: Name -> String
 lastNameComponent' = lastNameComponent . show
 
+type TSDeclarations = [TSDeclaration]
 
 -- | Return an expression that evaluates to a TSInterfaceDeclaration
 getConstructorDeclaration :: ConstructorInfo -> Exp
-getConstructorDeclaration (ConstructorInfo {constructorVariant=(RecordConstructor names), ..}) = AppE (AppE (ConE 'TSInterfaceDeclaration) (LitE $ StringL $ getConstructorName constructorName)) members
+getConstructorDeclaration (ConstructorInfo {constructorVariant=(RecordConstructor names), ..}) = interfaceDeclaration
   where
+    interfaceDeclaration = AppE (AppE (ConE 'TSInterfaceDeclaration) (LitE $ StringL $ getConstructorName constructorName)) members
     namesAndTypes :: [(String, Type)] = zip (fmap show names) constructorFields
     members = ListE [(AppE (AppE (AppE (ConE 'TSField)
                                    (ConE 'False))
                              (LitE $ StringL $ lastNameComponent $ nameString))
-                       (AppE (VarE 'unpackTSString) (SigE (VarE 'getTypeScriptType) (AppT (ConT ''TSString) typ))))
+                       (AppE (VarE 'unTagged) (SigE (VarE 'getTypeScriptType) (AppT (AppT (ConT ''Tagged) typ) (ConT ''String)))))
                     | (nameString, typ) <- namesAndTypes]
 
 getConstructorName :: Name -> String

@@ -10,6 +10,7 @@ import Data.Data
 import Data.Monoid
 import Data.String
 import Data.String.Interpolate.IsString
+import Data.Tagged
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Typeable
@@ -20,13 +21,13 @@ class TypeScript a where
   -- ^ Get the declaration of this type, if necessary.
   -- When Nothing, no declaration is emitted. Nothing is used for types that are already
   -- known to TypeScript, such as primitive types.
-  getTypeScriptDeclaration :: [TSDeclaration a]
-  getTypeScriptType :: TSString a
+  getTypeScriptDeclaration :: Tagged a [TSDeclaration]
+  getTypeScriptType :: Tagged a String
 
-data TSDeclaration a = TSInterfaceDeclaration { interfaceName :: String
-                                              , interfaceMembers :: [TSField] }
-                     | TSTypeAlternatives { typeName :: String
-                                          , alternativeTypes :: [String]}
+data TSDeclaration = TSInterfaceDeclaration { interfaceName :: String
+                                            , interfaceMembers :: [TSField] }
+                   | TSTypeAlternatives { typeName :: String
+                                        , alternativeTypes :: [String]}
   deriving Show
 
 data TSField = TSField { fieldOptional :: Bool

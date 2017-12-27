@@ -20,10 +20,10 @@ import Types
 
 formatTSDeclarations = formatTSDeclarations' defaultFormattingOptions
 
-formatTSDeclarations' :: FormattingOptions -> [TSDeclaration a] -> String
+formatTSDeclarations' :: FormattingOptions -> [TSDeclaration] -> String
 formatTSDeclarations' options declarations = T.unpack $ T.intercalate "\n\n" (fmap (T.pack . formatTSDeclaration options) declarations)
 
-formatTSDeclaration :: FormattingOptions -> TSDeclaration a -> String
+formatTSDeclaration :: FormattingOptions -> TSDeclaration -> String
 formatTSDeclaration (FormattingOptions {numIndentSpaces}) (TSTypeAlternatives name names) = [i|type #{name} = #{alternatives};|]
   where alternatives = T.intercalate " | " (fmap T.pack names)
 formatTSDeclaration (FormattingOptions {numIndentSpaces}) (TSInterfaceDeclaration interfaceName members) = [i|interface #{interfaceName} {

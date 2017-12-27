@@ -9,6 +9,7 @@ import qualified Data.Aeson as A
 import Data.Data
 import Data.Monoid
 import Data.String.Interpolate.IsString
+import Data.Tagged
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Typeable
@@ -31,6 +32,6 @@ $(deriveTypeScript A.defaultOptions ''Foo)
 $(deriveTypeScript A.defaultOptions ''Baz)
 
 main = do
-  let stuff1 = getTypeScriptDeclaration :: [TSDeclaration Foo]
-  -- let stuff2 = getTypeScriptDeclaration :: TSDeclaration Baz
-  putStrLn $ formatTSDeclarations stuff1
+  let stuff1 = unTagged (getTypeScriptDeclaration :: Tagged Foo [TSDeclaration])
+  let stuff2 = unTagged (getTypeScriptDeclaration :: Tagged Baz [TSDeclaration])
+  putStrLn $ formatTSDeclarations (stuff1 <> stuff2)
