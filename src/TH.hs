@@ -42,16 +42,16 @@ deriveTypeScript :: A.Options
                  -- ^ Name of the type for which to generate a 'TypeScript' instance
                  -- declaration.
                  -> Q [Dec]
-deriveTypeScript opts name = do
+deriveTypeScript options name = do
   DatatypeInfo {..} <- reifyDatatype name
 
   let getTypeFn = FunD 'getTypeScriptType [Clause [] (NormalB $ LitE $ StringL $ getTypeName datatypeName) []]
 
   constructorsExp <- liftData datatypeCons
-  declarationFnBody <- case A.sumEncoding opts of
+  declarationFnBody <- case A.sumEncoding options of
     A.TaggedObject tagFieldName contentsFieldName -> do
 
-      let interfaceDeclarations = fmap getConstructorDeclaration datatypeCons
+      let interfaceDeclarations = fmap (getTaggedObjectConstructorDeclaration tagFieldName contentsFieldName) datatypeCons
       let typeDeclaration = AppE (AppE (ConE 'TSTypeAlternatives) (LitE $ StringL $ getTypeName datatypeName)) (ListE [LitE $ StringL $ getConstructorName x | x <- fmap constructorName datatypeCons])
 
       return $ NormalB $ AppE (ConE 'Tagged) (ListE (typeDeclaration : interfaceDeclarations))
@@ -73,16 +73,17 @@ lastNameComponent' = lastNameComponent . show
 type TSDeclarations = [TSDeclaration]
 
 -- | Return an expression that evaluates to a TSInterfaceDeclaration
-getConstructorDeclaration :: ConstructorInfo -> Exp
-getConstructorDeclaration (ConstructorInfo {constructorVariant=(RecordConstructor names), ..}) = interfaceDeclaration
+getTaggedObjectConstructorDeclaration :: String -> String -> ConstructorInfo -> Exp
+getTaggedObjectConstructorDeclaration tagFieldName _contentsFieldName (ConstructorInfo {constructorVariant=(RecordConstructor names), ..}) = interfaceDeclaration
   where
     interfaceDeclaration = AppE (AppE (ConE 'TSInterfaceDeclaration) (LitE $ StringL $ getConstructorName constructorName)) members
-    namesAndTypes :: [(String, Type)] = zip (fmap show names) constructorFields
+    namesAndTypes :: [(String, Type)] = (tagFieldName, (ConT ''String)) : (zip (fmap show names) constructorFields)
     members = ListE [(AppE (AppE (AppE (ConE 'TSField)
-                                   (ConE 'False))
+                                   (AppE (VarE 'unTagged) (SigE (VarE 'getTypeScriptOptional) (AppT (AppT (ConT ''Tagged) typ) (ConT ''Bool)))))
                              (LitE $ StringL $ lastNameComponent $ nameString))
                        (AppE (VarE 'unTagged) (SigE (VarE 'getTypeScriptType) (AppT (AppT (ConT ''Tagged) typ) (ConT ''String)))))
                     | (nameString, typ) <- namesAndTypes]
+getTaggedObjectConstructorDeclaration _tagFieldName _contentsFieldName (ConstructorInfo {constructorVariant=x, ..}) = error [i|Constructor variant not supported yet: #{x}|]
 
 getConstructorName :: Name -> String
 getConstructorName x = "I" <> lastNameComponent' x

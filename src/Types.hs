@@ -23,6 +23,8 @@ class TypeScript a where
   -- known to TypeScript, such as primitive types.
   getTypeScriptDeclaration :: Tagged a [TSDeclaration]
   getTypeScriptType :: Tagged a String
+  getTypeScriptOptional :: Tagged a Bool
+  getTypeScriptOptional = Tagged False
 
 data TSDeclaration = TSInterfaceDeclaration { interfaceName :: String
                                             , interfaceMembers :: [TSField] }

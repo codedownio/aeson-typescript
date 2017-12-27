@@ -28,8 +28,9 @@ instance TypeScript Int where
 
 instance TypeScript [Char] where
   getTypeScriptDeclaration = Tagged []
-  getTypeScriptType = Tagged "number"
+  getTypeScriptType = Tagged "string"
 
 instance (TypeScript a) => TypeScript (Maybe a) where
   getTypeScriptDeclaration = Tagged [] :: Tagged (Maybe a) [TSDeclaration]
   getTypeScriptType = Tagged (unTagged $ (getTypeScriptType :: Tagged a String))
+  getTypeScriptOptional = Tagged True

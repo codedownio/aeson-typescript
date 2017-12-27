@@ -31,7 +31,6 @@ data Baz = Baz { bazString :: String }
 $(deriveTypeScript A.defaultOptions ''Foo)
 $(deriveTypeScript A.defaultOptions ''Baz)
 
-main = do
-  let stuff1 = unTagged (getTypeScriptDeclaration :: Tagged Foo [TSDeclaration])
-  let stuff2 = unTagged (getTypeScriptDeclaration :: Tagged Baz [TSDeclaration])
-  putStrLn $ formatTSDeclarations (stuff1 <> stuff2)
+main = putStrLn $ formatTSDeclarations
+  (unTagged (getTypeScriptDeclaration :: Tagged Foo [TSDeclaration]) <>
+   unTagged (getTypeScriptDeclaration :: Tagged Baz [TSDeclaration]))
