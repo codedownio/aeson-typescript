@@ -17,3 +17,13 @@ import Language.Haskell.TH.Datatype
 import TH
 
 $(deriveTypeScript A.defaultOptions ''Foo)
+
+
+-- instance TypeScript Foo
+--     where getTypeScriptType = "Foo"
+--           getTypeScriptDeclaration = [TSTypeAlternatives ["IFoo",
+--                                                                 "IBar"],
+--                                          TSInterfaceDeclaration "IFoo" [TSField False "fooString" (show (getTypeScriptType :: TypeScriptString String)),
+--                                                                            TSField False "fooInt" (show (getTypeScriptType :: TypeScriptString Int))],
+--                                          TSInterfaceDeclaration "IBar" [TSField False "barString" (show (getTypeScriptType :: TypeScriptString String)),
+--                                                                          TSField False "barMaybe" (show (getTypeScriptType :: TypeScriptString (Maybe Int)))]]

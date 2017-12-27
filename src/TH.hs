@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification #-}
+{-# LANGUAGE DeriveDataTypeable, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, FlexibleInstances #-}
 
 module TH where
 
@@ -30,7 +30,7 @@ newtype TSType a = TSType String deriving Show
 
 data TSDeclaration a = TSInterfaceDeclaration { interfaceName :: String
                                               , interfaceMembers :: [TSField] }
-                     | TypeAlternatives { alternativeTypes :: [String]}
+                     | TSTypeAlternatives { alternativeTypes :: [String]}
   deriving Show
 
 -- class IsTSField a where
@@ -63,6 +63,10 @@ instance TypeScript Int where
   getTypeScriptDeclaration = []
   getTypeScriptType = TypeScriptString "number"
 
+instance TypeScript [Char] where
+  getTypeScriptDeclaration = []
+  getTypeScriptType = TypeScriptString "string"
+
 -- | Generates a 'TypeScript' instance declaration for the given data type or
 -- data family instance constructor.
 deriveTypeScript :: A.Options
@@ -79,21 +83,12 @@ deriveTypeScript opts name = do
   constructorsExp <- liftData datatypeCons
   declarationFnBody <- case A.sumEncoding opts of
     A.TaggedObject tagFieldName contentsFieldName -> do
-      constructor <- newName "constructor"
 
-      let getMember :: ConstructorInfo -> Q Exp
-          getMember (ConstructorInfo {constructorVariant=(RecordConstructor names), ..}) = return $ ListE [(AppE (AppE (AppE (ConE 'TSField)
-                                                                                                                             (ConE 'False))
-                                                                                                                   (LitE $ StringL nameString))
-                                                                                                                   (SigE (VarE 'getTypeScriptType) typ))
-                                                                                                          | (nameString, typ) <- namesAndTypes]
-            where namesAndTypes :: [(String, Type)] = zip (fmap show names) constructorFields
+      let interfaceDeclarations = fmap getConstructorDeclaration datatypeCons
+      let typeDeclaration = AppE (ConE 'TSTypeAlternatives) (ListE [LitE $ StringL $ getConstructorName x | x <- fmap constructorName datatypeCons])
 
-      members <- ListE <$> (sequence $ fmap getMember datatypeCons)
+      return $ NormalB $ ListE (typeDeclaration : interfaceDeclarations)
 
-      -- The body
-      let getDeclarationFromConstructor = LamE [VarP constructor] (AppE (AppE (ConE 'TSInterfaceDeclaration) (LitE $ StringL $ lastNameComponent' datatypeName)) members)
-      return $ NormalB (AppE (AppE (VarE 'fmap) getDeclarationFromConstructor) constructorsExp)
     A.UntaggedValue -> error [i|UntaggedValue not implemented|]
     A.ObjectWithSingleField -> error [i|ObjectWithSingleField not implemented|]
     A.TwoElemArray -> error [i|TwoElemArray not implemented|]
@@ -102,11 +97,6 @@ deriveTypeScript opts name = do
 
   return $ [InstanceD Nothing [] (AppT (ConT ''TypeScript) (ConT name)) [getTypeFn, getDeclarationFn]]
 
--- getDeclarationFromConstructor :: (TypeScript a) => ConstructorInfo -> TSDeclaration a
--- getDeclarationFromConstructor (ConstructorInfo {constructorVariant=(RecordConstructor names), ..}) = TSInterfaceDeclaration (lastNameComponent $ show constructorName) members
-  -- where namesAndTypes = zip names constructorFields
-        -- members = [] -- [TSField False (show name) (show $ (getTypeScriptType :: typ)) | (name, typ) <- namesAndTypes]
-
 lastNameComponent :: String -> String
 lastNameComponent x = T.unpack $ last $ T.splitOn "." (T.pack x)
 
@@ -114,4 +104,16 @@ lastNameComponent' :: Name -> String
 lastNameComponent' = lastNameComponent . show
 
 
--- (LitE $ StringL $ lastNameComponent $ show constructorName)
+-- | Return an expression that evaluates to a TSInterfaceDeclaration
+getConstructorDeclaration :: ConstructorInfo -> Exp
+getConstructorDeclaration (ConstructorInfo {constructorVariant=(RecordConstructor names), ..}) = AppE (AppE (ConE 'TSInterfaceDeclaration) (LitE $ StringL $ getConstructorName constructorName)) members
+  where
+    namesAndTypes :: [(String, Type)] = zip (fmap show names) constructorFields
+    members = ListE [(AppE (AppE (AppE (ConE 'TSField)
+                                   (ConE 'False))
+                             (LitE $ StringL $ lastNameComponent $ nameString))
+                       (AppE (VarE 'show) (SigE (VarE 'getTypeScriptType) (AppT (VarT ''TypeScriptString) typ))))
+                    | (nameString, typ) <- namesAndTypes]
+
+getConstructorName :: Name -> String
+getConstructorName x = "I" <> lastNameComponent' x
