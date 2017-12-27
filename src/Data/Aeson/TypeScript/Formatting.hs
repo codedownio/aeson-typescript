@@ -1,22 +1,21 @@
 {-# LANGUAGE DeriveDataTypeable, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns #-}
 
-module Formatting where
+module Data.Aeson.TypeScript.Formatting where
 
 import Control.Monad
 import Control.Monad.Writer
 import Control.Monad.Writer.Lazy
 import qualified Data.Aeson as A
+import Data.Aeson.TypeScript.Types
 import Data.Data
 import Data.Monoid
 import Data.String
 import Data.String.Interpolate.IsString
-
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Typeable
 import Language.Haskell.TH
 import Language.Haskell.TH.Datatype
-import Types
 
 formatTSDeclarations = formatTSDeclarations' defaultFormattingOptions
 

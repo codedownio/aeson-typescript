@@ -21,9 +21,17 @@ description:         Please see the README on Github at <https://github.com/code
 
 dependencies:
 - base >= 4.7 && < 5
+- aeson
+- interpolate
+- mtl
+- tagged
+- template-haskell
+- text
+- th-abstraction
 
 library:
   source-dirs: src
+  exposed-modules: Data.Aeson.TypeScript.TH
 
 executables:
   aeson-typescript-exe:
@@ -34,14 +42,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - aeson
     - aeson-typescript
-    - interpolate
-    - mtl
-    - tagged
-    - template-haskell
-    - text
-    - th-abstraction
 
 tests:
   aeson-typescript-test:

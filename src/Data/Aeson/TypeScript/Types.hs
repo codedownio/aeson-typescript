@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification #-}
 
-module Types where
+module Data.Aeson.TypeScript.Types where
 
 import Control.Monad
 import Control.Monad.Writer

@@ -1,8 +1,9 @@
 {-# LANGUAGE DeriveDataTypeable, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, FlexibleInstances #-}
 
-module TH (
-  module Instances,
-  module Types,
+module Data.Aeson.TypeScript.TH (
+  module Data.Aeson.TypeScript.Instances,
+  module Data.Aeson.TypeScript.Types,
+  module Data.Aeson.TypeScript.Formatting,
   TSDeclaration(..),
   TSField(..),
   deriveTypeScript
@@ -13,6 +14,9 @@ import Control.Monad.Writer
 import Control.Monad.Writer.Lazy
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
+import Data.Aeson.TypeScript.Formatting
+import Data.Aeson.TypeScript.Instances
+import Data.Aeson.TypeScript.Types
 import Data.Data
 import Data.Monoid
 import Data.String
@@ -21,12 +25,10 @@ import Data.Tagged
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Typeable
-import Instances
 import Language.Haskell.TH
 import Language.Haskell.TH.Datatype
 import Language.Haskell.TH.Quote
 import Language.Haskell.TH.Syntax
-import Types
 
 data Foo = Foo { fooString :: String
                , fooInt :: Int }
