@@ -2,7 +2,6 @@
 
 module Main where
 
-import TH
 import Control.Monad
 import Control.Monad.Writer
 import Control.Monad.Writer.Lazy
@@ -13,6 +12,7 @@ import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Typeable
+import Formatting
 import Language.Haskell.TH
 import Language.Haskell.TH.Datatype
 import TH
@@ -22,11 +22,15 @@ data Foo = Foo { fooString :: String
                , fooInt :: Int }
          | Bar { barString :: String
                , barMaybe :: Maybe Int
+               , bazReference :: Baz
                }
 
-$(deriveTypeScript A.defaultOptions ''Foo)
+data Baz = Baz { bazString :: String }
 
+$(deriveTypeScript A.defaultOptions ''Foo)
+$(deriveTypeScript A.defaultOptions ''Baz)
 
 main = do
-  let stuff = getTypeScriptDeclaration :: [TSDeclaration Foo]
-  print stuff
+  let stuff1 = getTypeScriptDeclaration :: [TSDeclaration Foo]
+  -- let stuff2 = getTypeScriptDeclaration :: TSDeclaration Baz
+  putStrLn $ formatTSDeclarations stuff1

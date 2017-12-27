@@ -44,14 +44,14 @@ deriveTypeScript :: A.Options
 deriveTypeScript opts name = do
   DatatypeInfo {..} <- reifyDatatype name
 
-  let getTypeFn = FunD 'getTypeScriptType [Clause [] (NormalB $ LitE $ StringL $ lastNameComponent $ show datatypeName) []]
+  let getTypeFn = FunD 'getTypeScriptType [Clause [] (NormalB $ LitE $ StringL $ getTypeName datatypeName) []]
 
   constructorsExp <- liftData datatypeCons
   declarationFnBody <- case A.sumEncoding opts of
     A.TaggedObject tagFieldName contentsFieldName -> do
 
       let interfaceDeclarations = fmap getConstructorDeclaration datatypeCons
-      let typeDeclaration = AppE (ConE 'TSTypeAlternatives) (ListE [LitE $ StringL $ getConstructorName x | x <- fmap constructorName datatypeCons])
+      let typeDeclaration = AppE (AppE (ConE 'TSTypeAlternatives) (LitE $ StringL $ getTypeName datatypeName)) (ListE [LitE $ StringL $ getConstructorName x | x <- fmap constructorName datatypeCons])
 
       return $ NormalB $ ListE (typeDeclaration : interfaceDeclarations)
 
@@ -83,3 +83,6 @@ getConstructorDeclaration (ConstructorInfo {constructorVariant=(RecordConstructo
 
 getConstructorName :: Name -> String
 getConstructorName x = "I" <> lastNameComponent' x
+
+getTypeName :: Name -> String
+getTypeName x = lastNameComponent $ show x

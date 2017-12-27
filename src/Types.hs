@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables #-}
+{-# LANGUAGE DeriveDataTypeable, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification #-}
 
 module Types where
 
@@ -16,9 +16,17 @@ import Data.Typeable
 import Language.Haskell.TH
 import Language.Haskell.TH.Datatype
 
+class TypeScript a where
+  -- ^ Get the declaration of this type, if necessary.
+  -- When Nothing, no declaration is emitted. Nothing is used for types that are already
+  -- known to TypeScript, such as primitive types.
+  getTypeScriptDeclaration :: [TSDeclaration a]
+  getTypeScriptType :: TSString a
+
 data TSDeclaration a = TSInterfaceDeclaration { interfaceName :: String
                                               , interfaceMembers :: [TSField] }
-                     | TSTypeAlternatives { alternativeTypes :: [String]}
+                     | TSTypeAlternatives { typeName :: String
+                                          , alternativeTypes :: [String]}
   deriving Show
 
 data TSField = TSField { fieldOptional :: Bool
@@ -30,9 +38,10 @@ newtype TSString a = TSString { unpackTSString :: String } deriving Show
 instance IsString (TSString a) where
   fromString x = TSString x
 
-class TypeScript a where
-  -- ^ Get the declaration of this type, if necessary.
-  -- When Nothing, no declaration is emitted. Nothing is used for types that are already
-  -- known to TypeScript, such as primitive types.
-  getTypeScriptDeclaration :: [TSDeclaration a]
-  getTypeScriptType :: TSString a
+-- data AnyTSDeclaration = forall i. AnyTSDeclaration i
+
+-- * Formatting options
+
+data FormattingOptions = FormattingOptions { numIndentSpaces :: Int }
+
+defaultFormattingOptions = FormattingOptions 2
