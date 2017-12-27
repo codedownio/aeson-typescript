@@ -23,8 +23,7 @@ data Foo = Foo { fooString :: String
                , fooInt :: Int }
          | Bar { barString :: String
                , barMaybe :: Maybe Int
-               , bazReference :: Baz
-               }
+               , bazReference :: Baz }
 
 data Baz = Baz { bazString :: String }
 
