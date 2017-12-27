@@ -22,9 +22,16 @@ class TypeScript a where
   -- When Nothing, no declaration is emitted. Nothing is used for types that are already
   -- known to TypeScript, such as primitive types.
   getTypeScriptDeclaration :: Tagged a [TSDeclaration]
+  -- ^ Get the type as a string
   getTypeScriptType :: Tagged a String
+  -- ^ Get a flag representing whether this type is optional
   getTypeScriptOptional :: Tagged a Bool
   getTypeScriptOptional = Tagged False
+  -- ^ Get any special info about this type, used for ad-hoc instance tweaks
+  getTypeScriptSpecialInfo :: Tagged a (Maybe SpecialInfo)
+  getTypeScriptSpecialInfo = Tagged Nothing
+
+data SpecialInfo = IsChar deriving Eq
 
 data TSDeclaration = TSInterfaceDeclaration { interfaceName :: String
                                             , interfaceMembers :: [TSField] }
