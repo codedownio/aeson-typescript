@@ -1,6 +1,12 @@
 {-# LANGUAGE DeriveDataTypeable, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, FlexibleInstances #-}
 
-module TH where
+module TH (
+  module Instances,
+  module Types,
+  TSDeclaration(..),
+  TSField(..),
+  deriveTypeScript
+  ) where
 
 import Control.Monad
 import Control.Monad.Writer
@@ -14,58 +20,18 @@ import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Typeable
+import Instances
 import Language.Haskell.TH
 import Language.Haskell.TH.Datatype
 import Language.Haskell.TH.Quote
 import Language.Haskell.TH.Syntax
+import Types
 
 data Foo = Foo { fooString :: String
                , fooInt :: Int }
          | Bar { barString :: String
                , barMaybe :: Maybe Int
                } deriving (Data, Typeable)
-
-
-newtype TSType a = TSType String deriving Show
-
-data TSDeclaration a = TSInterfaceDeclaration { interfaceName :: String
-                                              , interfaceMembers :: [TSField] }
-                     | TSTypeAlternatives { alternativeTypes :: [String]}
-  deriving Show
-
--- class IsTSField a where
---   isFieldOptional :: a -> Bool
---   getFieldName :: a -> TSType a
---   getFieldType :: a -> TSType a
--- instance IsTSField (TSField a) where
---   isFieldOptional = fieldOptional
---   getFieldName field = fieldName field
-  -- getFieldType = fieldType
--- data TSF = forall a. IsTSField a => TSF a
-
-data TSField = TSField { fieldOptional :: Bool
-                       , fieldName :: String
-                       , fieldType :: String } deriving Show
-
-data TypeScriptString a = TypeScriptString String deriving Show
-
-instance IsString (TypeScriptString a) where
-  fromString x = TypeScriptString x
-
-class TypeScript a where
-  -- ^ Get the declaration of this type, if necessary.
-  -- When Nothing, no declaration is emitted. Nothing is used for types that are already
-  -- known to TypeScript, such as primitive types.
-  getTypeScriptDeclaration :: [TSDeclaration a]
-  getTypeScriptType :: TypeScriptString a
-
-instance TypeScript Int where
-  getTypeScriptDeclaration = []
-  getTypeScriptType = TypeScriptString "number"
-
-instance TypeScript [Char] where
-  getTypeScriptDeclaration = []
-  getTypeScriptType = TypeScriptString "string"
 
 -- | Generates a 'TypeScript' instance declaration for the given data type or
 -- data family instance constructor.
@@ -112,7 +78,7 @@ getConstructorDeclaration (ConstructorInfo {constructorVariant=(RecordConstructo
     members = ListE [(AppE (AppE (AppE (ConE 'TSField)
                                    (ConE 'False))
                              (LitE $ StringL $ lastNameComponent $ nameString))
-                       (AppE (VarE 'show) (SigE (VarE 'getTypeScriptType) (AppT (VarT ''TypeScriptString) typ))))
+                       (AppE (VarE 'unpackTSString) (SigE (VarE 'getTypeScriptType) (AppT (ConT ''TSString) typ))))
                     | (nameString, typ) <- namesAndTypes]
 
 getConstructorName :: Name -> String
