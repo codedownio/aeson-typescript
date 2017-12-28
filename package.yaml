@@ -20,8 +20,9 @@ synopsis:            Generate TypeScript definition files from your ADTs
 description:         Please see the README on Github at <https://github.com/codedownio/aeson-typescript#readme>
 
 dependencies:
-- base >= 4.7 && < 5
 - aeson
+- base >= 4.7 && < 5
+- containers
 - interpolate
 - mtl
 - tagged

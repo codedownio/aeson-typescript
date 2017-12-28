@@ -58,7 +58,9 @@ deriveTypeScript options name = do
       -- Return all the declarations
       return $ NormalB $ AppE (ConE 'Tagged) (ListE (typeDeclaration : interfaceDeclarations))
 
-    A.UntaggedValue -> error [i|UntaggedValue not implemented|]
+    A.UntaggedValue -> do
+      -- Constructor names won't be encoded. Instead only the contents of the constructor will be encoded as if the type had a single constructor.
+      error [i|UntaggedValue not implemented|]
     A.ObjectWithSingleField -> error [i|ObjectWithSingleField not implemented|]
     A.TwoElemArray -> error [i|TwoElemArray not implemented|]
 
@@ -78,21 +80,20 @@ getTaggedObjectConstructorDeclaration tagFieldName _contentsFieldName options (C
   where
     interfaceDeclaration = AppE (AppE (ConE 'TSInterfaceDeclaration) (LitE $ StringL $ getConstructorName constructorName)) members
     namesAndTypes :: [(String, Type)] = (tagFieldName, (ConT ''String)) : (zip (fmap ((A.fieldLabelModifier options) . show) names) constructorFields)
-    members = ListE [(AppE (AppE (AppE (ConE 'TSField)
-                                   (AppE (VarE 'unTagged) (SigE (VarE 'getTypeScriptOptional) (AppT (AppT (ConT ''Tagged) typ) (ConT ''Bool)))))
-                             (LitE $ StringL $ lastNameComponent $ nameString))
-                       (AppE (VarE 'unTagged) (SigE (VarE 'getTypeScriptType) (AppT (AppT (ConT ''Tagged) typ) (ConT ''String)))))
-                    | (nameString, typ) <- namesAndTypes]
+    members = getTSFields namesAndTypes
 getTaggedObjectConstructorDeclaration tagFieldName _ _ (ConstructorInfo {constructorVariant=NormalConstructor, ..}) = interfaceDeclaration
   where
     interfaceDeclaration = AppE (AppE (ConE 'TSInterfaceDeclaration) (LitE $ StringL $ getConstructorName constructorName)) members
     namesAndTypes :: [(String, Type)] = [(tagFieldName, (ConT ''String))]
-    members = ListE [(AppE (AppE (AppE (ConE 'TSField)
-                                   (AppE (VarE 'unTagged) (SigE (VarE 'getTypeScriptOptional) (AppT (AppT (ConT ''Tagged) typ) (ConT ''Bool)))))
-                             (LitE $ StringL $ lastNameComponent $ nameString))
-                       (AppE (VarE 'unTagged) (SigE (VarE 'getTypeScriptType) (AppT (AppT (ConT ''Tagged) typ) (ConT ''String)))))
-                    | (nameString, typ) <- namesAndTypes]
+    members = getTSFields namesAndTypes
 getTaggedObjectConstructorDeclaration _tagFieldName _contentsFieldName _ (ConstructorInfo {constructorVariant=x, ..}) = error [i|Constructor variant not supported yet: #{x}|]
+
+getTSFields :: [(String, Type)] -> Exp
+getTSFields namesAndTypes = ListE [(AppE (AppE (AppE (ConE 'TSField)
+                                                (AppE (VarE 'unTagged) (SigE (VarE 'getTypeScriptOptional) (AppT (AppT (ConT ''Tagged) typ) (ConT ''Bool)))))
+                                          (LitE $ StringL $ lastNameComponent $ nameString))
+                                    (AppE (VarE 'unTagged) (SigE (VarE 'getTypeScriptType) (AppT (AppT (ConT ''Tagged) typ) (ConT ''String)))))
+                                  | (nameString, typ) <- namesAndTypes]
 
 getConstructorName :: Name -> String
 getConstructorName x = "I" <> lastNameComponent' x

@@ -11,6 +11,7 @@ import Data.Aeson.TypeScript.Types
 import Data.Data
 import Data.Monoid
 import Data.Proxy
+import Data.Set
 import Data.String
 import Data.String.Interpolate.IsString
 import Data.Tagged
@@ -49,15 +50,30 @@ instance (TypeScript a) => TypeScript [a] where
     specialInfo = unTagged (getTypeScriptSpecialInfo :: Tagged a (Maybe SpecialInfo))
   getTypeScriptDeclaration = Tagged []
 
+instance (TypeScript a, TypeScript b) => TypeScript (Either a b) where
+  getTypeScriptType = Tagged [i|Either<#{unTagged $ (getTypeScriptType :: Tagged a String)}, #{unTagged $ (getTypeScriptType :: Tagged b String)}>|]
+  getTypeScriptDeclaration = Tagged [TSTypeAlternatives "Either" ["ILeft<T1>", "IRight<T2"]
+                                    , TSInterfaceDeclaration "ILeft<T>" [TSField False "Left" "T"]
+                                    , TSInterfaceDeclaration "IRight<T>" [TSField False "Right" "T"]
+                                    ]
+
 instance (TypeScript a, TypeScript b) => TypeScript (a, b) where
   getTypeScriptType = Tagged [i|[#{unTagged $ (getTypeScriptType :: Tagged a String)}, #{unTagged $ (getTypeScriptType :: Tagged b String)}]|]
   getTypeScriptDeclaration = Tagged []
 
+instance (TypeScript a, TypeScript b, TypeScript c) => TypeScript (a, b, c) where
+  getTypeScriptType = Tagged [i|[#{unTagged $ (getTypeScriptType :: Tagged a String)}, #{unTagged $ (getTypeScriptType :: Tagged b String)}, #{unTagged $ (getTypeScriptType :: Tagged c String)}]|]
+  getTypeScriptDeclaration = Tagged []
+
 instance (TypeScript a) => TypeScript (Maybe a) where
-  getTypeScriptDeclaration = Tagged [] :: Tagged (Maybe a) [TSDeclaration]
   getTypeScriptType = Tagged (unTagged $ (getTypeScriptType :: Tagged a String))
+  getTypeScriptDeclaration = Tagged []
   getTypeScriptOptional = Tagged True
 
 instance TypeScript A.Value where
-  getTypeScriptDeclaration = Tagged []
   getTypeScriptType = Tagged "any";
+  getTypeScriptDeclaration = Tagged []
+
+instance (TypeScript a) => TypeScript (Set a) where
+  getTypeScriptType = Tagged ((unTagged $ (getTypeScriptType :: Tagged a String)) <> "[]");
+  getTypeScriptDeclaration = Tagged []
