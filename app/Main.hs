@@ -33,6 +33,10 @@ data HigherKind a = HigherKind { higherKindList :: [a] }
 
 $(deriveTypeScript A.defaultOptions ''HigherKind)
 
+-- TODO: switch to using Data.Proxy so we can pass higher-kinded things like HigherKind
+-- to getTypeScriptDeclaration, and get back a properly templated declaration
+-- Unfortunately Data.Tagged seems not to be poly-kinded
+
 data T = T
 instance TypeScript T where
   getTypeScriptType = Tagged "T"
