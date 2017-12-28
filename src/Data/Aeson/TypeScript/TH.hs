@@ -17,7 +17,7 @@ import Data.Monoid
 import Data.String.Interpolate.IsString
 import Data.Tagged
 import qualified Data.Text as T
-import Language.Haskell.TH
+import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
 
 -- import Debug.Trace
@@ -35,19 +35,20 @@ deriveTypeScript options name = do
 
   -- traceM [i|datatype info: #{datatypeInfo}|]
 
-  let getTypeFn = FunD 'getTypeScriptType [Clause [] (NormalB $ AppE (ConE 'Tagged) (LitE $ StringL $ getTypeName datatypeName)) []]
+  typeExpression <- getTypeExpression datatypeInfo
+  let getTypeFn = FunD 'getTypeScriptType [Clause [] (NormalB typeExpression) []]
 
   -- If name is higher-kinded, add generic variables to the type and interface declarations
   let genericVariables :: [String] = if | length datatypeVars == 1 -> ["T"]
                                         | otherwise -> ["T" <> show i | i <- [1..(length datatypeVars)]]
-  let genericVariablesExp = ListE [LitE $ StringL x | x <- genericVariables]
+  let genericVariablesExp = ListE [stringE x | x <- genericVariables]
   let genericBrackets = getGenericBrackets genericVariables
 
   declarationFnBody <- case A.sumEncoding options of
     A.TaggedObject _ _ | A.allNullaryToStringTag options && (allConstructorsAreNullary datatypeCons) -> do
       -- Since all constructors are nullary, just encode them to strings
-      let strings = [[i|"#{getTypeName $ constructorName x}"|] | x <- datatypeCons]
-      let typeDeclaration = AppE (AppE (AppE (ConE 'TSTypeAlternatives) (LitE $ StringL $ getTypeName datatypeName)) genericVariablesExp) (ListE [LitE $ StringL (s <> genericBrackets) | s <- strings])
+      let strings = [[i|"#{(A.constructorTagModifier options) $ getTypeName $ constructorName x}"|] | x <- datatypeCons]
+      let typeDeclaration = AppE (AppE (AppE (ConE 'TSTypeAlternatives) (stringE $ getTypeName datatypeName)) genericVariablesExp) (ListE [stringE (s <> genericBrackets) | s <- strings])
       -- Return the single type declaration
       return $ NormalB $ AppE (ConE 'Tagged) (ListE [typeDeclaration])
 
@@ -59,8 +60,8 @@ deriveTypeScript options name = do
       -- interface IBar { barInt: "number" }
 
       -- Get the type declaration
-      let interfaceNames = ListE [LitE $ StringL (getConstructorName x <> genericBrackets) | x <- fmap constructorName datatypeCons]
-      let typeDeclaration = AppE (AppE (AppE (ConE 'TSTypeAlternatives) (LitE $ StringL $ getTypeName datatypeName)) genericVariablesExp) interfaceNames
+      let interfaceNames = ListE [stringE (getConstructorName (A.constructorTagModifier options) x <> genericBrackets) | x <- fmap constructorName datatypeCons]
+      let typeDeclaration = AppE (AppE (AppE (ConE 'TSTypeAlternatives) (stringE $ getTypeName datatypeName)) genericVariablesExp) interfaceNames
 
       -- Get the interface declaration
       let interfaceDeclarations = fmap (getTaggedObjectConstructorDeclaration tagFieldName contentsFieldName options genericVariables) datatypeCons
@@ -84,27 +85,47 @@ deriveTypeScript options name = do
 getTaggedObjectConstructorDeclaration :: String -> String -> A.Options -> [String] -> ConstructorInfo -> Exp
 getTaggedObjectConstructorDeclaration tagFieldName _contentsFieldName options genericVariables (ConstructorInfo {constructorVariant=(RecordConstructor names), ..}) = interfaceDeclaration
   where
-    genericVariablesExp = (ListE [LitE $ StringL x | x <- genericVariables])
-    interfaceDeclaration = AppE (AppE (AppE (ConE 'TSInterfaceDeclaration) (LitE $ StringL $ getConstructorName constructorName)) genericVariablesExp) members
-    namesAndTypes :: [(String, Type)] = (tagFieldName, (ConT ''String)) : (zip (fmap ((A.fieldLabelModifier options) . show) names) constructorFields)
+    namesAndTypes :: [(String, Type)] = (tagFieldName, (ConT ''String)) : (zip (fmap ((A.fieldLabelModifier options) . lastNameComponent') names) constructorFields)
     members = getTSFields namesAndTypes
-getTaggedObjectConstructorDeclaration tagFieldName _ _ genericVariables (ConstructorInfo {constructorVariant=NormalConstructor, ..}) = interfaceDeclaration
+    interfaceDeclaration = assembleInterfaceDeclaration options constructorName genericVariables members
+getTaggedObjectConstructorDeclaration tagFieldName _ options genericVariables (ConstructorInfo {constructorVariant=NormalConstructor, ..}) = interfaceDeclaration
   where
-    genericVariablesExp = (ListE [LitE $ StringL x | x <- genericVariables])
-    interfaceDeclaration = AppE (AppE (AppE (ConE 'TSInterfaceDeclaration) (LitE $ StringL $ getConstructorName constructorName)) genericVariablesExp) members
     namesAndTypes :: [(String, Type)] = [(tagFieldName, (ConT ''String))]
     members = getTSFields namesAndTypes
+    interfaceDeclaration = assembleInterfaceDeclaration options constructorName genericVariables members
 getTaggedObjectConstructorDeclaration _tagFieldName _contentsFieldName _ _ (ConstructorInfo {constructorVariant=x, ..}) = error [i|Constructor variant not supported yet: #{x}|]
 
+-- | Helper for getTaggedObjectConstructorDeclaration
 getTSFields :: [(String, Type)] -> Exp
-getTSFields namesAndTypes = ListE [(AppE (AppE (AppE (ConE 'TSField)
-                                                (AppE (VarE 'unTagged) (SigE (VarE 'getTypeScriptOptional) (AppT (AppT (ConT ''Tagged) typ) (ConT ''Bool)))))
-                                          (LitE $ StringL $ lastNameComponent $ nameString))
-                                    (AppE (VarE 'unTagged) (SigE (VarE 'getTypeScriptType) (AppT (AppT (ConT ''Tagged) typ) (ConT ''String)))))
+getTSFields namesAndTypes = ListE [(AppE (AppE (AppE (ConE 'TSField) (getOptionalAsBoolExp typ))
+                                           (stringE nameString))
+                                    (getTypeAsStringExp typ))
                                   | (nameString, typ) <- namesAndTypes]
 
-getDatatypePredicate :: Type -> Pred
-getDatatypePredicate typ = AppT (ConT ''TypeScript) typ
+-- | Helper for getTaggedObjectConstructorDeclaration
+assembleInterfaceDeclaration options constructorName genericVariables members = AppE (AppE (AppE (ConE 'TSInterfaceDeclaration) constructorNameExp) genericVariablesExp) members where
+  constructorNameExp = stringE $ getConstructorName (A.constructorTagModifier options) constructorName
+  genericVariablesExp = (ListE [stringE x | x <- genericVariables])
+
+
+-- * Getting type expression
+
+-- | Get an expression to be used for getTypeScriptType.
+-- For datatypes of kind * this is easy, since we can just evaluate the string literal in TH.
+-- For higher-kinded types, we need to make an expression which evaluates the template types and fills it in.
+getTypeExpression :: DatatypeInfo -> Q Exp
+getTypeExpression (DatatypeInfo {datatypeVars=[], ..}) = return $ AppE (ConE 'Tagged) $ stringE $ getTypeName datatypeName
+getTypeExpression (DatatypeInfo {datatypeVars=vars, ..}) = do
+  let baseName = stringE $ getTypeName datatypeName
+  let typeNames = ListE [getTypeAsStringExp typ | typ <- vars]
+  let headType = AppE (VarE 'head) typeNames
+  let tailType = AppE (VarE 'tail) typeNames
+  let comma = stringE ", "
+  x <- newName "x"
+  let tailsWithCommas = AppE (VarE 'mconcat) (CompE [BindS (VarP x) tailType, NoBindS (AppE (AppE (VarE 'mappend) comma) (VarE x))])
+  let brackets = AppE (VarE 'mconcat) (ListE [stringE "<", headType, tailsWithCommas, stringE ">"])
+
+  return $ AppE (ConE 'Tagged) (AppE (AppE (VarE 'mappend) baseName) brackets)
 
 -- * Util stuff
 
@@ -114,8 +135,8 @@ lastNameComponent x = T.unpack $ last $ T.splitOn "." (T.pack x)
 lastNameComponent' :: Name -> String
 lastNameComponent' = lastNameComponent . show
 
-getConstructorName :: Name -> String
-getConstructorName x = "I" <> lastNameComponent' x
+getConstructorName :: (String -> String) -> Name -> String
+getConstructorName constructorTagModifier x = "I" <> (constructorTagModifier $ lastNameComponent' x)
 
 getTypeName :: Name -> String
 getTypeName x = lastNameComponent $ show x
@@ -125,3 +146,14 @@ allConstructorsAreNullary constructors = and $ fmap isConstructorNullary constru
 
 isConstructorNullary :: ConstructorInfo -> Bool
 isConstructorNullary (ConstructorInfo {constructorVariant, constructorFields}) = (constructorVariant == NormalConstructor) && (constructorFields == [])
+
+getDatatypePredicate :: Type -> Pred
+getDatatypePredicate typ = AppT (ConT ''TypeScript) typ
+
+getTypeAsStringExp :: Type -> Exp
+getTypeAsStringExp typ = AppE (VarE 'unTagged) (SigE (VarE 'getTypeScriptType) (AppT (AppT (ConT ''Tagged) typ) (ConT ''String)))
+
+getOptionalAsBoolExp :: Type -> Exp
+getOptionalAsBoolExp typ = AppE (VarE 'unTagged) (SigE (VarE 'getTypeScriptOptional) (AppT (AppT (ConT ''Tagged) typ) (ConT ''Bool)))
+
+stringE = LitE . StringL

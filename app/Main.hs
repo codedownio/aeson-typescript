@@ -18,20 +18,21 @@ import Language.Haskell.TH
 import Language.Haskell.TH.Datatype
 
 
+data HigherKind a = HigherKind { higherKindList :: [a] }
+
+$(deriveTypeScript A.defaultOptions ''HigherKind)
+
 data Foo = Foo { fooString :: String
                , fooInt :: Int }
          | Bar { barString :: String
                , barMaybe :: Maybe Int
-               , bazReference :: Baz }
+               , bazReference :: Baz
+               , higherKindReference :: HigherKind String }
 
 data Baz = Baz { bazString :: String }
 
 $(deriveTypeScript A.defaultOptions ''Foo)
 $(deriveTypeScript A.defaultOptions ''Baz)
-
-data HigherKind a = HigherKind { higherKindList :: [a] }
-
-$(deriveTypeScript A.defaultOptions ''HigherKind)
 
 data T = T
 instance TypeScript T where
