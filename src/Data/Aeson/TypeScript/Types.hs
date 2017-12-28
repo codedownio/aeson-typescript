@@ -34,8 +34,10 @@ class TypeScript a where
 data SpecialInfo = IsChar deriving Eq
 
 data TSDeclaration = TSInterfaceDeclaration { interfaceName :: String
+                                            , interfaceGenericVariables :: [String]
                                             , interfaceMembers :: [TSField] }
                    | TSTypeAlternatives { typeName :: String
+                                        , typeGenericVariables :: [String]
                                         , alternativeTypes :: [String]}
   deriving Show
 

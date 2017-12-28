@@ -23,11 +23,15 @@ formatTSDeclarations' :: FormattingOptions -> [TSDeclaration] -> String
 formatTSDeclarations' options declarations = T.unpack $ T.intercalate "\n\n" (fmap (T.pack . formatTSDeclaration options) declarations)
 
 formatTSDeclaration :: FormattingOptions -> TSDeclaration -> String
-formatTSDeclaration (FormattingOptions {numIndentSpaces}) (TSTypeAlternatives name names) = [i|type #{name} = #{alternatives};|]
+formatTSDeclaration (FormattingOptions {numIndentSpaces}) (TSTypeAlternatives name genericVariables names) = [i|type #{name}#{getGenericBrackets genericVariables} = #{alternatives};|]
   where alternatives = T.intercalate " | " (fmap T.pack names)
-formatTSDeclaration (FormattingOptions {numIndentSpaces}) (TSInterfaceDeclaration interfaceName members) = [i|interface #{interfaceName} {
+formatTSDeclaration (FormattingOptions {numIndentSpaces}) (TSInterfaceDeclaration interfaceName genericVariables members) = [i|interface #{interfaceName}#{getGenericBrackets genericVariables} {
 #{lines}
 }|] where lines = T.intercalate "\n" $ fmap T.pack [(replicate numIndentSpaces ' ') <> formatTSField member <> ";"| member <- members]
 
 formatTSField :: TSField -> String
 formatTSField (TSField optional name typ) = [i|#{name}#{if optional then "?" else ""}: #{typ}|]
+
+getGenericBrackets :: [String] -> String
+getGenericBrackets [] = ""
+getGenericBrackets xs = [i|<#{T.intercalate ", " (fmap T.pack xs)}>|]

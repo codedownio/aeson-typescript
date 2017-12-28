@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables #-}
+{-# LANGUAGE DeriveDataTypeable, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, KindSignatures #-}
 
 module Main where
 
@@ -29,6 +29,17 @@ data Baz = Baz { bazString :: String }
 $(deriveTypeScript A.defaultOptions ''Foo)
 $(deriveTypeScript A.defaultOptions ''Baz)
 
-main = putStrLn $ formatTSDeclarations
-  (unTagged (getTypeScriptDeclaration :: Tagged Foo [TSDeclaration]) <>
-   unTagged (getTypeScriptDeclaration :: Tagged Baz [TSDeclaration]))
+data HigherKind a = HigherKind { higherKindList :: [a] }
+
+$(deriveTypeScript A.defaultOptions ''HigherKind)
+
+data T = T
+instance TypeScript T where
+  getTypeScriptType = Tagged "T"
+  getTypeScriptDeclaration = Tagged []
+
+main = putStrLn $ formatTSDeclarations (
+  unTagged (getTypeScriptDeclaration :: Tagged (HigherKind T) [TSDeclaration]) <>
+  unTagged (getTypeScriptDeclaration :: Tagged Foo [TSDeclaration]) <>
+  unTagged (getTypeScriptDeclaration :: Tagged Baz [TSDeclaration])
+  )
