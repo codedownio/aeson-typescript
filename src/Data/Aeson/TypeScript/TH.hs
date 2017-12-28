@@ -68,12 +68,6 @@ deriveTypeScript options name = do
 
   return $ [InstanceD Nothing [] (AppT (ConT ''TypeScript) (ConT name)) [getTypeFn, getDeclarationFn]]
 
-lastNameComponent :: String -> String
-lastNameComponent x = T.unpack $ last $ T.splitOn "." (T.pack x)
-
-lastNameComponent' :: Name -> String
-lastNameComponent' = lastNameComponent . show
-
 -- | Return an expression that evaluates to a TSInterfaceDeclaration
 getTaggedObjectConstructorDeclaration :: String -> String -> A.Options -> ConstructorInfo -> Exp
 getTaggedObjectConstructorDeclaration tagFieldName _contentsFieldName options (ConstructorInfo {constructorVariant=(RecordConstructor names), ..}) = interfaceDeclaration
@@ -94,6 +88,14 @@ getTSFields namesAndTypes = ListE [(AppE (AppE (AppE (ConE 'TSField)
                                           (LitE $ StringL $ lastNameComponent $ nameString))
                                     (AppE (VarE 'unTagged) (SigE (VarE 'getTypeScriptType) (AppT (AppT (ConT ''Tagged) typ) (ConT ''String)))))
                                   | (nameString, typ) <- namesAndTypes]
+
+-- * Util stuff
+
+lastNameComponent :: String -> String
+lastNameComponent x = T.unpack $ last $ T.splitOn "." (T.pack x)
+
+lastNameComponent' :: Name -> String
+lastNameComponent' = lastNameComponent . show
 
 getConstructorName :: Name -> String
 getConstructorName x = "I" <> lastNameComponent' x
