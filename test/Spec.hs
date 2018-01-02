@@ -3,9 +3,11 @@ module Main where
 
 import Test.Tasty
 
-import BasicTests as BasicTests
+import TaggedObjectNoTagSingleConstructors as TaggedObjectNoTagSingleConstructors
+import TaggedObjectTagSingleConstructors as TaggedObjectTagSingleConstructors
 
 allTests :: TestTree
-allTests = testGroup "All unit tests" [BasicTests.tests]
+allTests = testGroup "All unit tests" [TaggedObjectTagSingleConstructors.tests
+                                      , TaggedObjectNoTagSingleConstructors.tests]
 
 main = defaultMainWithIngredients defaultIngredients $ allTests

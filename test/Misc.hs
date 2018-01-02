@@ -1,14 +1,17 @@
+{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns #-}
 
-module BasicTests where
+module Misc where
 
+import Data.Aeson as A
+import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.TH
+import Data.Tagged
+import Prelude hiding (Double)
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec
 import Test.Tasty
 import Test.Tasty.Hspec (testSpec)
 import Test.Tasty.Runners
-
-data Foo = Foo { fooString :: String }
 
 -- data HigherKind a = HigherKind { higherKindList :: [a] }
 
@@ -36,9 +39,3 @@ data Foo = Foo { fooString :: String }
 --   unTagged (getTypeScriptDeclaration :: Tagged Foo [TSDeclaration]) <>
 --   unTagged (getTypeScriptDeclaration :: Tagged Baz [TSDeclaration])
 --   )
-
--- why on earth does testSpec use IO
-tests = unsafePerformIO $ testSpec "Token tests" $ do
-  describe "basic test" $ do
-    it "does a basic thing" $ do
-      2 `shouldBe` 2

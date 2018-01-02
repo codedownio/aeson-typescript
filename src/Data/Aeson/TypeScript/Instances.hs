@@ -24,6 +24,9 @@ import Language.Haskell.TH.Datatype
 import Language.Haskell.TH.Quote
 import Language.Haskell.TH.Syntax
 
+instance TypeScript () where
+  getTypeScriptType = Tagged "void"
+
 instance TypeScript T.Text where
   getTypeScriptType = Tagged "string"
 
