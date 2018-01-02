@@ -61,3 +61,12 @@ instance IsString (TSString a) where
 data FormattingOptions = FormattingOptions { numIndentSpaces :: Int }
 
 defaultFormattingOptions = FormattingOptions 2
+
+
+-- | Convenience typeclass class you can use to "attach" a set of Aeson encoding options to a type
+-- This way, you can do
+-- $(deriveJSON (getJSONOptions (Proxy :: Proxy SomeType)) ''SomeType)
+-- $(deriveTypeScript (getJSONOptions (Proxy :: Proxy SomeType)) ''SomeType)
+-- and ensure that the options are always in sync
+class HasJSONOptions a where
+  getJSONOptions :: (Proxy a) -> A.Options
