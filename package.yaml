@@ -55,3 +55,7 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - aeson-typescript
+    - hspec
+    - tasty
+    - tasty-ant-xml
+    - tasty-hspec
