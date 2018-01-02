@@ -29,6 +29,7 @@ dependencies:
 - template-haskell
 - text
 - th-abstraction
+- unordered-containers
 
 library:
   source-dirs: src
