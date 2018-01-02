@@ -51,9 +51,9 @@ instance (TypeScript a) => TypeScript [a] where
 
 instance (TypeScript a, TypeScript b) => TypeScript (Either a b) where
   getTypeScriptType = Tagged [i|Either<#{unTagged $ (getTypeScriptType :: Tagged a String)}, #{unTagged $ (getTypeScriptType :: Tagged b String)}>|]
-  getTypeScriptDeclaration = Tagged [TSTypeAlternatives "Either" ["T1", "T2"] ["ILeft<T1>", "IRight<T2>"]
-                                    , TSInterfaceDeclaration "ILeft<T>" ["T"] [TSField False "Left" "T"]
-                                    , TSInterfaceDeclaration "IRight<T>" ["T"] [TSField False "Right" "T"]
+  getTypeScriptDeclaration = Tagged [TSTypeAlternatives "Either" ["T1", "T2"] ["Left<T1>", "Right<T2>"]
+                                    , TSInterfaceDeclaration "Left" ["T"] [TSField False "Left" "T"]
+                                    , TSInterfaceDeclaration "Right" ["T"] [TSField False "Right" "T"]
                                     ]
 
 instance (TypeScript a, TypeScript b) => TypeScript (a, b) where
