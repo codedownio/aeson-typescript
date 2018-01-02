@@ -9,6 +9,7 @@ import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
 import Data.Aeson.TypeScript.Types
 import Data.Data
+import Data.HashMap.Strict
 import Data.Monoid
 import Data.Proxy
 import Data.Set
@@ -71,6 +72,9 @@ instance (TypeScript a) => TypeScript (Maybe a) where
 
 instance TypeScript A.Value where
   getTypeScriptType = Tagged "any";
+
+instance (TypeScript a, TypeScript b) => TypeScript (HashMap a b) where
+  getTypeScriptType = Tagged [i|{[k: #{unTagged $ (getTypeScriptType :: Tagged a String)}]: #{unTagged $ (getTypeScriptType :: Tagged b String)}}|]
 
 instance (TypeScript a) => TypeScript (Set a) where
   getTypeScriptType = Tagged ((unTagged $ (getTypeScriptType :: Tagged a String)) <> "[]");
