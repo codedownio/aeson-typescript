@@ -66,6 +66,9 @@ instance (TypeScript a, TypeScript b) => TypeScript (a, b) where
 instance (TypeScript a, TypeScript b, TypeScript c) => TypeScript (a, b, c) where
   getTypeScriptType = Tagged [i|[#{unTagged $ (getTypeScriptType :: Tagged a String)}, #{unTagged $ (getTypeScriptType :: Tagged b String)}, #{unTagged $ (getTypeScriptType :: Tagged c String)}]|]
 
+instance (TypeScript a, TypeScript b, TypeScript c, TypeScript d) => TypeScript (a, b, c, d) where
+  getTypeScriptType = Tagged [i|[#{unTagged $ (getTypeScriptType :: Tagged a String)}, #{unTagged $ (getTypeScriptType :: Tagged b String)}, #{unTagged $ (getTypeScriptType :: Tagged c String)}, #{unTagged $ (getTypeScriptType :: Tagged d String)}]|]
+
 instance (TypeScript a) => TypeScript (Maybe a) where
   getTypeScriptType = Tagged (unTagged $ (getTypeScriptType :: Tagged a String))
   getTypeScriptOptional = Tagged True
