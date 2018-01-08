@@ -1,6 +1,6 @@
 {-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns #-}
 
-module TaggedObjectNoTagSingleConstructors (tests) where
+module Untagged (tests) where
 
 import Data.Aeson as A
 import Data.Aeson.TH as A
@@ -14,35 +14,36 @@ import Test.Tasty
 import Test.Tasty.Hspec (testSpec)
 import Test.Tasty.Runners
 
+
 data Unit = Unit
-$(deriveJSON A.defaultOptions ''Unit)
-$(deriveTypeScript A.defaultOptions ''Unit)
+$(deriveJSON (A.defaultOptions {sumEncoding=UntaggedValue}) ''Unit)
+$(deriveTypeScript (A.defaultOptions {sumEncoding=UntaggedValue}) ''Unit)
 
 data OneFieldRecordless = OneFieldRecordless Int
-$(deriveJSON A.defaultOptions ''OneFieldRecordless)
-$(deriveTypeScript A.defaultOptions ''OneFieldRecordless)
+$(deriveJSON (A.defaultOptions {sumEncoding=UntaggedValue}) ''OneFieldRecordless)
+$(deriveTypeScript (A.defaultOptions {sumEncoding=UntaggedValue}) ''OneFieldRecordless)
 
 data OneField = OneField { simpleString :: String }
-$(deriveJSON A.defaultOptions ''OneField)
-$(deriveTypeScript A.defaultOptions ''OneField)
+$(deriveJSON (A.defaultOptions {sumEncoding=UntaggedValue}) ''OneField)
+$(deriveTypeScript (A.defaultOptions {sumEncoding=UntaggedValue}) ''OneField)
 
 data TwoFieldRecordless = TwoFieldRecordless Int String
-$(deriveJSON A.defaultOptions ''TwoFieldRecordless)
-$(deriveTypeScript A.defaultOptions ''TwoFieldRecordless)
+$(deriveJSON (A.defaultOptions {sumEncoding=UntaggedValue}) ''TwoFieldRecordless)
+$(deriveTypeScript (A.defaultOptions {sumEncoding=UntaggedValue}) ''TwoFieldRecordless)
 
 data TwoField = TwoField { doubleInt :: Int
                          , doubleString :: String }
-$(deriveJSON A.defaultOptions ''TwoField)
-$(deriveTypeScript A.defaultOptions ''TwoField)
+$(deriveJSON (A.defaultOptions {sumEncoding=UntaggedValue}) ''TwoField)
+$(deriveTypeScript (A.defaultOptions {sumEncoding=UntaggedValue}) ''TwoField)
 
 data TwoConstructor = Con1 { con1String :: String }
                     | Con2 { con2String :: String
                            , con2Int :: Int }
-$(deriveJSON A.defaultOptions ''TwoConstructor)
-$(deriveTypeScript A.defaultOptions ''TwoConstructor)
+$(deriveJSON (A.defaultOptions {sumEncoding=UntaggedValue}) ''TwoConstructor)
+$(deriveTypeScript (A.defaultOptions {sumEncoding=UntaggedValue}) ''TwoConstructor)
 
 
-tests = unsafePerformIO $ testSpec "TaggedObject with tagSingleConstructors=False" $ do
+tests = unsafePerformIO $ testSpec "UntaggedValue" $ do
   describe "single constructor" $ do
     it [i|with a single nullary constructor like #{A.encode Unit}|] $ do
       (getTypeScriptType :: Tagged Unit String) `shouldBe` "Unit"
@@ -81,10 +82,8 @@ tests = unsafePerformIO $ testSpec "TaggedObject with tagSingleConstructors=Fals
       (getTypeScriptType :: Tagged TwoConstructor String) `shouldBe` "TwoConstructor"
       (getTypeScriptDeclaration :: Tagged TwoConstructor [TSDeclaration]) `shouldBe` (Tagged [
         TSTypeAlternatives "TwoConstructor" [] ["ICon1","ICon2"],
-        TSInterfaceDeclaration "ICon1" [] [TSField False "tag" "string",
-                                           TSField False "con1String" "string"],
-        TSInterfaceDeclaration "ICon2" [] [TSField False "tag" "string",
-                                           TSField False "con2String" "string",
+        TSInterfaceDeclaration "ICon1" [] [TSField False "con1String" "string"],
+        TSInterfaceDeclaration "ICon2" [] [TSField False "con2String" "string",
                                            TSField False "con2Int" "number"]
         ])
 

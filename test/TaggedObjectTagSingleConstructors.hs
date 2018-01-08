@@ -35,58 +35,63 @@ data TwoField = TwoField { doubleInt :: Int
 $(deriveJSON (A.defaultOptions {tagSingleConstructors=True}) ''TwoField)
 $(deriveTypeScript (A.defaultOptions {tagSingleConstructors=True}) ''TwoField)
 
+data TwoConstructor = Con1 { con1String :: String }
+                    | Con2 { con2String :: String
+                           , con2Int :: Int }
+$(deriveJSON (A.defaultOptions {tagSingleConstructors=True}) ''TwoConstructor)
+$(deriveTypeScript (A.defaultOptions {tagSingleConstructors=True}) ''TwoConstructor)
+
+
 tests = unsafePerformIO $ testSpec "TaggedObject with tagSingleConstructors=True" $ do
   describe "single constructor" $ do
     it [i|with a single nullary constructor like #{A.encode Unit}|] $ do
       (getTypeScriptType :: Tagged Unit String) `shouldBe` "Unit"
       (getTypeScriptDeclaration :: Tagged Unit [TSDeclaration]) `shouldBe` (Tagged [
-        TSTypeAlternatives {typeName = "Unit", typeGenericVariables = [], alternativeTypes = ["\"Unit\""]}
+        TSTypeAlternatives "Unit" [] ["\"Unit\""]
         ])
 
     it [i|with a single non-record constructor like #{A.encode $ OneFieldRecordless 42}|] $ do
       (getTypeScriptType :: Tagged OneFieldRecordless String) `shouldBe` "OneFieldRecordless"
       (getTypeScriptDeclaration :: Tagged OneFieldRecordless [TSDeclaration]) `shouldBe` (Tagged [
-        TSTypeAlternatives {typeName = "OneFieldRecordless", typeGenericVariables = [], alternativeTypes = ["IOneFieldRecordless"]},
-        TSInterfaceDeclaration {interfaceName = "IOneFieldRecordless", interfaceGenericVariables = [], interfaceMembers = [
-                                   TSField {fieldOptional = False, fieldName = "tag", fieldType = "string"},
-                                   TSField {fieldOptional = False, fieldName = "contents", fieldType = "number"}
-                                   ]
-                               }
+        TSTypeAlternatives "OneFieldRecordless" [] ["IOneFieldRecordless"],
+        TSInterfaceDeclaration "IOneFieldRecordless" [] [TSField False "tag" "string",
+                                                         TSField False "contents" "number"]
         ])
 
     it [i|with a single record constructor like #{A.encode $ OneField "asdf"}|] $ do
       (getTypeScriptType :: Tagged OneField String) `shouldBe` "OneField"
       (getTypeScriptDeclaration :: Tagged OneField [TSDeclaration]) `shouldBe` (Tagged [
-        TSTypeAlternatives {typeName = "OneField", typeGenericVariables = [], alternativeTypes = ["IOneField"]},
-        TSInterfaceDeclaration {interfaceName = "IOneField", interfaceGenericVariables = [], interfaceMembers = [
-                                   TSField {fieldOptional = False, fieldName = "tag", fieldType = "string"},
-                                   TSField {fieldOptional = False, fieldName = "simpleString", fieldType = "string"}
-                                   ]
-                               }
+        TSTypeAlternatives "OneField" [] ["IOneField"],
+        TSInterfaceDeclaration "IOneField" [] [TSField False "tag" "string",
+                                               TSField False "simpleString" "string"]
         ])
 
     it [i|with a two-field non-record constructor like #{A.encode $ TwoFieldRecordless 42 "asdf"}|] $ do
       (getTypeScriptType :: Tagged TwoFieldRecordless String) `shouldBe` "TwoFieldRecordless"
       (getTypeScriptDeclaration :: Tagged TwoFieldRecordless [TSDeclaration]) `shouldBe` (Tagged [
-        TSTypeAlternatives {typeName = "TwoFieldRecordless", typeGenericVariables = [], alternativeTypes = ["ITwoFieldRecordless"]},
-        TSInterfaceDeclaration {interfaceName = "ITwoFieldRecordless", interfaceGenericVariables = [], interfaceMembers = [
-                                   TSField {fieldOptional = False, fieldName = "tag", fieldType = "string"},
-                                   TSField {fieldOptional = False, fieldName = "contents", fieldType = "[number, string]"}
-                                   ]
-                               }
+        TSTypeAlternatives "TwoFieldRecordless" [] ["ITwoFieldRecordless"],
+        TSInterfaceDeclaration "ITwoFieldRecordless" [] [TSField False "tag" "string",
+                                                         TSField False "contents" "[number, string]"]
         ])
 
     it [i|with a two-field record constructor like #{A.encode $ TwoField 42 "asdf"}|] $ do
       (getTypeScriptType :: Tagged TwoField String) `shouldBe` "TwoField"
       (getTypeScriptDeclaration :: Tagged TwoField [TSDeclaration]) `shouldBe` (Tagged [
-        TSTypeAlternatives {typeName = "TwoField", typeGenericVariables = [], alternativeTypes = ["ITwoField"]},
-        TSInterfaceDeclaration {interfaceName = "ITwoField", interfaceGenericVariables = [], interfaceMembers = [
-                                   TSField {fieldOptional = False, fieldName = "tag", fieldType = "string"},
-                                   TSField {fieldOptional = False, fieldName = "doubleInt", fieldType = "number"},
-                                   TSField {fieldOptional = False, fieldName = "doubleString", fieldType = "string"}
-                                   ]
-                               }
+        TSTypeAlternatives "TwoField" [] ["ITwoField"],
+        TSInterfaceDeclaration "ITwoField" [] [TSField False "tag" "string",
+                                               TSField False "doubleInt" "number",
+                                               TSField False "doubleString" "string"]
         ])
 
+    it [i|with a two-constructor type like #{A.encode $ Con1 "asdf"} or #{A.encode $ Con2 "asdf" 42}|] $ do
+      (getTypeScriptType :: Tagged TwoConstructor String) `shouldBe` "TwoConstructor"
+      (getTypeScriptDeclaration :: Tagged TwoConstructor [TSDeclaration]) `shouldBe` (Tagged [
+        TSTypeAlternatives "TwoConstructor" [] ["ICon1","ICon2"],
+        TSInterfaceDeclaration "ICon1" [] [TSField False "tag" "string",
+                                           TSField False "con1String" "string"],
+        TSInterfaceDeclaration "ICon2" [] [TSField False "tag" "string",
+                                           TSField False "con2String" "string",
+                                           TSField False "con2Int" "number"]
+        ])
 
 main = defaultMainWithIngredients defaultIngredients tests
