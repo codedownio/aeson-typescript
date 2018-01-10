@@ -45,17 +45,10 @@ deriveTypeScript options name = do
   let genericBrackets = getGenericBrackets genericVariables
 
   let allNullary = (A.allNullaryToStringTag options) && (allConstructorsAreNullary datatypeCons)
+  let singleNormalConstructor = (length datatypeCons == 1) && ((constructorVariant $ head datatypeCons) == NormalConstructor)
 
   declarationFnBody <- case A.sumEncoding options of
     A.ObjectWithSingleField -> error [i|ObjectWithSingleField not implemented|]
-
-    A.TwoElemArray | (not allNullary) && length datatypeCons == 1 && ((constructorVariant $ head datatypeCons) == NormalConstructor) -> do
-      -- There's a single constructor and tagSingleConstructors is False, so encode to a tuple (as a single type synonym)
-      let (ConstructorInfo {..}) = head datatypeCons
-      let contentsTupleType = getTupleType constructorFields
-      let constructor = if A.tagSingleConstructors options == False then 'TSTypeAlternatives else 'TSTwoElemArray
-      let typeDeclaration = applyToArgsE (ConE constructor) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE [getTypeAsStringExp contentsTupleType]]
-      return $ NormalB $ AppE (ConE 'Tagged) (ListE [typeDeclaration])
 
     x | allNullary && (A.tagSingleConstructors options) -> do
       -- Since all constructors are nullary, just encode them to strings
@@ -64,7 +57,15 @@ deriveTypeScript options name = do
       -- Return the single type declaration
       return $ NormalB $ AppE (ConE 'Tagged) (ListE [typeDeclaration])
 
-    x | length datatypeCons == 1 && (A.tagSingleConstructors options == False) && ((constructorVariant $ head datatypeCons) == NormalConstructor) -> do
+    A.TwoElemArray | (not allNullary) && singleNormalConstructor -> do
+      -- There's a single constructor and tagSingleConstructors is False, so encode to a tuple (as a single type synonym)
+      let (ConstructorInfo {..}) = head datatypeCons
+      let contentsTupleType = getTupleType constructorFields
+      let constructor = if A.tagSingleConstructors options == False then 'TSTypeAlternatives else 'TSTwoElemArray
+      let typeDeclaration = applyToArgsE (ConE constructor) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE [getTypeAsStringExp contentsTupleType]]
+      return $ NormalB $ AppE (ConE 'Tagged) (ListE [typeDeclaration])
+
+    x | (A.tagSingleConstructors options == False) && singleNormalConstructor -> do
       -- There's a single constructor and tagSingleConstructors is False, so encode to a tuple (as a single type synonym)
       let (ConstructorInfo {..}) = head datatypeCons
       let contentsTupleType = getTupleType constructorFields
