@@ -44,17 +44,12 @@ deriveTypeScript options name = do
   let genericVariablesExp = ListE [stringE x | x <- genericVariables]
   let genericBrackets = getGenericBrackets genericVariables
 
+  let allNullary = (A.allNullaryToStringTag options) && (allConstructorsAreNullary datatypeCons)
+
   declarationFnBody <- case A.sumEncoding options of
     A.ObjectWithSingleField -> error [i|ObjectWithSingleField not implemented|]
 
-    A.TwoElemArray | A.allNullaryToStringTag options && (allConstructorsAreNullary datatypeCons) && (A.tagSingleConstructors options) -> do
-      -- Since all constructors are nullary, just encode them to strings
-      let strings = [[i|"#{(A.constructorTagModifier options) $ getTypeName $ constructorName x}"|] | x <- datatypeCons]
-      let typeDeclaration = AppE (AppE (AppE (ConE 'TSTypeAlternatives) (stringE $ getTypeName datatypeName)) genericVariablesExp) (ListE [stringE (s <> genericBrackets) | s <- strings])
-      -- Return the single type declaration
-      return $ NormalB $ AppE (ConE 'Tagged) (ListE [typeDeclaration])
-
-    A.TwoElemArray | length datatypeCons == 1 && ((constructorVariant $ head datatypeCons) == NormalConstructor) -> do
+    A.TwoElemArray | (not allNullary) && length datatypeCons == 1 && ((constructorVariant $ head datatypeCons) == NormalConstructor) -> do
       -- There's a single constructor and tagSingleConstructors is False, so encode to a tuple (as a single type synonym)
       let (ConstructorInfo {..}) = head datatypeCons
       let contentsTupleType = getTupleType constructorFields
@@ -62,7 +57,7 @@ deriveTypeScript options name = do
       let typeDeclaration = applyToArgsE (ConE constructor) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE [getTypeAsStringExp contentsTupleType]]
       return $ NormalB $ AppE (ConE 'Tagged) (ListE [typeDeclaration])
 
-    x | A.allNullaryToStringTag options && (allConstructorsAreNullary datatypeCons) && (A.tagSingleConstructors options) -> do
+    x | allNullary && (A.tagSingleConstructors options) -> do
       -- Since all constructors are nullary, just encode them to strings
       let strings = [[i|"#{(A.constructorTagModifier options) $ getTypeName $ constructorName x}"|] | x <- datatypeCons]
       let typeDeclaration = AppE (AppE (AppE (ConE 'TSTypeAlternatives) (stringE $ getTypeName datatypeName)) genericVariablesExp) (ListE [stringE (s <> genericBrackets) | s <- strings])
