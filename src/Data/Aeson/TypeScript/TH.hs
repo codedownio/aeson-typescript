@@ -47,7 +47,7 @@ deriveTypeScript options name = do
   declarationFnBody <- case A.sumEncoding options of
     A.ObjectWithSingleField -> error [i|ObjectWithSingleField not implemented|]
 
-    A.TwoElemArray | A.allNullaryToStringTag options && (allConstructorsAreNullary datatypeCons) && (A.tagSingleConstructors options)-> do
+    A.TwoElemArray | A.allNullaryToStringTag options && (allConstructorsAreNullary datatypeCons) && (A.tagSingleConstructors options) -> do
       -- Since all constructors are nullary, just encode them to strings
       let strings = [[i|"#{(A.constructorTagModifier options) $ getTypeName $ constructorName x}"|] | x <- datatypeCons]
       let typeDeclaration = AppE (AppE (AppE (ConE 'TSTypeAlternatives) (stringE $ getTypeName datatypeName)) genericVariablesExp) (ListE [stringE (s <> genericBrackets) | s <- strings])
@@ -72,23 +72,6 @@ deriveTypeScript options name = do
 
       return $ NormalB $ AppE (ConE 'Tagged) (ListE (typeDeclaration : interfaceDeclarations))
 
-    A.TwoElemArray -> do
-      -- Something like "data Foo = Foo Int String" encodes to
-      -- ["Foo", [42, "asdf"]]
-      let interfaceDeclarations = fmap (getSumObjectConstructorDeclaration (options { A.sumEncoding = A.UntaggedValue }) (length datatypeCons) genericVariables) datatypeCons
-
-      let interfaceNames = [stringE (getConstructorName (A.constructorTagModifier options) x <> genericBrackets) | x <- fmap constructorName datatypeCons]
-      let tupleTypeDeclaration = applyToArgsE (ConE 'TSTwoElemArray) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE interfaceNames]
-
-      return $ NormalB $ AppE (ConE 'Tagged) (ListE (tupleTypeDeclaration : interfaceDeclarations))
-
-    x | length datatypeCons == 1 && (A.tagSingleConstructors options == False) && ((constructorVariant $ head datatypeCons) == NormalConstructor) -> do
-      -- There's a single constructor and tagSingleConstructors is False, so encode to a tuple (as a single type synonym)
-      let (ConstructorInfo {..}) = head datatypeCons
-      let contentsTupleType = getTupleType constructorFields
-      let typeDeclaration = applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE [getTypeAsStringExp contentsTupleType]]
-      return $ NormalB $ AppE (ConE 'Tagged) (ListE [typeDeclaration])
-
     x | A.allNullaryToStringTag options && (allConstructorsAreNullary datatypeCons) && (A.tagSingleConstructors options) -> do
       -- Since all constructors are nullary, just encode them to strings
       let strings = [[i|"#{(A.constructorTagModifier options) $ getTypeName $ constructorName x}"|] | x <- datatypeCons]
@@ -96,11 +79,21 @@ deriveTypeScript options name = do
       -- Return the single type declaration
       return $ NormalB $ AppE (ConE 'Tagged) (ListE [typeDeclaration])
 
+    x | length datatypeCons == 1 && (A.tagSingleConstructors options == False) && ((constructorVariant $ head datatypeCons) == NormalConstructor) -> do
+      -- There's a single constructor and tagSingleConstructors is False, so encode to a tuple (as a single type synonym)
+      let (ConstructorInfo {..}) = head datatypeCons
+      let contentsTupleType = getTupleType constructorFields
+      let constructor = if (A.tagSingleConstructors options && A.sumEncoding options == A.TwoElemArray) then 'TSTwoElemArray else 'TSTypeAlternatives
+      let typeDeclaration = applyToArgsE (ConE constructor) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE [getTypeAsStringExp contentsTupleType]]
+      return $ NormalB $ AppE (ConE 'Tagged) (ListE [typeDeclaration])
+
     x -> do
-      -- Handle UntaggedValue or TaggedObject
       let interfaceNames = ListE [stringE (getConstructorName (A.constructorTagModifier options) x <> genericBrackets) | x <- fmap constructorName datatypeCons]
-      let typeDeclaration = applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ getTypeName datatypeName, genericVariablesExp, interfaceNames]
+      let constructor = if A.sumEncoding options == A.TwoElemArray then 'TSTwoElemArray else 'TSTypeAlternatives
+      let typeDeclaration = applyToArgsE (ConE constructor) [stringE $ getTypeName datatypeName, genericVariablesExp, interfaceNames]
+
       let interfaceDeclarations = fmap (getSumObjectConstructorDeclaration options (length datatypeCons) genericVariables) datatypeCons
+
       return $ NormalB $ AppE (ConE 'Tagged) (ListE (typeDeclaration : interfaceDeclarations))
 
 
@@ -131,13 +124,13 @@ getSumObjectConstructorDeclaration options@(A.sumEncoding -> A.TaggedObject tagF
     namesAndTypes :: [(String, Type)] = if | (numConstructors > 1) || A.tagSingleConstructors options -> [(tagFieldName, (ConT ''String)), (contentsFieldName, contentsTupleType)]
                                            | otherwise -> [(contentsFieldName, contentsTupleType)]
     interfaceDeclaration = assembleInterfaceDeclaration options constructorName genericVariables (getTSFields namesAndTypes)
--- | Handle UntaggedValue
-getSumObjectConstructorDeclaration options@(A.sumEncoding -> A.UntaggedValue) _ genericVariables (ConstructorInfo {constructorVariant=(RecordConstructor names), ..}) = interfaceDeclaration
+-- | Handle UntaggedValue or TwoElemArray
+getSumObjectConstructorDeclaration options@(untaggedOrTwoElemArray -> True) _ genericVariables (ConstructorInfo {constructorVariant=(RecordConstructor names), ..}) = interfaceDeclaration
   where
     fieldNamesAndTypes = zip (fmap ((A.fieldLabelModifier options) . lastNameComponent') names) constructorFields
     namesAndTypes :: [(String, Type)] = fieldNamesAndTypes
     interfaceDeclaration = assembleInterfaceDeclaration options constructorName genericVariables (getTSFields namesAndTypes)
-getSumObjectConstructorDeclaration options@(A.sumEncoding -> A.UntaggedValue) _ genericVariables (ConstructorInfo {constructorVariant=NormalConstructor, ..}) = interfaceDeclaration
+getSumObjectConstructorDeclaration options@(untaggedOrTwoElemArray -> True) _ genericVariables (ConstructorInfo {constructorVariant=NormalConstructor, ..}) = interfaceDeclaration
   where
     contentsTupleType = getTupleType constructorFields
     namesAndTypes :: [(String, Type)] = [(show constructorName, contentsTupleType)]
@@ -145,6 +138,7 @@ getSumObjectConstructorDeclaration options@(A.sumEncoding -> A.UntaggedValue) _ 
 
 getSumObjectConstructorDeclaration  _ _ _ (ConstructorInfo {constructorVariant=x, ..}) = error [i|Constructor variant not supported yet: #{x}|]
 
+untaggedOrTwoElemArray options = (A.sumEncoding options == A.UntaggedValue) || (A.sumEncoding options == A.TwoElemArray)
 
 -- | Helper for getSumObjectConstructorDeclaration
 getTSFields :: [(String, Type)] -> Exp
