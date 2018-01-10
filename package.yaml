@@ -45,7 +45,13 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - aeson-typescript
+    - bytestring
+    - directory
+    - filepath
     - hspec
+    - process
+    - shelly
     - tasty
     - tasty-ant-xml
     - tasty-hspec
+    - temporary

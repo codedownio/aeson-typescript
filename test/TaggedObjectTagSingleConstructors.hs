@@ -5,6 +5,7 @@ module TaggedObjectTagSingleConstructors (tests) where
 import Data.Aeson as A
 import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.TH
+import Data.Monoid
 import Data.String.Interpolate.IsString
 import Data.Tagged
 import Prelude hiding (Double)
@@ -13,6 +14,7 @@ import Test.Hspec
 import Test.Tasty
 import Test.Tasty.Hspec (testSpec)
 import Test.Tasty.Runners
+import Util
 
 data Unit = Unit
 $(deriveJSON (A.defaultOptions {tagSingleConstructors=True}) ''Unit)
@@ -93,5 +95,26 @@ tests = unsafePerformIO $ testSpec "TaggedObject with tagSingleConstructors=True
                                            TSField False "con2String" "string",
                                            TSField False "con2Int" "number"]
         ])
+
+    it "type checks everything with tsc" $ do
+      let declarations = ((untag $ (getTypeScriptDeclaration :: Tagged Unit [TSDeclaration])) <>
+                          (untag $ (getTypeScriptDeclaration :: Tagged OneFieldRecordless [TSDeclaration])) <>
+                          (untag $ (getTypeScriptDeclaration :: Tagged OneField [TSDeclaration])) <>
+                          (untag $ (getTypeScriptDeclaration :: Tagged TwoFieldRecordless [TSDeclaration])) <>
+                          (untag $ (getTypeScriptDeclaration :: Tagged TwoField [TSDeclaration])) <>
+                          (untag $ (getTypeScriptDeclaration :: Tagged TwoConstructor [TSDeclaration]))
+                         )
+
+      let typesAndValues = [(untag $ (getTypeScriptType :: Tagged Unit String), A.encode Unit)
+                           , (untag $ (getTypeScriptType :: Tagged OneFieldRecordless String), A.encode $ OneFieldRecordless 42)
+                           , (untag $ (getTypeScriptType :: Tagged OneField String), A.encode $ OneField "asdf")
+                           , (untag $ (getTypeScriptType :: Tagged TwoFieldRecordless String), A.encode $ TwoFieldRecordless 42 "asdf")
+                           , (untag $ (getTypeScriptType :: Tagged TwoField String), A.encode $ TwoField 42 "asdf")
+                           , (untag $ (getTypeScriptType :: Tagged TwoConstructor String), A.encode $ Con1 "asdf")
+                           , (untag $ (getTypeScriptType :: Tagged TwoConstructor String), A.encode $ Con2 "asdf" 42)
+                           ]
+
+      testTypeCheckDeclarations declarations typesAndValues
+
 
 main = defaultMainWithIngredients defaultIngredients tests
