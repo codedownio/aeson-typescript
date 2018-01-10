@@ -45,16 +45,33 @@ deriveTypeScript options name = do
   let genericBrackets = getGenericBrackets genericVariables
 
   declarationFnBody <- case A.sumEncoding options of
-    A.TwoElemArray -> do
-      -- Something like "data Foo = Foo Int String" encodes to
-      -- ["Foo", [42, "asdf"]]
-      let (ConstructorInfo {constructorFields}) = head datatypeCons
+    A.ObjectWithSingleField -> error [i|ObjectWithSingleField not implemented|]
+
+    A.TwoElemArray | length datatypeCons == 1 && (A.tagSingleConstructors options == False) && ((constructorVariant $ head datatypeCons) == NormalConstructor) -> do
+      -- There's a single constructor and tagSingleConstructors is False, so encode to a tuple (as a single type synonym)
+      let (ConstructorInfo {..}) = head datatypeCons
       let contentsTupleType = getTupleType constructorFields
-      let interfaceNames = ListE [stringE (getConstructorName (A.constructorTagModifier options) x <> genericBrackets) | x <- fmap constructorName datatypeCons]
       let typeDeclaration = applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE [getTypeAsStringExp contentsTupleType]]
       return $ NormalB $ AppE (ConE 'Tagged) (ListE [typeDeclaration])
 
-    A.ObjectWithSingleField -> error [i|ObjectWithSingleField not implemented|]
+    A.TwoElemArray | length datatypeCons == 1 && (A.tagSingleConstructors options == False) -> do
+      -- There's a single constructor and tagSingleConstructors is False, but the constructor uses records
+      -- Encode as if it's untagged, but don't wrap it in an array
+      let interfaceNames = ListE [stringE (getConstructorName (A.constructorTagModifier options) x <> genericBrackets) | x <- fmap constructorName datatypeCons]
+      let typeDeclaration = applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ getTypeName datatypeName, genericVariablesExp, interfaceNames]
+      let interfaceDeclarations = fmap (getSumObjectConstructorDeclaration (options { A.sumEncoding = A.UntaggedValue }) (length datatypeCons) genericVariables) datatypeCons
+
+      return $ NormalB $ AppE (ConE 'Tagged) (ListE (typeDeclaration : interfaceDeclarations))
+
+    A.TwoElemArray -> do
+      -- Something like "data Foo = Foo Int String" encodes to
+      -- ["Foo", [42, "asdf"]]
+      let interfaceDeclarations = fmap (getSumObjectConstructorDeclaration (options { A.sumEncoding = A.UntaggedValue }) (length datatypeCons) genericVariables) datatypeCons
+
+      let interfaceNames = [stringE (getConstructorName (A.constructorTagModifier options) x <> genericBrackets) | x <- fmap constructorName datatypeCons]
+      let tupleTypeDeclaration = applyToArgsE (ConE 'TSTwoElemArray) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE interfaceNames]
+
+      return $ NormalB $ AppE (ConE 'Tagged) (ListE (tupleTypeDeclaration : interfaceDeclarations))
 
     x | length datatypeCons == 1 && (A.tagSingleConstructors options == False) && ((constructorVariant $ head datatypeCons) == NormalConstructor) -> do
       -- There's a single constructor and tagSingleConstructors is False, so encode to a tuple (as a single type synonym)
@@ -85,7 +102,7 @@ deriveTypeScript options name = do
   return $ [InstanceD Nothing (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) nameWithTypeVariables) [getTypeFn, getDeclarationFn]]
 
 -- | Return an expression that evaluates to a TSInterfaceDeclaration
--- Sum object encoding to TS creates an interface for each constructor, create an interface. So
+-- Sum object encoding to TS creates an interface for each constructor. So
 -- data Foo = Foo { fooString :: String } | Bar { barInt :: Int } becomes
 -- type Foo = IFoo | IBar;
 -- interface IFoo { fooString: "string" }
