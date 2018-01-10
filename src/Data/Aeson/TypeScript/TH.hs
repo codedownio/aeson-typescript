@@ -47,18 +47,27 @@ deriveTypeScript options name = do
   declarationFnBody <- case A.sumEncoding options of
     A.ObjectWithSingleField -> error [i|ObjectWithSingleField not implemented|]
 
-    A.TwoElemArray | length datatypeCons == 1 && (A.tagSingleConstructors options == False) && ((constructorVariant $ head datatypeCons) == NormalConstructor) -> do
+    A.TwoElemArray | A.allNullaryToStringTag options && (allConstructorsAreNullary datatypeCons) && (A.tagSingleConstructors options)-> do
+      -- Since all constructors are nullary, just encode them to strings
+      let strings = [[i|"#{(A.constructorTagModifier options) $ getTypeName $ constructorName x}"|] | x <- datatypeCons]
+      let typeDeclaration = AppE (AppE (AppE (ConE 'TSTypeAlternatives) (stringE $ getTypeName datatypeName)) genericVariablesExp) (ListE [stringE (s <> genericBrackets) | s <- strings])
+      -- Return the single type declaration
+      return $ NormalB $ AppE (ConE 'Tagged) (ListE [typeDeclaration])
+
+    A.TwoElemArray | length datatypeCons == 1 && ((constructorVariant $ head datatypeCons) == NormalConstructor) -> do
       -- There's a single constructor and tagSingleConstructors is False, so encode to a tuple (as a single type synonym)
       let (ConstructorInfo {..}) = head datatypeCons
       let contentsTupleType = getTupleType constructorFields
-      let typeDeclaration = applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE [getTypeAsStringExp contentsTupleType]]
+      let constructor = if A.tagSingleConstructors options == False then 'TSTypeAlternatives else 'TSTwoElemArray
+      let typeDeclaration = applyToArgsE (ConE constructor) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE [getTypeAsStringExp contentsTupleType]]
       return $ NormalB $ AppE (ConE 'Tagged) (ListE [typeDeclaration])
 
-    A.TwoElemArray | length datatypeCons == 1 && (A.tagSingleConstructors options == False) -> do
+    A.TwoElemArray | length datatypeCons == 1 && (((constructorVariant $ head datatypeCons) /= NormalConstructor)) -> do
       -- There's a single constructor and tagSingleConstructors is False, but the constructor uses records
       -- Encode as if it's untagged, but don't wrap it in an array
       let interfaceNames = ListE [stringE (getConstructorName (A.constructorTagModifier options) x <> genericBrackets) | x <- fmap constructorName datatypeCons]
-      let typeDeclaration = applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ getTypeName datatypeName, genericVariablesExp, interfaceNames]
+      let constructor = if A.tagSingleConstructors options == False then 'TSTypeAlternatives else 'TSTwoElemArray
+      let typeDeclaration = applyToArgsE (ConE constructor) [stringE $ getTypeName datatypeName, genericVariablesExp, interfaceNames]
       let interfaceDeclarations = fmap (getSumObjectConstructorDeclaration (options { A.sumEncoding = A.UntaggedValue }) (length datatypeCons) genericVariables) datatypeCons
 
       return $ NormalB $ AppE (ConE 'Tagged) (ListE (typeDeclaration : interfaceDeclarations))
@@ -80,7 +89,7 @@ deriveTypeScript options name = do
       let typeDeclaration = applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE [getTypeAsStringExp contentsTupleType]]
       return $ NormalB $ AppE (ConE 'Tagged) (ListE [typeDeclaration])
 
-    x | A.allNullaryToStringTag options && (allConstructorsAreNullary datatypeCons) -> do
+    x | A.allNullaryToStringTag options && (allConstructorsAreNullary datatypeCons) && (A.tagSingleConstructors options) -> do
       -- Since all constructors are nullary, just encode them to strings
       let strings = [[i|"#{(A.constructorTagModifier options) $ getTypeName $ constructorName x}"|] | x <- datatypeCons]
       let typeDeclaration = AppE (AppE (AppE (ConE 'TSTypeAlternatives) (stringE $ getTypeName datatypeName)) genericVariablesExp) (ListE [stringE (s <> genericBrackets) | s <- strings])

@@ -43,7 +43,7 @@ $(deriveJSON (A.defaultOptions {sumEncoding=TwoElemArray, tagSingleConstructors=
 $(deriveTypeScript (A.defaultOptions {sumEncoding=TwoElemArray, tagSingleConstructors=True}) ''TwoConstructor)
 
 
-tests = unsafePerformIO $ testSpec "TwoElemArray with tagSingleConstructors=False" $ do
+tests = unsafePerformIO $ testSpec "TwoElemArray with tagSingleConstructors=True" $ do
   describe "single constructor" $ do
     it [i|with a single nullary constructor like #{A.encode Unit}|] $ do
       (getTypeScriptType :: Tagged Unit String) `shouldBe` "Unit"
@@ -54,7 +54,7 @@ tests = unsafePerformIO $ testSpec "TwoElemArray with tagSingleConstructors=Fals
     it [i|with a single non-record constructor like #{A.encode $ OneFieldRecordless 42}|] $ do
       (getTypeScriptType :: Tagged OneFieldRecordless String) `shouldBe` "OneFieldRecordless"
       (getTypeScriptDeclaration :: Tagged OneFieldRecordless [TSDeclaration]) `shouldBe` (Tagged $ [
-        TSTypeAlternatives "OneFieldRecordless" [] ["[string, number]"]
+        TSTwoElemArray "OneFieldRecordless" [] ["number"]
         ])
 
     it [i|with a single record constructor like #{A.encode $ OneField "asdf"}|] $ do
@@ -67,7 +67,7 @@ tests = unsafePerformIO $ testSpec "TwoElemArray with tagSingleConstructors=Fals
     it [i|with a two-field non-record constructor like #{A.encode $ TwoFieldRecordless 42 "asdf"}|] $ do
       (getTypeScriptType :: Tagged TwoFieldRecordless String) `shouldBe` "TwoFieldRecordless"
       (getTypeScriptDeclaration :: Tagged TwoFieldRecordless [TSDeclaration]) `shouldBe` (Tagged [
-        TSTypeAlternatives "TwoFieldRecordless" [] ["[number, string]"]
+        TSTwoElemArray "TwoFieldRecordless" [] ["[number, string]"]
         ])
 
     it [i|with a two-field record constructor like #{A.encode $ TwoField 42 "asdf"}|] $ do
