@@ -1,6 +1,6 @@
 {-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns #-}
 
-module Untagged (tests) where
+module ObjectWithSingleFieldNoTagSingleConstructors (tests) where
 
 import Data.Aeson as A
 import Data.Aeson.TH as A
@@ -45,7 +45,7 @@ $(deriveJSON (A.defaultOptions {sumEncoding=ObjectWithSingleField}) ''TwoConstru
 $(deriveTypeScript (A.defaultOptions {sumEncoding=ObjectWithSingleField}) ''TwoConstructor)
 
 
-tests = unsafePerformIO $ testSpec "ObjectWithSingleField" $ do
+tests = unsafePerformIO $ testSpec "ObjectWithSingleField with tagSingleConstructors=False" $ do
   describe "single constructor" $ do
     it [i|with a single nullary constructor like #{A.encode Unit}|] $ do
       (getTypeScriptType :: Tagged Unit String) `shouldBe` "Unit"
