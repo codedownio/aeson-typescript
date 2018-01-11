@@ -57,11 +57,17 @@ deriveTypeScript options name = do
       -- Return the single type declaration
       return $ NormalB $ AppE (ConE 'Tagged) (ListE [typeDeclaration])
 
-    x | singleNormalConstructor && (((sumEncoding options == TwoElemArray) && (not allNullary)) || (tagSingleConstructors options == False)) -> do
+    x | singleNormalConstructor && (((sumEncoding options == TwoElemArray) && (not allNullary)) ||
+                                    (sumEncoding options == ObjectWithSingleField) ||
+                                    (tagSingleConstructors options == False)) -> do
       -- Encode to a tuple (as a single type synonym)
       let (ConstructorInfo {..}) = head datatypeCons
       let constructor = if (tagSingleConstructors options && sumEncoding options == TwoElemArray) then 'TSTwoElemArray else 'TSTypeAlternatives
-      let typeDeclaration = applyToArgsE (ConE constructor) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE [getTypeAsStringExp $ getTupleType constructorFields]]
+      let typeDeclaration = if | sumEncoding options == ObjectWithSingleField && shouldTag -> do
+                                   let name = stringE (constructorTagModifier options $ lastNameComponent' constructorName)
+                                   let nameAndInterfaceName = TupE [name, getTypeAsStringExp $ getTupleType constructorFields]
+                                   applyToArgsE (ConE 'TSObjectWithSingleField) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE [nameAndInterfaceName]]
+                               | otherwise -> applyToArgsE (ConE constructor) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE [getTypeAsStringExp $ getTupleType constructorFields]]
       return $ NormalB $ AppE (ConE 'Tagged) (ListE [typeDeclaration])
 
     x -> do

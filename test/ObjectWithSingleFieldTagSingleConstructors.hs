@@ -56,20 +56,20 @@ tests = unsafePerformIO $ testSpec "ObjectWithSingleField with tagSingleConstruc
     it [i|with a single non-record constructor like #{A.encode $ OneFieldRecordless 42}|] $ do
       (getTypeScriptType :: Tagged OneFieldRecordless String) `shouldBe` "OneFieldRecordless"
       (getTypeScriptDeclaration :: Tagged OneFieldRecordless [TSDeclaration]) `shouldBe` (Tagged $ [
-        TSTypeAlternatives "OneFieldRecordless" [] ["number"]
+        TSObjectWithSingleField "OneFieldRecordless" [] [("OneFieldRecordless","number")]
         ])
 
     it [i|with a single record constructor like #{A.encode $ OneField "asdf"}|] $ do
       (getTypeScriptType :: Tagged OneField String) `shouldBe` "OneField"
       (getTypeScriptDeclaration :: Tagged OneField [TSDeclaration]) `shouldBe` (Tagged [
-        TSTypeAlternatives "OneField" [] ["IOneField"],
+        TSObjectWithSingleField "OneField" [] [("OneField", "IOneField")],
         TSInterfaceDeclaration "IOneField" [] [TSField False "simpleString" "string"]
         ])
 
     it [i|with a two-field non-record constructor like #{A.encode $ TwoFieldRecordless 42 "asdf"}|] $ do
       (getTypeScriptType :: Tagged TwoFieldRecordless String) `shouldBe` "TwoFieldRecordless"
       (getTypeScriptDeclaration :: Tagged TwoFieldRecordless [TSDeclaration]) `shouldBe` (Tagged [
-        TSTypeAlternatives "TwoFieldRecordless" [] ["[number, string]"]
+        TSObjectWithSingleField "TwoFieldRecordless" [] [("TwoFieldRecordless","[number, string]")]
         ])
 
     it [i|with a two-field record constructor like #{A.encode $ TwoField 42 "asdf"}|] $ do
