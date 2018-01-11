@@ -25,6 +25,9 @@ formatTSDeclarations' options declarations = T.unpack $ T.intercalate "\n\n" (fm
 formatTSDeclaration :: FormattingOptions -> TSDeclaration -> String
 formatTSDeclaration (FormattingOptions {numIndentSpaces}) (TSTypeAlternatives name genericVariables names) = [i|type #{name}#{getGenericBrackets genericVariables} = #{alternatives};|]
   where alternatives = T.intercalate " | " (fmap T.pack names)
+formatTSDeclaration (FormattingOptions {numIndentSpaces}) (TSObjectWithSingleField name genericVariables namesAndInterfaces) = [i|type #{name}#{getGenericBrackets genericVariables} = #{alternatives};|]
+  where dicts = [[i|{#{show name}: #{interfaceName}}|] | (name, interfaceName) <- namesAndInterfaces]
+        alternatives = T.intercalate " | " (fmap T.pack dicts)
 formatTSDeclaration (FormattingOptions {numIndentSpaces}) (TSTwoElemArray name genericVariables names) = [i|type #{name}#{getGenericBrackets genericVariables} = [string, #{alternatives}];|]
   where alternatives = T.intercalate " | " (fmap T.pack names)
 formatTSDeclaration (FormattingOptions {numIndentSpaces}) (TSInterfaceDeclaration interfaceName genericVariables members) = [i|interface #{interfaceName}#{getGenericBrackets genericVariables} {
