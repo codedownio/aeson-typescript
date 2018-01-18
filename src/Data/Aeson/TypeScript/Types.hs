@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification #-}
+{-# LANGUAGE DeriveDataTypeable, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, PolyKinds #-}
 
 module Data.Aeson.TypeScript.Types where
 
@@ -8,9 +8,9 @@ import Control.Monad.Writer.Lazy
 import qualified Data.Aeson as A
 import Data.Data
 import Data.Monoid
+import Data.Proxy
 import Data.String
 import Data.String.Interpolate.IsString
-import Data.Tagged
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Typeable
@@ -21,19 +21,19 @@ class TypeScript a where
   -- ^ Get the declaration of this type, if necessary.
   -- When Nothing, no declaration is emitted. Nothing is used for types that are already
   -- known to TypeScript, such as primitive types.
-  getTypeScriptDeclaration :: Tagged a [TSDeclaration]
-  getTypeScriptDeclaration = Tagged []
+  getTypeScriptDeclaration :: Proxy a -> [TSDeclaration]
+  getTypeScriptDeclaration _ = []
 
   -- ^ Get the type as a string
-  getTypeScriptType :: Tagged a String
+  getTypeScriptType :: Proxy a -> String
 
   -- ^ Get a flag representing whether this type is optional
-  getTypeScriptOptional :: Tagged a Bool
-  getTypeScriptOptional = Tagged False
+  getTypeScriptOptional :: Proxy a -> Bool
+  getTypeScriptOptional _ = False
 
   -- ^ Get any special info about this type, used for ad-hoc instance tweaks
-  getTypeScriptSpecialInfo :: Tagged a (Maybe SpecialInfo)
-  getTypeScriptSpecialInfo = Tagged Nothing
+  getTypeScriptSpecialInfo :: Proxy a -> Maybe SpecialInfo
+  getTypeScriptSpecialInfo _ = Nothing
 
 data SpecialInfo = IsChar deriving Eq
 

@@ -14,8 +14,8 @@ import Data.Aeson.TypeScript.Formatting
 import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Types
 import Data.Monoid
+import Data.Proxy
 import Data.String.Interpolate.IsString
-import Data.Tagged
 import qualified Data.Text as T
 import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
@@ -36,7 +36,7 @@ deriveTypeScript options name = do
   -- traceM [i|datatype info: #{datatypeInfo}|]
 
   typeExpression <- getTypeExpression datatypeInfo
-  let getTypeFn = FunD 'getTypeScriptType [Clause [] (NormalB typeExpression) []]
+  let getTypeFn = FunD 'getTypeScriptType [Clause [WildP] (NormalB typeExpression) []]
 
   -- If name is higher-kinded, add generic variables to the type and interface declarations
   let genericVariables :: [String] = if | length datatypeVars == 1 -> ["T"]
@@ -55,7 +55,7 @@ deriveTypeScript options name = do
       let strings = [[i|"#{(constructorTagModifier options) $ getTypeName $ constructorName x}"|] | x <- datatypeCons]
       let typeDeclaration = AppE (AppE (AppE (ConE 'TSTypeAlternatives) (stringE $ getTypeName datatypeName)) genericVariablesExp) (ListE [stringE (s <> genericBrackets) | s <- strings])
       -- Return the single type declaration
-      return $ NormalB $ AppE (ConE 'Tagged) (ListE [typeDeclaration])
+      return $ NormalB $ ListE [typeDeclaration]
 
     x | singleNormalConstructor && (((sumEncoding options == TwoElemArray) && (not allNullary)) ||
                                     (sumEncoding options == ObjectWithSingleField) ||
@@ -68,7 +68,7 @@ deriveTypeScript options name = do
                                    let nameAndInterfaceName = TupE [name, getTypeAsStringExp $ getTupleType constructorFields]
                                    applyToArgsE (ConE 'TSObjectWithSingleField) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE [nameAndInterfaceName]]
                                | otherwise -> applyToArgsE (ConE constructor) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE [getTypeAsStringExp $ getTupleType constructorFields]]
-      return $ NormalB $ AppE (ConE 'Tagged) (ListE [typeDeclaration])
+      return $ NormalB $ ListE [typeDeclaration]
 
     x -> do
       let interfaceNames = [stringE (getConstructorName (constructorTagModifier options) x <> genericBrackets) | x <- fmap constructorName datatypeCons]
@@ -83,10 +83,10 @@ deriveTypeScript options name = do
 
       let interfaceDeclarations = fmap (getSumObjectConstructorDeclaration options shouldTag genericVariables) datatypeCons
 
-      return $ NormalB $ AppE (ConE 'Tagged) (ListE (typeDeclaration : interfaceDeclarations))
+      return $ NormalB $ ListE (typeDeclaration : interfaceDeclarations)
 
 
-  let getDeclarationFn = FunD 'getTypeScriptDeclaration [Clause [] declarationFnBody []]
+  let getDeclarationFn = FunD 'getTypeScriptDeclaration [Clause [WildP] declarationFnBody []]
 
   let nameWithTypeVariables = foldl (\x y -> AppT x y) (ConT name) datatypeVars
 
@@ -138,7 +138,7 @@ assembleInterfaceDeclaration options constructorName genericVariables members = 
 -- For datatypes of kind * this is easy, since we can just evaluate the string literal in TH.
 -- For higher-kinded types, we need to make an expression which evaluates the template types and fills it in.
 getTypeExpression :: DatatypeInfo -> Q Exp
-getTypeExpression (DatatypeInfo {datatypeVars=[], ..}) = return $ AppE (ConE 'Tagged) $ stringE $ getTypeName datatypeName
+getTypeExpression (DatatypeInfo {datatypeVars=[], ..}) = return $ stringE $ getTypeName datatypeName
 getTypeExpression (DatatypeInfo {datatypeVars=vars, ..}) = do
   let baseName = stringE $ getTypeName datatypeName
   let typeNames = ListE [getTypeAsStringExp typ | typ <- vars]
@@ -149,7 +149,7 @@ getTypeExpression (DatatypeInfo {datatypeVars=vars, ..}) = do
   let tailsWithCommas = AppE (VarE 'mconcat) (CompE [BindS (VarP x) tailType, NoBindS (AppE (AppE (VarE 'mappend) comma) (VarE x))])
   let brackets = AppE (VarE 'mconcat) (ListE [stringE "<", headType, tailsWithCommas, stringE ">"])
 
-  return $ AppE (ConE 'Tagged) (AppE (AppE (VarE 'mappend) baseName) brackets)
+  return $ (AppE (AppE (VarE 'mappend) baseName) brackets)
 
 -- * Util stuff
 
@@ -175,10 +175,10 @@ getDatatypePredicate :: Type -> Pred
 getDatatypePredicate typ = AppT (ConT ''TypeScript) typ
 
 getTypeAsStringExp :: Type -> Exp
-getTypeAsStringExp typ = AppE (VarE 'unTagged) (SigE (VarE 'getTypeScriptType) (AppT (AppT (ConT ''Tagged) typ) (ConT ''String)))
+getTypeAsStringExp typ = AppE (VarE 'getTypeScriptType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) typ))
 
 getOptionalAsBoolExp :: Type -> Exp
-getOptionalAsBoolExp typ = AppE (VarE 'unTagged) (SigE (VarE 'getTypeScriptOptional) (AppT (AppT (ConT ''Tagged) typ) (ConT ''Bool)))
+getOptionalAsBoolExp typ = AppE (VarE 'getTypeScriptOptional) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) typ))
 
 -- | Get the type of a tuple of constructor fields, as when we're packing a record-less constructor into a list
 getTupleType constructorFields = case length constructorFields of

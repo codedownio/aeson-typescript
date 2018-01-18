@@ -15,7 +15,6 @@ import Data.Proxy
 import Data.Set
 import Data.String
 import Data.String.Interpolate.IsString
-import Data.Tagged
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified Data.Text.Lazy as TL
@@ -26,58 +25,58 @@ import Language.Haskell.TH.Quote
 import Language.Haskell.TH.Syntax
 
 instance TypeScript () where
-  getTypeScriptType = Tagged "void"
+  getTypeScriptType _ = "void"
 
 instance TypeScript T.Text where
-  getTypeScriptType = Tagged "string"
+  getTypeScriptType _ = "string"
 
 instance TypeScript TL.Text where
-  getTypeScriptType = Tagged "string"
+  getTypeScriptType _ = "string"
 
 instance TypeScript Integer where
-  getTypeScriptType = Tagged "number"
+  getTypeScriptType _ = "number"
 
 instance TypeScript Bool where
-  getTypeScriptType = Tagged "boolean"
+  getTypeScriptType _ = "boolean"
 
 instance TypeScript Int where
-  getTypeScriptDeclaration = Tagged []
-  getTypeScriptType = Tagged "number"
+  getTypeScriptDeclaration _ = []
+  getTypeScriptType _ = "number"
 
 instance TypeScript Char where
-  getTypeScriptType = Tagged "string"
-  getTypeScriptSpecialInfo = Tagged $ Just IsChar
+  getTypeScriptType _ = "string"
+  getTypeScriptSpecialInfo _ = Just IsChar
 
 instance (TypeScript a) => TypeScript [a] where
-  getTypeScriptType = Tagged (if specialInfo == (Just IsChar) then "string" else (baseType ++ "[]")) where
-    baseType = unTagged (getTypeScriptType :: Tagged a String)
-    specialInfo = unTagged (getTypeScriptSpecialInfo :: Tagged a (Maybe SpecialInfo))
+  getTypeScriptType _ = (if specialInfo == (Just IsChar) then "string" else (baseType ++ "[]")) where
+    baseType = getTypeScriptType (Proxy :: Proxy a)
+    specialInfo = getTypeScriptSpecialInfo (Proxy :: Proxy a)
 
 instance (TypeScript a, TypeScript b) => TypeScript (Either a b) where
-  getTypeScriptType = Tagged [i|Either<#{unTagged $ (getTypeScriptType :: Tagged a String)}, #{unTagged $ (getTypeScriptType :: Tagged b String)}>|]
-  getTypeScriptDeclaration = Tagged [TSTypeAlternatives "Either" ["T1", "T2"] ["Left<T1>", "Right<T2>"]
-                                    , TSInterfaceDeclaration "Left" ["T"] [TSField False "Left" "T"]
-                                    , TSInterfaceDeclaration "Right" ["T"] [TSField False "Right" "T"]
-                                    ]
+  getTypeScriptType _ = [i|Either<#{getTypeScriptType (Proxy :: Proxy a)}, #{getTypeScriptType (Proxy :: Proxy b)}>|]
+  getTypeScriptDeclaration _ = [TSTypeAlternatives "Either" ["T1", "T2"] ["Left<T1>", "Right<T2>"]
+                               , TSInterfaceDeclaration "Left" ["T"] [TSField False "Left" "T"]
+                               , TSInterfaceDeclaration "Right" ["T"] [TSField False "Right" "T"]
+                               ]
 
 instance (TypeScript a, TypeScript b) => TypeScript (a, b) where
-  getTypeScriptType = Tagged [i|[#{unTagged $ (getTypeScriptType :: Tagged a String)}, #{unTagged $ (getTypeScriptType :: Tagged b String)}]|]
+  getTypeScriptType _ = [i|[#{getTypeScriptType (Proxy :: Proxy a)}, #{getTypeScriptType (Proxy :: Proxy b)}]|]
 
 instance (TypeScript a, TypeScript b, TypeScript c) => TypeScript (a, b, c) where
-  getTypeScriptType = Tagged [i|[#{unTagged $ (getTypeScriptType :: Tagged a String)}, #{unTagged $ (getTypeScriptType :: Tagged b String)}, #{unTagged $ (getTypeScriptType :: Tagged c String)}]|]
+  getTypeScriptType _ = [i|[#{getTypeScriptType (Proxy :: Proxy a)}, #{getTypeScriptType (Proxy :: Proxy b)}, #{getTypeScriptType (Proxy :: Proxy c)}]|]
 
 instance (TypeScript a, TypeScript b, TypeScript c, TypeScript d) => TypeScript (a, b, c, d) where
-  getTypeScriptType = Tagged [i|[#{unTagged $ (getTypeScriptType :: Tagged a String)}, #{unTagged $ (getTypeScriptType :: Tagged b String)}, #{unTagged $ (getTypeScriptType :: Tagged c String)}, #{unTagged $ (getTypeScriptType :: Tagged d String)}]|]
+  getTypeScriptType _ = [i|[#{getTypeScriptType (Proxy :: Proxy a)}, #{getTypeScriptType (Proxy :: Proxy b)}, #{getTypeScriptType (Proxy :: Proxy c)}, #{getTypeScriptType (Proxy :: Proxy d)}]|]
 
 instance (TypeScript a) => TypeScript (Maybe a) where
-  getTypeScriptType = Tagged (unTagged $ (getTypeScriptType :: Tagged a String))
-  getTypeScriptOptional = Tagged True
+  getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
+  getTypeScriptOptional _ = True
 
 instance TypeScript A.Value where
-  getTypeScriptType = Tagged "any";
+  getTypeScriptType _ = "any";
 
 instance (TypeScript a, TypeScript b) => TypeScript (HashMap a b) where
-  getTypeScriptType = Tagged [i|{[k: #{unTagged $ (getTypeScriptType :: Tagged a String)}]: #{unTagged $ (getTypeScriptType :: Tagged b String)}}|]
+  getTypeScriptType _ = [i|{[k: #{getTypeScriptType (Proxy :: Proxy a)}]: #{getTypeScriptType (Proxy :: Proxy b)}}|]
 
 instance (TypeScript a) => TypeScript (Set a) where
-  getTypeScriptType = Tagged ((unTagged $ (getTypeScriptType :: Tagged a String)) <> "[]");
+  getTypeScriptType _ = (((getTypeScriptType (Proxy :: Proxy a))) <> "[]");

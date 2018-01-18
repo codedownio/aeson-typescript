@@ -25,7 +25,6 @@ dependencies:
 - containers
 - interpolate
 - mtl
-- tagged
 - template-haskell
 - text
 - th-abstraction

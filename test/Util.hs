@@ -6,9 +6,10 @@ import Control.Monad
 import Data.Aeson as A
 import Data.Aeson.TypeScript.TH
 import qualified Data.ByteString.Lazy as B
+import Data.Proxy
 import Data.String
 import Data.String.Interpolate.IsString
-import Data.Tagged
+import Data.Proxy
 import qualified Data.Text as T
 import Shelly hiding ((</>))
 import System.Directory
@@ -35,8 +36,8 @@ let x: #{tsType} = #{A.encode obj};
   shelly $ bash (fromString tsc) ["--noEmit", "--skipLibCheck", "--traceResolution", "--noResolve", T.pack tsFile]
 
   return ()
-  where tsDeclarations :: [TSDeclaration] = untag (getTypeScriptDeclaration :: Tagged a [TSDeclaration])
-        tsType :: String = untag (getTypeScriptType :: Tagged a String)
+  where tsDeclarations :: [TSDeclaration] = getTypeScriptDeclaration (Proxy :: Proxy a)
+        tsType :: String = getTypeScriptType (Proxy :: Proxy a)
 
 
 testTypeCheckDeclarations :: [TSDeclaration] -> [(String, B.ByteString)] -> IO ()
