@@ -64,22 +64,27 @@ deriveTypeScript options name = do
   let fromSigT (SigT typ kind) = typ
       fromSigT typ = typ
 
-  let typeReplacementMap :: M.Map Type Type = M.fromList $ zip (fmap fromSigT datatypeVars) (take (length datatypeVars) templateVars)
+  let templateVarsToUse = case length datatypeVars of
+        1 -> [ConT ''T]
+        n -> take (length datatypeVars) templateVars
 
-  let fullyQualifiedDatatypeInfo = (datatypeInfo {datatypeVars = take (length datatypeVars) templateVars
+  let typeReplacementMap :: M.Map Type Type = M.fromList $ zip (fmap fromSigT datatypeVars) templateVarsToUse
+  let fullyQualifiedDatatypeInfo = (datatypeInfo {datatypeVars = templateVarsToUse
                                                  , datatypeCons = fmap (replaceTypesInConstructor typeReplacementMap) datatypeCons})
-
   getTypeFn <- getTypeExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
-
   getDeclarationFn <- getDeclarationFunctionBody options name fullyQualifiedDatatypeInfo
-
-  -- let nameWithTypeVariables = foldl (\x y -> AppT x y) (ConT name) datatypeVars
-
   let fullyGenericInstance = InstanceD Nothing [] (AppT (ConT ''TypeScript) (ConT name)) [getTypeFn, getDeclarationFn]
 
-  let otherInstances = [] -- [InstanceD Nothing (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) nameWithTypeVariables) [getTypeFn, getDeclarationFn]]
+  otherInstances <- case length datatypeVars > 0 of
+    True -> do
+      otherGetTypeFn <- getTypeExpression datatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
+      return [InstanceD Nothing (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) (foldl (\x y -> AppT x y) (ConT name) datatypeVars)) [otherGetTypeFn]]
+    False -> return []
 
   return $ fullyGenericInstance : otherInstances
+
+
+getPartiallyQualifiedTypeFn vars = undefined
 
 
 getDeclarationFunctionBody options name datatypeInfo@(DatatypeInfo {..}) = do
