@@ -6,14 +6,20 @@ module Data.Aeson.TypeScript.TH (
   module Data.Aeson.TypeScript.Formatting,
   TSDeclaration(..),
   TSField(..),
-  deriveTypeScript
+  deriveTypeScript,
+  T(..),
+  T1(..),
+  T2(..),
+  T3(..)
   ) where
 
 import Data.Aeson as A
 import Data.Aeson.TypeScript.Formatting
 import Data.Aeson.TypeScript.Instances ()
+import Data.Aeson.TypeScript.TypeReplacement
 import Data.Aeson.TypeScript.Types
 import Data.List (inits, tails)
+import qualified Data.Map as M
 import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString
@@ -21,7 +27,7 @@ import qualified Data.Text as T
 import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
 
--- import Debug.Trace
+import Debug.Trace
 
 
 data T = T
@@ -53,14 +59,23 @@ deriveTypeScript :: Options
 deriveTypeScript options name = do
   datatypeInfo@(DatatypeInfo {..}) <- reifyDatatype name
 
-  typeExpression <- getTypeExpression datatypeInfo
-  let getTypeFn = FunD 'getTypeScriptType [Clause [WildP] (NormalB typeExpression) []]
+  let templateVars :: [Type] = [ConT ''T1, ConT ''T2, ConT ''T3]
 
-  getDeclarationFn <- getDeclarationFunctionBody options name datatypeInfo
+  let fromSigT (SigT typ kind) = typ
+      fromSigT typ = typ
 
-  let nameWithTypeVariables = foldl (\x y -> AppT x y) (ConT name) datatypeVars
+  let typeReplacementMap :: M.Map Type Type = M.fromList $ zip (fmap fromSigT datatypeVars) (take (length datatypeVars) templateVars)
 
-  let fullyGenericInstance = InstanceD Nothing [] (AppT (ConT ''TypeScript) nameWithTypeVariables) [getTypeFn, getDeclarationFn]
+  let fullyQualifiedDatatypeInfo = (datatypeInfo {datatypeVars = take (length datatypeVars) templateVars
+                                                 , datatypeCons = fmap (replaceTypesInConstructor typeReplacementMap) datatypeCons})
+
+  getTypeFn <- getTypeExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
+
+  getDeclarationFn <- getDeclarationFunctionBody options name fullyQualifiedDatatypeInfo
+
+  -- let nameWithTypeVariables = foldl (\x y -> AppT x y) (ConT name) datatypeVars
+
+  let fullyGenericInstance = InstanceD Nothing [] (AppT (ConT ''TypeScript) (ConT name)) [getTypeFn, getDeclarationFn]
 
   let otherInstances = [] -- [InstanceD Nothing (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) nameWithTypeVariables) [getTypeFn, getDeclarationFn]]
 
