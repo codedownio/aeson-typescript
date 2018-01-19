@@ -13,6 +13,7 @@ import Data.Aeson as A
 import Data.Aeson.TypeScript.Formatting
 import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Types
+import Data.List (inits, tails)
 import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString
@@ -21,6 +22,25 @@ import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
 
 -- import Debug.Trace
+
+
+data T = T
+data T1 = T1
+data T2 = T2
+data T3 = T3
+
+instance TypeScript T where
+  getTypeScriptType _ = "T"
+
+instance TypeScript T1 where
+  getTypeScriptType _ = "T1"
+
+instance TypeScript T2 where
+  getTypeScriptType _ = "T2"
+
+instance TypeScript T3 where
+  getTypeScriptType _ = "T3"
+
 
 -- | Generates a 'TypeScript' instance declaration for the given data type or
 -- data family instance constructor.
@@ -33,11 +53,21 @@ deriveTypeScript :: Options
 deriveTypeScript options name = do
   datatypeInfo@(DatatypeInfo {..}) <- reifyDatatype name
 
-  -- traceM [i|datatype info: #{datatypeInfo}|]
-
   typeExpression <- getTypeExpression datatypeInfo
   let getTypeFn = FunD 'getTypeScriptType [Clause [WildP] (NormalB typeExpression) []]
 
+  getDeclarationFn <- getDeclarationFunctionBody options name datatypeInfo
+
+  let nameWithTypeVariables = foldl (\x y -> AppT x y) (ConT name) datatypeVars
+
+  let fullyGenericInstance = InstanceD Nothing [] (AppT (ConT ''TypeScript) nameWithTypeVariables) [getTypeFn, getDeclarationFn]
+
+  let otherInstances = [] -- [InstanceD Nothing (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) nameWithTypeVariables) [getTypeFn, getDeclarationFn]]
+
+  return $ fullyGenericInstance : otherInstances
+
+
+getDeclarationFunctionBody options name datatypeInfo@(DatatypeInfo {..}) = do
   -- If name is higher-kinded, add generic variables to the type and interface declarations
   let genericVariables :: [String] = if | length datatypeVars == 1 -> ["T"]
                                         | otherwise -> ["T" <> show i | i <- [1..(length datatypeVars)]]
@@ -86,11 +116,8 @@ deriveTypeScript options name = do
       return $ NormalB $ ListE (typeDeclaration : interfaceDeclarations)
 
 
-  let getDeclarationFn = FunD 'getTypeScriptDeclaration [Clause [WildP] declarationFnBody []]
+  return $ FunD 'getTypeScriptDeclaration [Clause [WildP] declarationFnBody []]
 
-  let nameWithTypeVariables = foldl (\x y -> AppT x y) (ConT name) datatypeVars
-
-  return $ [InstanceD Nothing (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) nameWithTypeVariables) [getTypeFn, getDeclarationFn]]
 
 -- | Return an expression that evaluates to a TSInterfaceDeclaration
 -- Sum object encoding to TS creates an interface for each constructor. So
