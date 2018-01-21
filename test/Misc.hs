@@ -5,7 +5,9 @@ module Misc where
 import Data.Aeson as A
 import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.TH
-import Data.Monoid
+import qualified Data.ByteString.Lazy.Char8 as BL8
+import Data.Char
+import Data.Monoid ((<>))
 import Data.Proxy
 import Data.String.Interpolate.IsString
 import Language.Haskell.TH
@@ -20,9 +22,6 @@ import Test.Tasty.Runners
 import Debug.Trace
 
 data HigherKind a = HigherKind { higherKindList :: [a] }
-
-type TypeSyn = Misc.HigherKind Data.Aeson.TypeScript.TH.T1
-
 
 $(deriveTypeScript A.defaultOptions ''HigherKind)
 
@@ -50,3 +49,21 @@ main = putStrLn $ formatTSDeclarations (
   (getTypeScriptDeclaration (Proxy :: Proxy Baz)) <>
   (getTypeScriptDeclaration (Proxy :: Proxy EvenHigherKind))
   )
+
+
+data D a = Nullary
+         | Unary Int
+         | Product String Char a
+         | Record { testOne   :: Int
+                  , testTwo   :: Bool
+                  , testThree :: D a
+                  } deriving Eq
+
+d :: D Int
+d = Record { testOne = 3
+           , testTwo = True
+           , testThree = Product "test" 'A' 123
+           }
+
+$(deriveTypeScript (defaultOptions{fieldLabelModifier = drop 4, constructorTagModifier = map toLower}) ''D)
+$(deriveJSON (defaultOptions{fieldLabelModifier = drop 4, constructorTagModifier = map toLower}) ''D)

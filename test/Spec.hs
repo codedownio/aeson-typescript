@@ -3,6 +3,7 @@ module Main where
 
 import Test.Tasty
 
+import HigherKind as HigherKind
 import ObjectWithSingleFieldNoTagSingleConstructors as ObjectWithSingleFieldNoTagSingleConstructors
 import ObjectWithSingleFieldTagSingleConstructors as ObjectWithSingleFieldTagSingleConstructors
 import TaggedObjectNoTagSingleConstructors as TaggedObjectNoTagSingleConstructors
@@ -18,6 +19,7 @@ allTests = testGroup "All unit tests" [ObjectWithSingleFieldTagSingleConstructor
                                       , TaggedObjectNoTagSingleConstructors.tests
                                       , TwoElemArrayTagSingleConstructors.tests
                                       , TwoElemArrayNoTagSingleConstructors.tests
-                                      , Untagged.tests]
+                                      , Untagged.tests
+                                      , HigherKind.tests]
 
 main = defaultMainWithIngredients defaultIngredients $ allTests

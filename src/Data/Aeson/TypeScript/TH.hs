@@ -1,16 +1,63 @@
 {-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, FlexibleInstances, NamedFieldPuns, MultiWayIf, ViewPatterns #-}
 
+{-|
+Module:      Data.Aeson.TypeScript.TH
+Copyright:   (c) 2018 Tom McLaughlin
+License:     BSD3
+Stability:   experimental
+Portability: portable
+
+This library provides a way to generate TypeScript @.d.ts@ files that match your existing Aeson ToJSON/FromJSON instances.
+If you already use Aeson's Template Haskell support to derive your instances, then deriving TypeScript is as simple as
+
+@
+$(deriveTypeScript myAesonOptions ''MyType)
+@
+
+For example,
+
+@
+data D a = Nullary
+         | Unary Int
+         | Product String Char a
+         | Record { testOne   :: Double
+                  , testTwo   :: Bool
+                  , testThree :: D a
+                  } deriving Eq
+@
+
+Next we derive the necessary instances.
+
+@
+$('deriveTypeScript' 'defaultOptions'{'fieldLabelModifier' = 'drop' 4, 'constructorTagModifier' = map toLower} ''D)
+@
+
+Now we can use the newly created instances.
+
+>>> getTypeScriptDeclaration (Proxy :: Proxy D)
+> True
+
+-}
+
 module Data.Aeson.TypeScript.TH (
+  deriveTypeScript,
+
   module Data.Aeson.TypeScript.Instances,
   module Data.Aeson.TypeScript.Types,
   module Data.Aeson.TypeScript.Formatting,
   TSDeclaration(..),
   TSField(..),
-  deriveTypeScript,
   T(..),
   T1(..),
   T2(..),
-  T3(..)
+  T3(..),
+  T4(..),
+  T5(..),
+  T6(..),
+  T7(..),
+  T8(..),
+  T9(..),
+  T10(..)
   ) where
 
 import Data.Aeson as A
@@ -29,11 +76,17 @@ import Language.Haskell.TH.Datatype
 
 import Debug.Trace
 
-
 data T = T
 data T1 = T1
 data T2 = T2
 data T3 = T3
+data T4 = T4
+data T5 = T5
+data T6 = T6
+data T7 = T7
+data T8 = T8
+data T9 = T9
+data T10 = T10
 
 instance TypeScript T where
   getTypeScriptType _ = "T"
@@ -47,9 +100,29 @@ instance TypeScript T2 where
 instance TypeScript T3 where
   getTypeScriptType _ = "T3"
 
+instance TypeScript T4 where
+  getTypeScriptType _ = "T4"
 
--- | Generates a 'TypeScript' instance declaration for the given data type or
--- data family instance constructor.
+instance TypeScript T5 where
+  getTypeScriptType _ = "T5"
+
+instance TypeScript T6 where
+  getTypeScriptType _ = "T6"
+
+instance TypeScript T7 where
+  getTypeScriptType _ = "T7"
+
+instance TypeScript T8 where
+  getTypeScriptType _ = "T8"
+
+instance TypeScript T9 where
+  getTypeScriptType _ = "T9"
+
+instance TypeScript T10 where
+  getTypeScriptType _ = "T10"
+
+
+-- | Generates a 'TypeScript' instance declaration for the given data type or data family instance constructor.
 deriveTypeScript :: Options
                  -- ^ Encoding options.
                  -> Name
@@ -121,7 +194,7 @@ getDeclarationFunctionBody options name datatypeInfo@(DatatypeInfo {..}) = do
       return $ NormalB $ ListE [typeDeclaration]
 
     x -> do
-      let interfaceNames = [stringE (getConstructorName (constructorTagModifier options) x <> genericBrackets) | x <- fmap constructorName datatypeCons]
+      let interfaceNames = [stringE (getInterfaceName x <> genericBrackets) | x <- fmap constructorName datatypeCons]
       let constructor = if | sumEncoding options == TwoElemArray && (tagSingleConstructors options || length datatypeCons > 1) -> 'TSTwoElemArray
                            | otherwise -> 'TSTypeAlternatives
 
@@ -175,7 +248,7 @@ getTSFields namesAndTypes = ListE [(AppE (AppE (AppE (ConE 'TSField) (getOptiona
 
 -- | Helper for getSumObjectConstructorDeclaration
 assembleInterfaceDeclaration options constructorName genericVariables members = AppE (AppE (AppE (ConE 'TSInterfaceDeclaration) constructorNameExp) genericVariablesExp) members where
-  constructorNameExp = stringE $ getConstructorName (constructorTagModifier options) constructorName
+  constructorNameExp = stringE $ getInterfaceName constructorName
   genericVariablesExp = (ListE [stringE x | x <- genericVariables])
 
 
@@ -206,8 +279,8 @@ lastNameComponent x = T.unpack $ last $ T.splitOn "." (T.pack x)
 lastNameComponent' :: Name -> String
 lastNameComponent' = lastNameComponent . show
 
-getConstructorName :: (String -> String) -> Name -> String
-getConstructorName constructorTagModifier x = "I" <> (constructorTagModifier $ lastNameComponent' x)
+getInterfaceName :: Name -> String
+getInterfaceName x = "I" <> (lastNameComponent' x)
 
 getTypeName :: Name -> String
 getTypeName x = lastNameComponent $ show x
