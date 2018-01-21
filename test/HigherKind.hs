@@ -67,13 +67,13 @@ tests = unsafePerformIO $ testSpec "Higher kinds" $ do
                           (getTypeScriptDeclaration (Proxy :: Proxy DoubleHigherKind))
                          )
 
-      let proxiesAndValues = [((Proxy :: Proxy (HigherKind Int)) , A.encode (HigherKind [42 :: Int]))
-                             , ((Proxy :: Proxy (HigherKind String)) , A.encode (HigherKind ["asdf" :: String]))
-                             , ((Proxy :: Proxy (DoubleHigherKind String Int)) , A.encode (DoubleHigherKind ["asdf" :: String] (HigherKind [42 :: Int])))
-                             , ((Proxy :: Proxy (DoubleHigherKind Int String)) , A.encode (DoubleHigherKind [42 :: Int] (HigherKind ["asdf" :: String])))
-                             ]
+      let typesAndValues = [(getTypeScriptType (Proxy :: Proxy (HigherKind Int)) , A.encode (HigherKind [42 :: Int]))
+                           , (getTypeScriptType (Proxy :: Proxy (HigherKind String)) , A.encode (HigherKind ["asdf" :: String]))
+                           , (getTypeScriptType (Proxy :: Proxy (DoubleHigherKind String Int)) , A.encode (DoubleHigherKind [42 :: Int] (HigherKind ["asdf" :: String])))
+                           , (getTypeScriptType (Proxy :: Proxy (DoubleHigherKind Int String)) , A.encode (DoubleHigherKind ["asdf" :: String] (HigherKind [42 :: Int])))
+                           ]
 
-      testTypeCheckDeclarations declarations proxiesAndValues
+      testTypeCheckDeclarations declarations typesAndValues
 
 
 main = defaultMainWithIngredients defaultIngredients tests

@@ -9,7 +9,6 @@ import qualified Data.ByteString.Lazy as B
 import Data.Proxy
 import Data.String
 import Data.String.Interpolate.IsString
-import Data.Proxy
 import qualified Data.Text as T
 import Shelly hiding ((</>))
 import System.Directory
@@ -44,15 +43,24 @@ testTypeCheckDeclarations :: [TSDeclaration] -> [(String, B.ByteString)] -> IO (
 testTypeCheckDeclarations tsDeclarations typesAndVals = withSystemTempDirectory "typescript_test" $ \folder -> do
   let tsFile = folder </> "test.ts"
 
-  writeFile tsFile [i|
+  let contents = [i|
 #{formatTSDeclarations tsDeclarations}
 
 #{T.unlines typeLines}
 |]
 
+  writeFile tsFile contents
+
   ensureTSCExists
 
-  shelly $ bash (fromString tsc) ["--noEmit", "--skipLibCheck", "--traceResolution", "--noResolve", T.pack tsFile]
+  (output, code) <- shelly $ errExit False $ do
+      output <- bash (fromString tsc) ["--noEmit", "--skipLibCheck", "--traceResolution", "--noResolve", T.pack tsFile]
+      code <- lastExitCode
+      return (output, code)
+
+  when (code /= 0) $ do
+    putStrLn [i|TSC check failed. File contents were\n\n#{contents}|]
+    error [i|TSC check failed: #{output}|]
 
   return ()
   where typeLines = [[i|let x#{index}: #{typ} = #{val};|] | (index, (typ, val)) <- zip [1..] typesAndVals]
