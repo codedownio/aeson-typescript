@@ -56,7 +56,7 @@ tests = unsafePerformIO $ testSpec "TaggedObject with tagSingleConstructors=True
       (getTypeScriptType (Proxy :: Proxy OneFieldRecordless)) `shouldBe` "OneFieldRecordless"
       (getTypeScriptDeclaration (Proxy :: Proxy OneFieldRecordless)) `shouldBe` ([
         TSTypeAlternatives "OneFieldRecordless" [] ["IOneFieldRecordless"],
-        TSInterfaceDeclaration "IOneFieldRecordless" [] [TSField False "tag" "string",
+        TSInterfaceDeclaration "IOneFieldRecordless" [] [TSField False "tag" "\"OneFieldRecordless\"",
                                                          TSField False "contents" "number"]
         ])
 
@@ -64,7 +64,7 @@ tests = unsafePerformIO $ testSpec "TaggedObject with tagSingleConstructors=True
       (getTypeScriptType (Proxy :: Proxy OneField)) `shouldBe` "OneField"
       (getTypeScriptDeclaration (Proxy :: Proxy OneField)) `shouldBe` ([
         TSTypeAlternatives "OneField" [] ["IOneField"],
-        TSInterfaceDeclaration "IOneField" [] [TSField False "tag" "string",
+        TSInterfaceDeclaration "IOneField" [] [TSField False "tag" "\"OneField\"",
                                                TSField False "simpleString" "string"]
         ])
 
@@ -72,7 +72,7 @@ tests = unsafePerformIO $ testSpec "TaggedObject with tagSingleConstructors=True
       (getTypeScriptType (Proxy :: Proxy TwoFieldRecordless)) `shouldBe` "TwoFieldRecordless"
       (getTypeScriptDeclaration (Proxy :: Proxy TwoFieldRecordless)) `shouldBe` ([
         TSTypeAlternatives "TwoFieldRecordless" [] ["ITwoFieldRecordless"],
-        TSInterfaceDeclaration "ITwoFieldRecordless" [] [TSField False "tag" "string",
+        TSInterfaceDeclaration "ITwoFieldRecordless" [] [TSField False "tag" "\"TwoFieldRecordless\"",
                                                          TSField False "contents" "[number, string]"]
         ])
 
@@ -80,7 +80,7 @@ tests = unsafePerformIO $ testSpec "TaggedObject with tagSingleConstructors=True
       (getTypeScriptType (Proxy :: Proxy TwoField)) `shouldBe` "TwoField"
       (getTypeScriptDeclaration (Proxy :: Proxy TwoField)) `shouldBe` ([
         TSTypeAlternatives "TwoField" [] ["ITwoField"],
-        TSInterfaceDeclaration "ITwoField" [] [TSField False "tag" "string",
+        TSInterfaceDeclaration "ITwoField" [] [TSField False "tag" "\"TwoField\"",
                                                TSField False "doubleInt" "number",
                                                TSField False "doubleString" "string"]
         ])
@@ -89,9 +89,9 @@ tests = unsafePerformIO $ testSpec "TaggedObject with tagSingleConstructors=True
       (getTypeScriptType (Proxy :: Proxy TwoConstructor)) `shouldBe` "TwoConstructor"
       (getTypeScriptDeclaration (Proxy :: Proxy TwoConstructor)) `shouldBe` ([
         TSTypeAlternatives "TwoConstructor" [] ["ICon1","ICon2"],
-        TSInterfaceDeclaration "ICon1" [] [TSField False "tag" "string",
+        TSInterfaceDeclaration "ICon1" [] [TSField False "tag" "\"Con1\"",
                                            TSField False "con1String" "string"],
-        TSInterfaceDeclaration "ICon2" [] [TSField False "tag" "string",
+        TSInterfaceDeclaration "ICon2" [] [TSField False "tag" "\"Con2\"",
                                            TSField False "con2String" "string",
                                            TSField False "con2Int" "number"]
         ])

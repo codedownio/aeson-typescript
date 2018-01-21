@@ -87,9 +87,9 @@ tests = unsafePerformIO $ testSpec "TaggedObject with tagSingleConstructors=Fals
       (getTypeScriptType (Proxy :: Proxy TwoConstructor)) `shouldBe` "TwoConstructor"
       (getTypeScriptDeclaration (Proxy :: Proxy TwoConstructor)) `shouldBe` ([
         TSTypeAlternatives "TwoConstructor" [] ["ICon1","ICon2"],
-        TSInterfaceDeclaration "ICon1" [] [TSField False "tag" "string",
+        TSInterfaceDeclaration "ICon1" [] [TSField False "tag" "\"Con1\"",
                                            TSField False "con1String" "string"],
-        TSInterfaceDeclaration "ICon2" [] [TSField False "tag" "string",
+        TSInterfaceDeclaration "ICon2" [] [TSField False "tag" "\"Con2\"",
                                            TSField False "con2String" "string",
                                            TSField False "con2Int" "number"]
         ])

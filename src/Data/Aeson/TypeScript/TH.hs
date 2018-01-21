@@ -220,31 +220,39 @@ getDeclarationFunctionBody options name datatypeInfo@(DatatypeInfo {..}) = do
 -- interface IBar { barInt: "number" }
 -- This function produces a single interface declaration
 getSumObjectConstructorDeclaration :: Options -> Bool -> [String] -> ConstructorInfo -> Exp
--- | Handle TaggedObject
 getSumObjectConstructorDeclaration options shouldTag genericVariables (ConstructorInfo {constructorVariant=(RecordConstructor names), ..}) = interfaceDeclaration
   where
     fieldNamesAndTypes = zip (fmap ((fieldLabelModifier options) . lastNameComponent') names) constructorFields
-    namesAndTypes :: [(String, Type)] = case sumEncoding options of
-      TaggedObject tagFieldName contentsFieldName | shouldTag -> (tagFieldName, (ConT ''String)) : fieldNamesAndTypes
-      _ -> fieldNamesAndTypes
-    interfaceDeclaration = assembleInterfaceDeclaration options constructorName genericVariables (getTSFields namesAndTypes)
+    tagField = case sumEncoding options of
+      TaggedObject tagFieldName contentsFieldName | shouldTag -> [(AppE (AppE (AppE (ConE 'TSField) (ConE 'False))
+                                                                         (stringE tagFieldName))
+                                                                   (stringE $ [i|"#{(A.constructorTagModifier options) $ lastNameComponent' constructorName}"|]))]
+      _ -> []
+    interfaceDeclaration = assembleInterfaceDeclaration options constructorName genericVariables (ListE (tagField ++ (getTSFields fieldNamesAndTypes)))
 getSumObjectConstructorDeclaration options shouldTag genericVariables (ConstructorInfo {constructorVariant=NormalConstructor, ..}) = interfaceDeclaration
   where
     contentsTupleType = getTupleType constructorFields
+
     namesAndTypes :: [(String, Type)] = case sumEncoding options of
-      TaggedObject tagFieldName contentsFieldName | shouldTag -> [(tagFieldName, (ConT ''String)), (contentsFieldName, contentsTupleType)]
       TaggedObject tagFieldName contentsFieldName -> [(contentsFieldName, contentsTupleType)]
       _ -> [(show constructorName, contentsTupleType)]
-    interfaceDeclaration = assembleInterfaceDeclaration options constructorName genericVariables (getTSFields namesAndTypes)
+
+    tagField = case sumEncoding options of
+      TaggedObject tagFieldName contentsFieldName | shouldTag -> [(AppE (AppE (AppE (ConE 'TSField) (ConE 'False))
+                                                                         (stringE tagFieldName))
+                                                                   (stringE $ [i|"#{(A.constructorTagModifier options) $ lastNameComponent' constructorName}"|]))]
+      _ -> []
+
+    interfaceDeclaration = assembleInterfaceDeclaration options constructorName genericVariables (ListE $ (tagField ++ getTSFields namesAndTypes))
 
 getSumObjectConstructorDeclaration  _ _ _ (ConstructorInfo {constructorVariant=x, ..}) = error [i|Constructor variant not supported yet: #{x}|]
 
 -- | Helper for getSumObjectConstructorDeclaration
-getTSFields :: [(String, Type)] -> Exp
-getTSFields namesAndTypes = ListE [(AppE (AppE (AppE (ConE 'TSField) (getOptionalAsBoolExp typ))
-                                           (stringE nameString))
-                                    (getTypeAsStringExp typ))
-                                  | (nameString, typ) <- namesAndTypes]
+getTSFields :: [(String, Type)] -> [Exp]
+getTSFields namesAndTypes = [(AppE (AppE (AppE (ConE 'TSField) (getOptionalAsBoolExp typ))
+                                     (stringE nameString))
+                               (getTypeAsStringExp typ))
+                            | (nameString, typ) <- namesAndTypes]
 
 -- | Helper for getSumObjectConstructorDeclaration
 assembleInterfaceDeclaration options constructorName genericVariables members = AppE (AppE (AppE (ConE 'TSInterfaceDeclaration) constructorNameExp) genericVariablesExp) members where
