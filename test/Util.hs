@@ -1,4 +1,4 @@
-{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns #-}
+{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns, ExistentialQuantification, MultiParamTypeClasses, FlexibleInstances, UndecidableInstances #-}
 
 module Util where
 
@@ -9,7 +9,6 @@ import qualified Data.ByteString.Lazy as B
 import Data.Proxy
 import Data.String
 import Data.String.Interpolate.IsString
-import Data.Proxy
 import qualified Data.Text as T
 import Shelly hiding ((</>))
 import System.Directory
@@ -39,9 +38,24 @@ let x: #{tsType} = #{A.encode obj};
   where tsDeclarations :: [TSDeclaration] = getTypeScriptDeclaration (Proxy :: Proxy a)
         tsType :: String = getTypeScriptType (Proxy :: Proxy a)
 
+data ProxyAndValue a = ProxyAndValue (Proxy a) a
 
-testTypeCheckDeclarations :: [TSDeclaration] -> [(String, B.ByteString)] -> IO ()
-testTypeCheckDeclarations tsDeclarations typesAndVals = withSystemTempDirectory "typescript_test" $ \folder -> do
+class IsProxyAndValue a b where
+  getProxy :: a -> Proxy b
+  getValue :: a -> b
+
+instance IsProxyAndValue (ProxyAndValue a) a where
+  getProxy (ProxyAndValue proxy _) = proxy
+  getValue (ProxyAndValue _ value) = value
+
+data PAV = forall a b. IsProxyAndValue a b => PAV a b
+
+instance (IsProxyAndValue a b) => IsProxyAndValue (PAV) b where
+  getProxy (PAV x) = getProxy x
+  getValue (PAV x) = getValue x
+
+testTypeCheckDeclarations :: (TypeScript a, ToJSON a) => [TSDeclaration] -> [PAV] -> IO ()
+testTypeCheckDeclarations tsDeclarations proxiesAndVals = withSystemTempDirectory "typescript_test" $ \folder -> do
   let tsFile = folder </> "test.ts"
 
   writeFile tsFile [i|
@@ -55,7 +69,8 @@ testTypeCheckDeclarations tsDeclarations typesAndVals = withSystemTempDirectory 
   shelly $ bash (fromString tsc) ["--noEmit", "--skipLibCheck", "--traceResolution", "--noResolve", T.pack tsFile]
 
   return ()
-  where typeLines = [[i|let x#{index}: #{typ} = #{val};|] | (index, (typ, val)) <- zip [1..] typesAndVals]
+  where typesAndVals = [(getTypeScriptType (getProxy x), A.encode (getValue x)) | x <- proxiesAndVals]
+        typeLines = [[i|let x#{index}: #{typ} = #{val};|] | (index, (typ, val)) <- zip [1..] typesAndVals]
 
 
 ensureTSCExists :: IO ()
