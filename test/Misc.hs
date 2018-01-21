@@ -67,3 +67,11 @@ d = Record { testOne = 3
 
 $(deriveTypeScript (defaultOptions{fieldLabelModifier = drop 4, constructorTagModifier = map toLower}) ''D)
 $(deriveJSON (defaultOptions{fieldLabelModifier = drop 4, constructorTagModifier = map toLower}) ''D)
+
+
+type JupyterInterpreterType = String
+data InterpreterType = Normal
+                     | Scss
+                     | Jupyter JupyterInterpreterType deriving (Eq, Ord, Show)
+
+$(deriveTypeScript (A.defaultOptions { sumEncoding=UntaggedValue }) ''InterpreterType)

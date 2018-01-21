@@ -44,6 +44,10 @@ data TwoConstructor = Con1 { con1String :: String }
 $(deriveJSON (A.defaultOptions {sumEncoding=UntaggedValue}) ''TwoConstructor)
 $(deriveTypeScript (A.defaultOptions {sumEncoding=UntaggedValue}) ''TwoConstructor)
 
+data MixedNullary = Normal
+                  | Other String deriving (Eq, Ord, Show)
+$(deriveJSON (A.defaultOptions { sumEncoding=UntaggedValue }) ''MixedNullary)
+$(deriveTypeScript (A.defaultOptions { sumEncoding=UntaggedValue }) ''MixedNullary)
 
 tests = unsafePerformIO $ testSpec "UntaggedValue" $ do
   describe "single constructor" $ do
@@ -89,6 +93,15 @@ tests = unsafePerformIO $ testSpec "UntaggedValue" $ do
                                            TSField False "con2Int" "number"]
         ])
 
+    it [i|with one nullary and one non-nullary constructor like #{A.encode $ Normal} or #{A.encode $ Other "asdf"}|] $ do
+      (getTypeScriptType (Proxy :: Proxy MixedNullary)) `shouldBe` "MixedNullary"
+      (getTypeScriptDeclaration (Proxy :: Proxy MixedNullary)) `shouldBe` ([
+        TSTypeAlternatives "MixedNullary" [] ["INormal","IOther"],
+        TSInterfaceDeclaration "INormal" [] [TSField False "tag" "\"Normal\""],
+        TSInterfaceDeclaration "IOther" [] [TSField False "tag" "\"Other\"",
+                                            TSField False "" "number"]
+        ])
+
     it "type checks everything with tsc" $ do
       let declarations = ((getTypeScriptDeclaration (Proxy :: Proxy Unit)) <>
                           (getTypeScriptDeclaration (Proxy :: Proxy OneFieldRecordless)) <>
@@ -111,3 +124,13 @@ tests = unsafePerformIO $ testSpec "UntaggedValue" $ do
 
 
 main = defaultMainWithIngredients defaultIngredients tests
+
+main' = putStrLn $ formatTSDeclarations (
+   (getTypeScriptDeclaration (Proxy :: Proxy Unit)) <>
+   (getTypeScriptDeclaration (Proxy :: Proxy OneFieldRecordless)) <>
+   (getTypeScriptDeclaration (Proxy :: Proxy OneField)) <>
+   (getTypeScriptDeclaration (Proxy :: Proxy TwoFieldRecordless)) <>
+   (getTypeScriptDeclaration (Proxy :: Proxy TwoField)) <>
+   (getTypeScriptDeclaration (Proxy :: Proxy TwoConstructor)) <>
+   (getTypeScriptDeclaration (Proxy :: Proxy MixedNullary))
+  )

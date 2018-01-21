@@ -235,7 +235,7 @@ getSumObjectConstructorDeclaration options shouldTag genericVariables (Construct
 
     namesAndTypes :: [(String, Type)] = case sumEncoding options of
       TaggedObject tagFieldName contentsFieldName -> [(contentsFieldName, contentsTupleType)]
-      _ -> [(show constructorName, contentsTupleType)]
+      _ -> [((A.constructorTagModifier options) $ lastNameComponent' constructorName, contentsTupleType)]
 
     tagField = case sumEncoding options of
       TaggedObject tagFieldName contentsFieldName | shouldTag -> [(AppE (AppE (AppE (ConE 'TSField) (ConE 'False))
