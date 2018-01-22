@@ -46,55 +46,55 @@ $(deriveTypeScript (A.defaultOptions {tagSingleConstructors=True}) ''TwoConstruc
 
 tests = unsafePerformIO $ testSpec "TaggedObject with tagSingleConstructors=True" $ do
   describe "single constructor" $ do
-    it [i|with a single nullary constructor like #{A.encode Unit}|] $ do
-      (getTypeScriptType (Proxy :: Proxy Unit)) `shouldBe` "Unit"
-      (getTypeScriptDeclaration (Proxy :: Proxy Unit)) `shouldBe` ([
-        TSTypeAlternatives "Unit" [] ["\"Unit\""]
-        ])
+    -- it [i|with a single nullary constructor like #{A.encode Unit}|] $ do
+    --   (getTypeScriptType (Proxy :: Proxy Unit)) `shouldBe` "Unit"
+    --   (getTypeScriptDeclaration (Proxy :: Proxy Unit)) `shouldBe` ([
+    --     TSTypeAlternatives "Unit" [] ["\"Unit\""]
+    --     ])
 
-    it [i|with a single non-record constructor like #{A.encode $ OneFieldRecordless 42}|] $ do
-      (getTypeScriptType (Proxy :: Proxy OneFieldRecordless)) `shouldBe` "OneFieldRecordless"
-      (getTypeScriptDeclaration (Proxy :: Proxy OneFieldRecordless)) `shouldBe` ([
-        TSTypeAlternatives "OneFieldRecordless" [] ["IOneFieldRecordless"],
-        TSInterfaceDeclaration "IOneFieldRecordless" [] [TSField False "tag" "\"OneFieldRecordless\"",
-                                                         TSField False "contents" "number"]
-        ])
+    -- it [i|with a single non-record constructor like #{A.encode $ OneFieldRecordless 42}|] $ do
+    --   (getTypeScriptType (Proxy :: Proxy OneFieldRecordless)) `shouldBe` "OneFieldRecordless"
+    --   (getTypeScriptDeclaration (Proxy :: Proxy OneFieldRecordless)) `shouldBe` ([
+    --     TSTypeAlternatives "OneFieldRecordless" [] ["IOneFieldRecordless"],
+    --     TSInterfaceDeclaration "IOneFieldRecordless" [] [TSField False "tag" "\"OneFieldRecordless\"",
+    --                                                      TSField False "contents" "number"]
+    --     ])
 
-    it [i|with a single record constructor like #{A.encode $ OneField "asdf"}|] $ do
-      (getTypeScriptType (Proxy :: Proxy OneField)) `shouldBe` "OneField"
-      (getTypeScriptDeclaration (Proxy :: Proxy OneField)) `shouldBe` ([
-        TSTypeAlternatives "OneField" [] ["IOneField"],
-        TSInterfaceDeclaration "IOneField" [] [TSField False "tag" "\"OneField\"",
-                                               TSField False "simpleString" "string"]
-        ])
+    -- it [i|with a single record constructor like #{A.encode $ OneField "asdf"}|] $ do
+    --   (getTypeScriptType (Proxy :: Proxy OneField)) `shouldBe` "OneField"
+    --   (getTypeScriptDeclaration (Proxy :: Proxy OneField)) `shouldBe` ([
+    --     TSTypeAlternatives "OneField" [] ["IOneField"],
+    --     TSInterfaceDeclaration "IOneField" [] [TSField False "tag" "\"OneField\"",
+    --                                            TSField False "simpleString" "string"]
+    --     ])
 
-    it [i|with a two-field non-record constructor like #{A.encode $ TwoFieldRecordless 42 "asdf"}|] $ do
-      (getTypeScriptType (Proxy :: Proxy TwoFieldRecordless)) `shouldBe` "TwoFieldRecordless"
-      (getTypeScriptDeclaration (Proxy :: Proxy TwoFieldRecordless)) `shouldBe` ([
-        TSTypeAlternatives "TwoFieldRecordless" [] ["ITwoFieldRecordless"],
-        TSInterfaceDeclaration "ITwoFieldRecordless" [] [TSField False "tag" "\"TwoFieldRecordless\"",
-                                                         TSField False "contents" "[number, string]"]
-        ])
+    -- it [i|with a two-field non-record constructor like #{A.encode $ TwoFieldRecordless 42 "asdf"}|] $ do
+    --   (getTypeScriptType (Proxy :: Proxy TwoFieldRecordless)) `shouldBe` "TwoFieldRecordless"
+    --   (getTypeScriptDeclaration (Proxy :: Proxy TwoFieldRecordless)) `shouldBe` ([
+    --     TSTypeAlternatives "TwoFieldRecordless" [] ["ITwoFieldRecordless"],
+    --     TSInterfaceDeclaration "ITwoFieldRecordless" [] [TSField False "tag" "\"TwoFieldRecordless\"",
+    --                                                      TSField False "contents" "[number, string]"]
+    --     ])
 
-    it [i|with a two-field record constructor like #{A.encode $ TwoField 42 "asdf"}|] $ do
-      (getTypeScriptType (Proxy :: Proxy TwoField)) `shouldBe` "TwoField"
-      (getTypeScriptDeclaration (Proxy :: Proxy TwoField)) `shouldBe` ([
-        TSTypeAlternatives "TwoField" [] ["ITwoField"],
-        TSInterfaceDeclaration "ITwoField" [] [TSField False "tag" "\"TwoField\"",
-                                               TSField False "doubleInt" "number",
-                                               TSField False "doubleString" "string"]
-        ])
+    -- it [i|with a two-field record constructor like #{A.encode $ TwoField 42 "asdf"}|] $ do
+    --   (getTypeScriptType (Proxy :: Proxy TwoField)) `shouldBe` "TwoField"
+    --   (getTypeScriptDeclaration (Proxy :: Proxy TwoField)) `shouldBe` ([
+    --     TSTypeAlternatives "TwoField" [] ["ITwoField"],
+    --     TSInterfaceDeclaration "ITwoField" [] [TSField False "tag" "\"TwoField\"",
+    --                                            TSField False "doubleInt" "number",
+    --                                            TSField False "doubleString" "string"]
+    --     ])
 
-    it [i|with a two-constructor type like #{A.encode $ Con1 "asdf"} or #{A.encode $ Con2 "asdf" 42}|] $ do
-      (getTypeScriptType (Proxy :: Proxy TwoConstructor)) `shouldBe` "TwoConstructor"
-      (getTypeScriptDeclaration (Proxy :: Proxy TwoConstructor)) `shouldBe` ([
-        TSTypeAlternatives "TwoConstructor" [] ["ICon1","ICon2"],
-        TSInterfaceDeclaration "ICon1" [] [TSField False "tag" "\"Con1\"",
-                                           TSField False "con1String" "string"],
-        TSInterfaceDeclaration "ICon2" [] [TSField False "tag" "\"Con2\"",
-                                           TSField False "con2String" "string",
-                                           TSField False "con2Int" "number"]
-        ])
+    -- it [i|with a two-constructor type like #{A.encode $ Con1 "asdf"} or #{A.encode $ Con2 "asdf" 42}|] $ do
+    --   (getTypeScriptType (Proxy :: Proxy TwoConstructor)) `shouldBe` "TwoConstructor"
+    --   (getTypeScriptDeclaration (Proxy :: Proxy TwoConstructor)) `shouldBe` ([
+    --     TSTypeAlternatives "TwoConstructor" [] ["ICon1","ICon2"],
+    --     TSInterfaceDeclaration "ICon1" [] [TSField False "tag" "\"Con1\"",
+    --                                        TSField False "con1String" "string"],
+    --     TSInterfaceDeclaration "ICon2" [] [TSField False "tag" "\"Con2\"",
+    --                                        TSField False "con2String" "string",
+    --                                        TSField False "con2Int" "number"]
+    --     ])
 
     it "type checks everything with tsc" $ do
       let declarations = ((getTypeScriptDeclaration (Proxy :: Proxy Unit)) <>
