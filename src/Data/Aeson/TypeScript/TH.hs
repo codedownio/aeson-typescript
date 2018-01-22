@@ -67,6 +67,7 @@ import Data.Aeson.TypeScript.TypeReplacement
 import Data.Aeson.TypeScript.Types
 import Data.List (inits, tails)
 import qualified Data.Map as M
+import Data.Maybe
 import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString
@@ -167,7 +168,7 @@ getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
   declarationFnBody <- do
     let interfaceNamesAndDeclarations = fmap (handleConstructor options datatypeInfo genericVariables) datatypeCons
     let interfaceNames = fmap fst interfaceNamesAndDeclarations
-    let interfaceDeclarations = fmap snd interfaceNamesAndDeclarations
+    let interfaceDeclarations = catMaybes $ fmap snd interfaceNamesAndDeclarations
 
     let typeDeclaration = applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE interfaceNames]
 
@@ -183,27 +184,24 @@ getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
 -- interface IFoo { fooString: "string" }
 -- interface IBar { barInt: "number" }
 -- This function produces a single interface declaration
-handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> (Exp, Exp)
+handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> (Exp, Maybe Exp)
 handleConstructor options (DatatypeInfo {..}) genericVariables (ConstructorInfo {..}) = (typeDeclarationToUse, declaration)
   where
     -- * Type declaration to use
-    interfaceNameStr = getInterfaceName constructorName <> (getGenericBrackets genericVariables)
-    interfaceName = stringE interfaceNameStr
-    typeDeclarationToUse = if | shouldEncodeToString -> interfaceName
-                              | sumEncoding options == ObjectWithSingleField && shouldTag -> stringE [i|{#{show constructorNameToUse}: #{interfaceNameStr}}|]
-                              | sumEncoding options == TwoElemArray && shouldTag -> stringE [i|[#{show constructorNameToUse}, #{interfaceNameStr}]|]
-                              | otherwise -> interfaceName
+    interfaceName = getInterfaceName constructorName <> (getGenericBrackets genericVariables)
+    typeDeclarationToUse = if | shouldEncodeToString -> stringE [i|"#{(constructorTagModifier options) $ getTypeName $ constructorName}"|]
+                              | sumEncoding options == ObjectWithSingleField && shouldTag -> stringE [i|{#{show constructorNameToUse}: #{interfaceName}}|]
+                              | sumEncoding options == TwoElemArray && shouldTag -> stringE [i|[#{show constructorNameToUse}, #{interfaceName}]|]
+                              | otherwise -> stringE interfaceName
 
     -- * Declaration
     shouldEncodeToString = null constructorFields && shouldTag
     shouldEncodeToTuple = (constructorVariant == NormalConstructor) && (not $ (isTaggedObject options && (tagSingleConstructors options)))
-    declaration = if | shouldEncodeToString -> applyToArgsE (ConE 'TSTypeAlternatives) [interfaceName,
-                                                                                        ListE [stringE x | x <- genericVariables],
-                                                                                        ListE [stringE [i|"#{(constructorTagModifier options) $ getTypeName $ constructorName}"|]]]
-                     | shouldEncodeToTuple -> applyToArgsE (ConE 'TSTypeAlternatives) [interfaceName,
-                                                                                       ListE [stringE x | x <- genericVariables],
-                                                                                       ListE [getTypeAsStringExp contentsTupleType]]
-                     | otherwise -> assembleInterfaceDeclaration options constructorName genericVariables (ListE $ (tagField ++ getTSFields namesAndTypes))
+    declaration = if | shouldEncodeToString -> Nothing
+                     | shouldEncodeToTuple -> Just $ applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ getInterfaceName constructorName,
+                                                                                              ListE [stringE x | x <- genericVariables],
+                                                                                              ListE [getTypeAsStringExp contentsTupleType]]
+                     | otherwise -> Just $ assembleInterfaceDeclaration options constructorName genericVariables (ListE $ (tagField ++ getTSFields namesAndTypes))
                           where
                             namesAndTypes :: [(String, Type)] = case constructorVariant of
                               RecordConstructor names -> zip (fmap ((fieldLabelModifier options) . lastNameComponent') names) constructorFields
@@ -229,7 +227,7 @@ getTSFields namesAndTypes = [(AppE (AppE (AppE (ConE 'TSField) (getOptionalAsBoo
                                (getTypeAsStringExp typ))
                             | (nameString, typ) <- namesAndTypes]
 
--- | Helper for getSumObjectConstructorDeclaration
+-- | Helper for handleConstructor
 assembleInterfaceDeclaration options constructorName genericVariables members = AppE (AppE (AppE (ConE 'TSInterfaceDeclaration) constructorNameExp) genericVariablesExp) members where
   constructorNameExp = stringE $ getInterfaceName constructorName
   genericVariablesExp = (ListE [stringE x | x <- genericVariables])
