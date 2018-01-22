@@ -45,78 +45,75 @@ $(deriveJSON (A.defaultOptions {sumEncoding=ObjectWithSingleField}) ''TwoConstru
 $(deriveTypeScript (A.defaultOptions {sumEncoding=ObjectWithSingleField}) ''TwoConstructor)
 
 
+declarations = ((getTypeScriptDeclaration (Proxy :: Proxy Unit)) <>
+                 (getTypeScriptDeclaration (Proxy :: Proxy OneFieldRecordless)) <>
+                 (getTypeScriptDeclaration (Proxy :: Proxy OneField)) <>
+                 (getTypeScriptDeclaration (Proxy :: Proxy TwoFieldRecordless)) <>
+                 (getTypeScriptDeclaration (Proxy :: Proxy TwoField)) <>
+                 (getTypeScriptDeclaration (Proxy :: Proxy TwoConstructor))
+               )
+
+typesAndValues = [(getTypeScriptType (Proxy :: Proxy Unit) , A.encode Unit)
+                 , (getTypeScriptType (Proxy :: Proxy OneFieldRecordless) , A.encode $ OneFieldRecordless 42)
+                 , (getTypeScriptType (Proxy :: Proxy OneField) , A.encode $ OneField "asdf")
+                 , (getTypeScriptType (Proxy :: Proxy TwoFieldRecordless) , A.encode $ TwoFieldRecordless 42 "asdf")
+                 , (getTypeScriptType (Proxy :: Proxy TwoField) , A.encode $ TwoField 42 "asdf")
+                 , (getTypeScriptType (Proxy :: Proxy TwoConstructor) , A.encode $ Con1 "asdf")
+                 , (getTypeScriptType (Proxy :: Proxy TwoConstructor) , A.encode $ Con2 "asdf" 42)
+                 ]
+
 tests = unsafePerformIO $ testSpec "ObjectWithSingleField with tagSingleConstructors=False" $ do
-  describe "single constructor" $ do
-    -- it [i|with a single nullary constructor like #{A.encode Unit}|] $ do
-    --   (getTypeScriptType (Proxy :: Proxy Unit)) `shouldBe` "Unit"
-    --   (getTypeScriptDeclaration (Proxy :: Proxy Unit)) `shouldBe` ([
-    --     TSTypeAlternatives "Unit" [] ["void[]"]
-    --     ])
+  it "generates the right output" $ do
+    let file = getTSFile declarations typesAndValues
+    file `shouldBe` [i|
+type Unit = IUnit;
 
-    -- it [i|with a single non-record constructor like #{A.encode $ OneFieldRecordless 42}|] $ do
-    --   (getTypeScriptType (Proxy :: Proxy OneFieldRecordless)) `shouldBe` "OneFieldRecordless"
-    --   (getTypeScriptDeclaration (Proxy :: Proxy OneFieldRecordless)) `shouldBe` ([
-    --     TSTypeAlternatives "OneFieldRecordless" [] ["number"]
-    --     ])
+type IUnit = void[];
 
-    -- it [i|with a single record constructor like #{A.encode $ OneField "asdf"}|] $ do
-    --   (getTypeScriptType (Proxy :: Proxy OneField)) `shouldBe` "OneField"
-    --   (getTypeScriptDeclaration (Proxy :: Proxy OneField)) `shouldBe` ([
-    --     TSTypeAlternatives "OneField" [] ["IOneField"],
-    --     TSInterfaceDeclaration "IOneField" [] [TSField False "simpleString" "string"]
-    --     ])
+type OneFieldRecordless = IOneFieldRecordless;
 
-    -- it [i|with a two-field non-record constructor like #{A.encode $ TwoFieldRecordless 42 "asdf"}|] $ do
-    --   (getTypeScriptType (Proxy :: Proxy TwoFieldRecordless)) `shouldBe` "TwoFieldRecordless"
-    --   (getTypeScriptDeclaration (Proxy :: Proxy TwoFieldRecordless)) `shouldBe` ([
-    --     TSTypeAlternatives "TwoFieldRecordless" [] ["[number, string]"]
-    --     ])
+type IOneFieldRecordless = number;
 
-    -- it [i|with a two-field record constructor like #{A.encode $ TwoField 42 "asdf"}|] $ do
-    --   (getTypeScriptType (Proxy :: Proxy TwoField)) `shouldBe` "TwoField"
-    --   (getTypeScriptDeclaration (Proxy :: Proxy TwoField)) `shouldBe` ([
-    --     TSTypeAlternatives "TwoField" [] ["ITwoField"],
-    --     TSInterfaceDeclaration "ITwoField" [] [TSField False "doubleInt" "number",
-    --                                            TSField False "doubleString" "string"]
-    --     ])
+type OneField = IOneField;
 
-    -- it [i|with a two-constructor type like #{A.encode $ Con1 "asdf"} or #{A.encode $ Con2 "asdf" 42}|] $ do
-    --   (getTypeScriptType (Proxy :: Proxy TwoConstructor)) `shouldBe` "TwoConstructor"
-    --   (getTypeScriptDeclaration (Proxy :: Proxy TwoConstructor)) `shouldBe` ([
-    --     TSTypeAlternatives "TwoConstructor" [] ["{\"Con1\": ICon1}","{\"Con2\": ICon2}"],
-    --     TSInterfaceDeclaration "ICon1" [] [TSField False "con1String" "string"],
-    --     TSInterfaceDeclaration "ICon2" [] [TSField False "con2String" "string",
-    --                                        TSField False "con2Int" "number"]
-    --     ])
+interface IOneField {
+  simpleString: string;
+}
 
-    it "type checks everything with tsc" $ do
-      let declarations = ((getTypeScriptDeclaration (Proxy :: Proxy Unit)) <>
-                          (getTypeScriptDeclaration (Proxy :: Proxy OneFieldRecordless)) <>
-                          (getTypeScriptDeclaration (Proxy :: Proxy OneField)) <>
-                          (getTypeScriptDeclaration (Proxy :: Proxy TwoFieldRecordless)) <>
-                          (getTypeScriptDeclaration (Proxy :: Proxy TwoField)) <>
-                          (getTypeScriptDeclaration (Proxy :: Proxy TwoConstructor))
-                         )
+type TwoFieldRecordless = ITwoFieldRecordless;
 
-      let typesAndValues = [(getTypeScriptType (Proxy :: Proxy Unit) , A.encode Unit)
-                           , (getTypeScriptType (Proxy :: Proxy OneFieldRecordless) , A.encode $ OneFieldRecordless 42)
-                           , (getTypeScriptType (Proxy :: Proxy OneField) , A.encode $ OneField "asdf")
-                           , (getTypeScriptType (Proxy :: Proxy TwoFieldRecordless) , A.encode $ TwoFieldRecordless 42 "asdf")
-                           , (getTypeScriptType (Proxy :: Proxy TwoField) , A.encode $ TwoField 42 "asdf")
-                           , (getTypeScriptType (Proxy :: Proxy TwoConstructor) , A.encode $ Con1 "asdf")
-                           , (getTypeScriptType (Proxy :: Proxy TwoConstructor) , A.encode $ Con2 "asdf" 42)
-                           ]
+type ITwoFieldRecordless = [number, string];
 
-      testTypeCheckDeclarations declarations typesAndValues
+type TwoField = ITwoField;
+
+interface ITwoField {
+  doubleInt: number;
+  doubleString: string;
+}
+
+type TwoConstructor = {\"Con1\": ICon1} | {\"Con2\": ICon2};
+
+interface ICon1 {
+  con1String: string;
+}
+
+interface ICon2 {
+  con2String: string;
+  con2Int: number;
+}
+
+let x1: Unit = [];
+let x2: OneFieldRecordless = 42;
+let x3: OneField = {\"simpleString\":\"asdf\"};
+let x4: TwoFieldRecordless = [42,\"asdf\"];
+let x5: TwoField = {\"doubleInt\":42,\"doubleString\":\"asdf\"};
+let x6: TwoConstructor = {\"Con1\":{\"con1String\":\"asdf\"}};
+let x7: TwoConstructor = {\"Con2\":{\"con2String\":\"asdf\",\"con2Int\":42}};
+
+|]
+
+  it "type checks everything with tsc" $ do
+    testTypeCheckDeclarations declarations typesAndValues
 
 
 main = defaultMainWithIngredients defaultIngredients tests
-
-main' = putStrLn $ formatTSDeclarations (
-   (getTypeScriptDeclaration (Proxy :: Proxy Unit)) <>
-   (getTypeScriptDeclaration (Proxy :: Proxy OneFieldRecordless)) <>
-   (getTypeScriptDeclaration (Proxy :: Proxy OneField)) <>
-   (getTypeScriptDeclaration (Proxy :: Proxy TwoFieldRecordless)) <>
-   (getTypeScriptDeclaration (Proxy :: Proxy TwoField)) <>
-   (getTypeScriptDeclaration (Proxy :: Proxy TwoConstructor))
-  )

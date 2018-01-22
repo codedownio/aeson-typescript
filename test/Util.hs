@@ -39,15 +39,19 @@ let x: #{tsType} = #{A.encode obj};
         tsType :: String = getTypeScriptType (Proxy :: Proxy a)
 
 
-testTypeCheckDeclarations :: [TSDeclaration] -> [(String, B.ByteString)] -> IO ()
-testTypeCheckDeclarations tsDeclarations typesAndVals = withSystemTempDirectory "typescript_test" $ \folder -> do
-  let tsFile = folder </> "test.ts"
-
-  let contents = [i|
+getTSFile tsDeclarations typesAndVals = [i|
 #{formatTSDeclarations tsDeclarations}
 
 #{T.unlines typeLines}
 |]
+  where typeLines = [[i|let x#{index}: #{typ} = #{val};|] | (index, (typ, val)) <- zip [1..] typesAndVals]
+
+
+testTypeCheckDeclarations :: [TSDeclaration] -> [(String, B.ByteString)] -> IO ()
+testTypeCheckDeclarations tsDeclarations typesAndVals = withSystemTempDirectory "typescript_test" $ \folder -> do
+  let tsFile = folder </> "test.ts"
+
+  let contents = getTSFile tsDeclarations typesAndVals
 
   writeFile tsFile contents
 
@@ -63,7 +67,6 @@ testTypeCheckDeclarations tsDeclarations typesAndVals = withSystemTempDirectory 
     error [i|TSC check failed: #{output}|]
 
   return ()
-  where typeLines = [[i|let x#{index}: #{typ} = #{val};|] | (index, (typ, val)) <- zip [1..] typesAndVals]
 
 
 ensureTSCExists :: IO ()
