@@ -71,7 +71,6 @@ $(deriveJSON (defaultOptions{fieldLabelModifier = drop 4, constructorTagModifier
 
 type JupyterInterpreterType = String
 data InterpreterType = Normal
-                     | Scss
                      | Jupyter JupyterInterpreterType deriving (Eq, Ord, Show)
 
 $(deriveTypeScript (A.defaultOptions { sumEncoding=UntaggedValue }) ''InterpreterType)

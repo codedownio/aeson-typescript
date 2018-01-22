@@ -83,7 +83,7 @@ tests = unsafePerformIO $ testSpec "ObjectWithSingleField with tagSingleConstruc
     it [i|with a two-constructor type like #{A.encode $ Con1 "asdf"} or #{A.encode $ Con2 "asdf" 42}|] $ do
       (getTypeScriptType (Proxy :: Proxy TwoConstructor)) `shouldBe` "TwoConstructor"
       (getTypeScriptDeclaration (Proxy :: Proxy TwoConstructor)) `shouldBe` ([
-        TSObjectWithSingleField "TwoConstructor" [] [("Con1","ICon1"),("Con2","ICon2")],
+        TSTypeAlternatives "TwoConstructor" [] ["{\"Con1\": ICon1}","{\"Con2\": ICon2}"],
         TSInterfaceDeclaration "ICon1" [] [TSField False "con1String" "string"],
         TSInterfaceDeclaration "ICon2" [] [TSField False "con2String" "string",
                                            TSField False "con2Int" "number"]

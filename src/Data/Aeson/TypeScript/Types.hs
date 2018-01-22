@@ -46,9 +46,6 @@ data TSDeclaration = TSInterfaceDeclaration { interfaceName :: String
                    | TSTwoElemArray { typeName :: String
                                     , typeGenericVariables :: [String]
                                     , alternativeTypes :: [String]}
-                   | TSObjectWithSingleField { typeName :: String
-                                             , typeGenericVariables :: [String]
-                                             , namesAndInterfaces :: [(String, String)]}
   deriving (Show, Eq)
 
 data TSField = TSField { fieldOptional :: Bool
