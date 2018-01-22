@@ -74,8 +74,6 @@ import qualified Data.Text as T
 import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
 
-import Debug.Trace
-
 data T = T
 data T1 = T1
 data T2 = T2
@@ -132,7 +130,7 @@ deriveTypeScript :: Options
 deriveTypeScript options name = do
   datatypeInfo@(DatatypeInfo {..}) <- reifyDatatype name
 
-  let templateVars :: [Type] = [ConT ''T1, ConT ''T2, ConT ''T3]
+  let templateVars :: [Type] = [ConT ''T1, ConT ''T2, ConT ''T3, ConT ''T4, ConT ''T5, ConT ''T6, ConT ''T7, ConT ''T8, ConT ''T9, ConT ''T10]
 
   let fromSigT (SigT typ kind) = typ
       fromSigT typ = typ
@@ -156,24 +154,18 @@ deriveTypeScript options name = do
 
   return $ fullyGenericInstance : otherInstances
 
-
-getPartiallyQualifiedTypeFn vars = undefined
-
-
 getDeclarationFunctionBody :: Options -> p -> DatatypeInfo -> Q Dec
 getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
   -- If name is higher-kinded, add generic variables to the type and interface declarations
   let genericVariables :: [String] = if | length datatypeVars == 1 -> ["T"]
                                         | otherwise -> ["T" <> show i | i <- [1..(length datatypeVars)]]
   let genericVariablesExp = ListE [stringE x | x <- genericVariables]
-  let genericBrackets = getGenericBrackets genericVariables
 
   let allNullary = (allNullaryToStringTag options) && (allConstructorsAreNullary datatypeCons)
   let singleNormalConstructor = (length datatypeCons == 1) && ((constructorVariant $ head datatypeCons) == NormalConstructor)
 
   declarationFnBody <- do
     let interfaceNamesAndDeclarations = fmap (handleConstructor options datatypeInfo genericVariables) datatypeCons
-
     let interfaceNames = fmap fst interfaceNamesAndDeclarations
     let interfaceDeclarations = fmap snd interfaceNamesAndDeclarations
 
@@ -219,22 +211,15 @@ handleConstructor options (DatatypeInfo {..}) genericVariables (ConstructorInfo 
                                 TaggedObject tagFieldName contentsFieldName -> [(contentsFieldName, contentsTupleType)]
                                 _ -> [(constructorNameToUse, contentsTupleType)]
 
+                            tagField = case sumEncoding options of
+                              TaggedObject tagFieldName contentsFieldName | shouldTag -> [(AppE (AppE (AppE (ConE 'TSField) (ConE 'False))
+                                                                                                 (stringE tagFieldName))
+                                                                                           (stringE $ [i|"#{constructorNameToUse}"|]))]
+                              _ -> []
 
-    -- allNullary = (allNullaryToStringTag options) && (allConstructorsAreNullary datatypeCons)
     shouldTag = (((length datatypeCons) > 1) || (tagSingleConstructors options))
-
     constructorNameToUse = (constructorTagModifier options) $ lastNameComponent' constructorName
-
     contentsTupleType = getTupleType constructorFields
-
-    isTaggedObject (sumEncoding -> TaggedObject _ _) = True
-    isTaggedObject _ = False
-
-    tagField = case sumEncoding options of
-      TaggedObject tagFieldName contentsFieldName | shouldTag -> [(AppE (AppE (AppE (ConE 'TSField) (ConE 'False))
-                                                                         (stringE tagFieldName))
-                                                                   (stringE $ [i|"#{constructorNameToUse}"|]))]
-      _ -> []
 
 
 -- | Helper for handleConstructor
@@ -298,6 +283,9 @@ getTypeAsStringExp typ = AppE (VarE 'getTypeScriptType) (SigE (ConE 'Proxy) (App
 getOptionalAsBoolExp :: Type -> Exp
 getOptionalAsBoolExp typ = AppE (VarE 'getTypeScriptOptional) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) typ))
 
+isTaggedObject (sumEncoding -> TaggedObject _ _) = True
+isTaggedObject _ = False
+
 -- | Get the type of a tuple of constructor fields, as when we're packing a record-less constructor into a list
 getTupleType constructorFields = case length constructorFields of
   0 -> AppT ListT (ConT ''())
@@ -315,6 +303,3 @@ applyToArgsE f [] = f
 applyToArgsE f (x:xs) = applyToArgsE (AppE f x) xs
 
 stringE = LitE . StringL
-
-unitSynonym :: ()
-unitSynonym = ()
