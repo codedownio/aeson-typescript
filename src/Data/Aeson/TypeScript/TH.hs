@@ -1,4 +1,4 @@
-{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, FlexibleInstances, NamedFieldPuns, MultiWayIf, ViewPatterns #-}
+{-# LANGUAGE CPP, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, FlexibleInstances, NamedFieldPuns, MultiWayIf, ViewPatterns #-}
 
 {-|
 Module:      Data.Aeson.TypeScript.TH
@@ -161,12 +161,12 @@ deriveTypeScript options name = do
                                                  , datatypeCons = fmap (applySubstitution subMap) datatypeCons})
   getTypeFn <- getTypeExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
   getDeclarationFn <- getDeclarationFunctionBody options name fullyQualifiedDatatypeInfo
-  let fullyGenericInstance = InstanceD Nothing [] (AppT (ConT ''TypeScript) (ConT name)) [getTypeFn, getDeclarationFn]
+  let fullyGenericInstance = mkInstance [] (AppT (ConT ''TypeScript) (ConT name)) [getTypeFn, getDeclarationFn]
 
   otherInstances <- case length datatypeVars > 0 of
     True -> do
       otherGetTypeFn <- getTypeExpression datatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
-      return [InstanceD Nothing (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) (foldl (\x y -> AppT x y) (ConT name) datatypeVars)) [otherGetTypeFn]]
+      return [mkInstance (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) (foldl (\x y -> AppT x y) (ConT name) datatypeVars)) [otherGetTypeFn]]
     False -> return []
 
   return $ fullyGenericInstance : otherInstances
@@ -311,3 +311,10 @@ applyToArgsE f [] = f
 applyToArgsE f (x:xs) = applyToArgsE (AppE f x) xs
 
 stringE = LitE . StringL
+
+-- Between Template Haskell 2.10 and 2.11, InstanceD got an additional argument
+#if __GLASGOW_HASKELL__ >= 800
+mkInstance context typ decs = InstanceD Nothing context typ decs
+#else
+mkInstance context typ decs = InstanceD context typ decs
+#endif
