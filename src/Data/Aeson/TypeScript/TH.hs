@@ -7,7 +7,7 @@ License:     BSD3
 Stability:   experimental
 Portability: portable
 
-This library provides a way to generate TypeScript @.d.ts@ files that match your existing Aeson 'ToJSON'/'FromJSON' instances.
+This library provides a way to generate TypeScript @.d.ts@ files that match your existing Aeson 'A.ToJSON' instances.
 If you already use Aeson's Template Haskell support to derive your instances, then deriving TypeScript is as simple as
 
 @

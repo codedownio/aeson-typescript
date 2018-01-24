@@ -49,7 +49,10 @@ instance IsString (TSString a) where
 
 -- * Formatting options
 
-data FormattingOptions = FormattingOptions { numIndentSpaces :: Int }
+data FormattingOptions = FormattingOptions {
+  numIndentSpaces :: Int
+  -- ^ How many spaces to indent TypeScript blocks
+  }
 
 defaultFormattingOptions = FormattingOptions 2
 
