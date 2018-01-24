@@ -17,25 +17,18 @@ import Data.Typeable
 import Language.Haskell.TH
 import Language.Haskell.TH.Datatype
 
+-- | The typeclass that defines how a type is turned into TypeScript.
 class TypeScript a where
-  -- ^ Get the declaration of this type, if necessary.
-  -- When Nothing, no declaration is emitted. Nothing is used for types that are already
-  -- known to TypeScript, such as primitive types.
   getTypeScriptDeclaration :: Proxy a -> [TSDeclaration]
+  -- ^ Get the declaration(s) needed for this type.
   getTypeScriptDeclaration _ = []
 
-  -- ^ Get the type as a string
   getTypeScriptType :: Proxy a -> String
+  -- ^ Get the type as a string.
 
-  -- ^ Get a flag representing whether this type is optional
   getTypeScriptOptional :: Proxy a -> Bool
+  -- ^ Get a flag representing whether this type is optional.
   getTypeScriptOptional _ = False
-
-  -- ^ Get any special info about this type, used for ad-hoc instance tweaks
-  getTypeScriptSpecialInfo :: Proxy a -> Maybe SpecialInfo
-  getTypeScriptSpecialInfo _ = Nothing
-
-data SpecialInfo = IsChar deriving Eq
 
 data TSDeclaration = TSInterfaceDeclaration { interfaceName :: String
                                             , interfaceGenericVariables :: [String]
@@ -54,19 +47,12 @@ newtype TSString a = TSString { unpackTSString :: String } deriving Show
 instance IsString (TSString a) where
   fromString x = TSString x
 
--- data AnyTSDeclaration = forall i. AnyTSDeclaration i
-
 -- * Formatting options
 
 data FormattingOptions = FormattingOptions { numIndentSpaces :: Int }
 
 defaultFormattingOptions = FormattingOptions 2
 
-
--- | Convenience typeclass class you can use to "attach" a set of Aeson encoding options to a type
--- This way, you can do
--- $(deriveJSON (getJSONOptions (Proxy :: Proxy SomeType)) ''SomeType)
--- $(deriveTypeScript (getJSONOptions (Proxy :: Proxy SomeType)) ''SomeType)
--- and ensure that the options are always in sync
+-- | Convenience typeclass class you can use to "attach" a set of Aeson encoding options to a type.
 class HasJSONOptions a where
   getJSONOptions :: (Proxy a) -> A.Options

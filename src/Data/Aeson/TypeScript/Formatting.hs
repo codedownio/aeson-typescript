@@ -17,17 +17,20 @@ import Data.Typeable
 import Language.Haskell.TH
 import Language.Haskell.TH.Datatype
 
+-- | Same as 'formatTSDeclarations'', but uses default formatting options.
 formatTSDeclarations = formatTSDeclarations' defaultFormattingOptions
 
-formatTSDeclarations' :: FormattingOptions -> [TSDeclaration] -> String
-formatTSDeclarations' options declarations = T.unpack $ T.intercalate "\n\n" (fmap (T.pack . formatTSDeclaration options) declarations)
-
+-- | Format a single TypeScript declaration. This version accepts a FormattingOptions object in case you want more control over the output.
 formatTSDeclaration :: FormattingOptions -> TSDeclaration -> String
 formatTSDeclaration (FormattingOptions {numIndentSpaces}) (TSTypeAlternatives name genericVariables names) = [i|type #{name}#{getGenericBrackets genericVariables} = #{alternatives};|]
   where alternatives = T.intercalate " | " (fmap T.pack names)
 formatTSDeclaration (FormattingOptions {numIndentSpaces}) (TSInterfaceDeclaration interfaceName genericVariables members) = [i|interface #{interfaceName}#{getGenericBrackets genericVariables} {
 #{lines}
 }|] where lines = T.intercalate "\n" $ fmap T.pack [(replicate numIndentSpaces ' ') <> formatTSField member <> ";"| member <- members]
+
+-- | Format a list of TypeScript declarations into a string, suitable for putting directly into a @.d.ts@ file.
+formatTSDeclarations' :: FormattingOptions -> [TSDeclaration] -> String
+formatTSDeclarations' options declarations = T.unpack $ T.intercalate "\n\n" (fmap (T.pack . formatTSDeclaration options) declarations)
 
 formatTSField :: TSField -> String
 formatTSField (TSField optional name typ) = [i|#{name}#{if optional then "?" else ""}: #{typ}|]

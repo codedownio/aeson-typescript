@@ -45,12 +45,10 @@ instance TypeScript Int where
 
 instance TypeScript Char where
   getTypeScriptType _ = "string"
-  getTypeScriptSpecialInfo _ = Just IsChar
 
-instance (TypeScript a) => TypeScript [a] where
-  getTypeScriptType _ = (if specialInfo == (Just IsChar) then "string" else (baseType ++ "[]")) where
-    baseType = getTypeScriptType (Proxy :: Proxy a)
-    specialInfo = getTypeScriptSpecialInfo (Proxy :: Proxy a)
+instance (Typeable a, TypeScript a) => TypeScript [a] where
+  getTypeScriptType x | typeOf x == typeOf (Proxy :: Proxy [Char]) = "string"
+  getTypeScriptType _ = (getTypeScriptType (Proxy :: Proxy a)) ++ "[]"
 
 instance (TypeScript a, TypeScript b) => TypeScript (Either a b) where
   getTypeScriptType _ = [i|Either<#{getTypeScriptType (Proxy :: Proxy a)}, #{getTypeScriptType (Proxy :: Proxy b)}>|]

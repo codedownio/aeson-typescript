@@ -7,7 +7,7 @@ License:     BSD3
 Stability:   experimental
 Portability: portable
 
-This library provides a way to generate TypeScript @.d.ts@ files that match your existing Aeson ToJSON/FromJSON instances.
+This library provides a way to generate TypeScript @.d.ts@ files that match your existing Aeson 'ToJSON'/'FromJSON' instances.
 If you already use Aeson's Template Haskell support to derive your instances, then deriving TypeScript is as simple as
 
 @
@@ -29,35 +29,55 @@ data D a = Nullary
 Next we derive the necessary instances.
 
 @
-$('deriveTypeScript' 'defaultOptions'{'fieldLabelModifier' = 'drop' 4, 'constructorTagModifier' = map toLower} ''D)
+$('deriveTypeScript' ('defaultOptions' {'fieldLabelModifier' = 'drop' 4, 'constructorTagModifier' = map toLower}) ''D)
 @
 
 Now we can use the newly created instances.
 
->>> getTypeScriptDeclaration (Proxy :: Proxy D)
-> True
+@
+>>> putStrLn $ formatTSDeclarations $ getTypeScriptDeclaration (Proxy :: Proxy D)
+
+type D\<T\> = "nullary" | IUnary\<T\> | IProduct\<T\> | IRecord\<T\>;
+
+type IUnary\<T\> = number;
+
+type IProduct\<T\> = [string, string, T];
+
+interface IRecord\<T\> {
+  tag: "record";
+  One: number;
+  Two: boolean;
+  Three: D\<T\>;
+}
+@
+
+It's important to make sure your JSON and TypeScript are being derived with the same options. For this reason, we
+include the convenience 'HasJSONOptions' typeclass, which lets you write the options only once, like this:
+
+@
+instance HasJSONOptions MyType where getJSONOptions _ = ('defaultOptions' {'fieldLabelModifier' = 'drop' 4})
+
+$(deriveJSON (getJSONOptions (Proxy :: Proxy MyType)) ''MyType)
+$(deriveTypeScript (getJSONOptions (Proxy :: Proxy MyType)) ''MyType)
+@
 
 -}
 
 module Data.Aeson.TypeScript.TH (
   deriveTypeScript,
 
-  module Data.Aeson.TypeScript.Instances,
-  module Data.Aeson.TypeScript.Types,
-  module Data.Aeson.TypeScript.Formatting,
-  TSDeclaration(..),
-  TSField(..),
-  T(..),
-  T1(..),
-  T2(..),
-  T3(..),
-  T4(..),
-  T5(..),
-  T6(..),
-  T7(..),
-  T8(..),
-  T9(..),
-  T10(..)
+  -- * The main typeclass
+  TypeScript(..),
+
+  -- * Formatting declarations
+  formatTSDeclarations,
+  formatTSDeclaration,
+  FormattingOptions(..),
+
+  -- * Convenience tools
+  HasJSONOptions(..),
+
+  module Data.Aeson.TypeScript.Instances
   ) where
 
 import Data.Aeson as A
@@ -125,8 +145,7 @@ instance TypeScript T10 where
 deriveTypeScript :: Options
                  -- ^ Encoding options.
                  -> Name
-                 -- ^ Name of the type for which to generate a 'TypeScript' instance
-                 -- declaration.
+                 -- ^ Name of the type for which to generate a 'TypeScript' instance declaration.
                  -> Q [Dec]
 deriveTypeScript options name = do
   datatypeInfo@(DatatypeInfo {..}) <- reifyDatatype name
