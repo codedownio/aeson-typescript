@@ -6,6 +6,7 @@ import Control.Monad
 import Control.Monad.Writer
 import Control.Monad.Writer.Lazy
 import qualified Data.Aeson as A
+import qualified Data.Aeson.Types as A
 import Data.Data
 import Data.Monoid
 import Data.Proxy
