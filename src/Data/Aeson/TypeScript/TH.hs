@@ -84,6 +84,7 @@ import Data.Aeson as A
 import Data.Aeson.TypeScript.Formatting
 import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Types
+import Data.Aeson.Types as A
 import Data.List (inits, tails)
 import qualified Data.Map as M
 import Data.Maybe
