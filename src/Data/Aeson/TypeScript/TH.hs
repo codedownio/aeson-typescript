@@ -83,7 +83,6 @@ module Data.Aeson.TypeScript.TH (
 import Data.Aeson as A
 import Data.Aeson.TypeScript.Formatting
 import Data.Aeson.TypeScript.Instances ()
-import Data.Aeson.TypeScript.TypeReplacement
 import Data.Aeson.TypeScript.Types
 import Data.List (inits, tails)
 import qualified Data.Map as M
@@ -150,18 +149,16 @@ deriveTypeScript :: Options
 deriveTypeScript options name = do
   datatypeInfo@(DatatypeInfo {..}) <- reifyDatatype name
 
-  let templateVars :: [Type] = [ConT ''T1, ConT ''T2, ConT ''T3, ConT ''T4, ConT ''T5, ConT ''T6, ConT ''T7, ConT ''T8, ConT ''T9, ConT ''T10]
-
-  let fromSigT (SigT typ kind) = typ
-      fromSigT typ = typ
+  let getFreeVariableName (SigT (VarT name) kind) = Just name
+      getFreeVariableName typ = Nothing
 
   let templateVarsToUse = case length datatypeVars of
         1 -> [ConT ''T]
-        n -> take (length datatypeVars) templateVars
+        n -> take (length datatypeVars) [ConT ''T1, ConT ''T2, ConT ''T3, ConT ''T4, ConT ''T5, ConT ''T6, ConT ''T7, ConT ''T8, ConT ''T9, ConT ''T10]
 
-  let typeReplacementMap :: M.Map Type Type = M.fromList $ zip (fmap fromSigT datatypeVars) templateVarsToUse
+  let subMap = M.fromList $ zip (catMaybes $ fmap getFreeVariableName datatypeVars) templateVarsToUse
   let fullyQualifiedDatatypeInfo = (datatypeInfo {datatypeVars = templateVarsToUse
-                                                 , datatypeCons = fmap (replaceTypesInConstructor typeReplacementMap) datatypeCons})
+                                                 , datatypeCons = fmap (applySubstitution subMap) datatypeCons})
   getTypeFn <- getTypeExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
   getDeclarationFn <- getDeclarationFunctionBody options name fullyQualifiedDatatypeInfo
   let fullyGenericInstance = InstanceD Nothing [] (AppT (ConT ''TypeScript) (ConT name)) [getTypeFn, getDeclarationFn]
@@ -196,13 +193,7 @@ getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
   return $ FunD 'getTypeScriptDeclaration [Clause [WildP] declarationFnBody []]
 
 
--- | Return an expression that evaluates to a TSInterfaceDeclaration
--- Sum object encoding to TS creates an interface for each constructor. So
--- data Foo = Foo { fooString :: String } | Bar { barInt :: Int } becomes
--- type Foo = IFoo | IBar;
--- interface IFoo { fooString: "string" }
--- interface IBar { barInt: "number" }
--- This function produces a single interface declaration
+-- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
 handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> (Exp, Maybe Exp)
 handleConstructor options (DatatypeInfo {..}) genericVariables (ConstructorInfo {..}) = (typeDeclarationToUse, declaration)
   where

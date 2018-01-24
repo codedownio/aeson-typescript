@@ -44,10 +44,11 @@ data EvenHigherKind a b = EvenHigherKind { someList :: [b]
 $(deriveTypeScript A.defaultOptions ''EvenHigherKind)
 
 main = putStrLn $ formatTSDeclarations (
-  (getTypeScriptDeclaration (Proxy :: Proxy HigherKind)) <>
-  (getTypeScriptDeclaration (Proxy :: Proxy Foo)) <>
-  (getTypeScriptDeclaration (Proxy :: Proxy Baz)) <>
-  (getTypeScriptDeclaration (Proxy :: Proxy EvenHigherKind))
+  (getTypeScriptDeclaration (Proxy :: Proxy HigherKind))
+  <> (getTypeScriptDeclaration (Proxy :: Proxy Foo))
+  <> (getTypeScriptDeclaration (Proxy :: Proxy Baz))
+  <> (getTypeScriptDeclaration (Proxy :: Proxy D))
+  <> (getTypeScriptDeclaration (Proxy :: Proxy EvenHigherKind))
   )
 
 
@@ -69,8 +70,8 @@ $(deriveTypeScript (defaultOptions{fieldLabelModifier = drop 4, constructorTagMo
 $(deriveJSON (defaultOptions{fieldLabelModifier = drop 4, constructorTagModifier = map toLower}) ''D)
 
 
-type JupyterInterpreterType = String
-data InterpreterType = Normal
-                     | Jupyter JupyterInterpreterType deriving (Eq, Ord, Show)
+-- type JupyterInterpreterType = String
+-- data InterpreterType = Normal
+--                      | Jupyter JupyterInterpreterType deriving (Eq, Ord, Show)
 
-$(deriveTypeScript (A.defaultOptions { sumEncoding=UntaggedValue }) ''InterpreterType)
+-- $(deriveTypeScript (A.defaultOptions { sumEncoding=UntaggedValue }) ''InterpreterType)
