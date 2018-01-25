@@ -17,31 +17,31 @@ import Test.Tasty.Runners
 import Util
 
 data Unit = Unit
-$(deriveJSON (A.defaultOptions {sumEncoding=TwoElemArray, tagSingleConstructors=True}) ''Unit)
-$(deriveTypeScript (A.defaultOptions {sumEncoding=TwoElemArray, tagSingleConstructors=True}) ''Unit)
+$(deriveJSON (setTagSingleConstructors $ A.defaultOptions {sumEncoding=TwoElemArray}) ''Unit)
+$(deriveTypeScript (setTagSingleConstructors $ A.defaultOptions {sumEncoding=TwoElemArray}) ''Unit)
 
 data OneFieldRecordless = OneFieldRecordless Int
-$(deriveJSON (A.defaultOptions {sumEncoding=TwoElemArray, tagSingleConstructors=True}) ''OneFieldRecordless)
-$(deriveTypeScript (A.defaultOptions {sumEncoding=TwoElemArray, tagSingleConstructors=True}) ''OneFieldRecordless)
+$(deriveJSON (setTagSingleConstructors $ A.defaultOptions {sumEncoding=TwoElemArray}) ''OneFieldRecordless)
+$(deriveTypeScript (setTagSingleConstructors $ A.defaultOptions {sumEncoding=TwoElemArray}) ''OneFieldRecordless)
 
 data OneField = OneField { simpleString :: String }
-$(deriveJSON (A.defaultOptions {sumEncoding=TwoElemArray, tagSingleConstructors=True}) ''OneField)
-$(deriveTypeScript (A.defaultOptions {sumEncoding=TwoElemArray, tagSingleConstructors=True}) ''OneField)
+$(deriveJSON (setTagSingleConstructors $ A.defaultOptions {sumEncoding=TwoElemArray}) ''OneField)
+$(deriveTypeScript (setTagSingleConstructors $ A.defaultOptions {sumEncoding=TwoElemArray}) ''OneField)
 
 data TwoFieldRecordless = TwoFieldRecordless Int String
-$(deriveJSON (A.defaultOptions {sumEncoding=TwoElemArray, tagSingleConstructors=True}) ''TwoFieldRecordless)
-$(deriveTypeScript (A.defaultOptions {sumEncoding=TwoElemArray, tagSingleConstructors=True}) ''TwoFieldRecordless)
+$(deriveJSON (setTagSingleConstructors $ A.defaultOptions {sumEncoding=TwoElemArray}) ''TwoFieldRecordless)
+$(deriveTypeScript (setTagSingleConstructors $ A.defaultOptions {sumEncoding=TwoElemArray}) ''TwoFieldRecordless)
 
 data TwoField = TwoField { doubleInt :: Int
                          , doubleString :: String }
-$(deriveJSON (A.defaultOptions {sumEncoding=TwoElemArray, tagSingleConstructors=True}) ''TwoField)
-$(deriveTypeScript (A.defaultOptions {sumEncoding=TwoElemArray, tagSingleConstructors=True}) ''TwoField)
+$(deriveJSON (setTagSingleConstructors $ A.defaultOptions {sumEncoding=TwoElemArray}) ''TwoField)
+$(deriveTypeScript (setTagSingleConstructors $ A.defaultOptions {sumEncoding=TwoElemArray}) ''TwoField)
 
 data TwoConstructor = Con1 { con1String :: String }
                     | Con2 { con2String :: String
                            , con2Int :: Int }
-$(deriveJSON (A.defaultOptions {sumEncoding=TwoElemArray, tagSingleConstructors=True}) ''TwoConstructor)
-$(deriveTypeScript (A.defaultOptions {sumEncoding=TwoElemArray, tagSingleConstructors=True}) ''TwoConstructor)
+$(deriveJSON (setTagSingleConstructors $ A.defaultOptions {sumEncoding=TwoElemArray}) ''TwoConstructor)
+$(deriveTypeScript (setTagSingleConstructors $ A.defaultOptions {sumEncoding=TwoElemArray}) ''TwoConstructor)
 
 
 declarations = ((getTypeScriptDeclaration (Proxy :: Proxy Unit)) <>

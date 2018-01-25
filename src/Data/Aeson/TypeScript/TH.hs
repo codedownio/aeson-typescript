@@ -207,7 +207,7 @@ handleConstructor options (DatatypeInfo {..}) genericVariables (ConstructorInfo 
 
     -- * Declaration
     shouldEncodeToString = null constructorFields && shouldTag
-    shouldEncodeToTuple = (constructorVariant == NormalConstructor) && (not $ (isTaggedObject options && (tagSingleConstructors options)))
+    shouldEncodeToTuple = (constructorVariant == NormalConstructor) && (not $ (isTaggedObject options && (getTagSingleConstructors options)))
     declaration = if | shouldEncodeToString -> Nothing
                      | shouldEncodeToTuple -> Just $ applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ getInterfaceName constructorName,
                                                                                               ListE [stringE x | x <- genericVariables],
@@ -226,7 +226,7 @@ handleConstructor options (DatatypeInfo {..}) genericVariables (ConstructorInfo 
                                                                                            (stringE $ [i|"#{constructorNameToUse}"|]))]
                               _ -> []
 
-    shouldTag = (((length datatypeCons) > 1) || (tagSingleConstructors options))
+    shouldTag = (((length datatypeCons) > 1) || (getTagSingleConstructors options))
     constructorNameToUse = (constructorTagModifier options) $ lastNameComponent' constructorName
     contentsTupleType = getTupleType constructorFields
 
@@ -314,8 +314,16 @@ applyToArgsE f (x:xs) = applyToArgsE (AppE f x) xs
 stringE = LitE . StringL
 
 -- Between Template Haskell 2.10 and 2.11, InstanceD got an additional argument
-#if __GLASGOW_HASKELL__ >= 800
+#if MIN_VERSION_template_haskell(2,11,0)
 mkInstance context typ decs = InstanceD Nothing context typ decs
 #else
 mkInstance context typ decs = InstanceD context typ decs
+#endif
+
+-- Between Aeson 1.1.2.0 and 1.2.0.0, tagSingleConstructors was added
+getTagSingleConstructors :: Options -> Bool
+#if MIN_VERSION_aeson(1,2,0)
+getTagSingleConstructors options = tagSingleConstructors options
+#else
+getTagSingleConstructors options = False
 #endif

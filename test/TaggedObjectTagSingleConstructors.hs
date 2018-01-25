@@ -17,31 +17,31 @@ import Test.Tasty.Runners
 import Util
 
 data Unit = Unit
-$(deriveJSON (A.defaultOptions {tagSingleConstructors=True}) ''Unit)
-$(deriveTypeScript (A.defaultOptions {tagSingleConstructors=True}) ''Unit)
+$(deriveJSON (setTagSingleConstructors A.defaultOptions) ''Unit)
+$(deriveTypeScript (setTagSingleConstructors A.defaultOptions) ''Unit)
 
 data OneFieldRecordless = OneFieldRecordless Int
-$(deriveJSON (A.defaultOptions {tagSingleConstructors=True}) ''OneFieldRecordless)
-$(deriveTypeScript (A.defaultOptions {tagSingleConstructors=True}) ''OneFieldRecordless)
+$(deriveJSON (setTagSingleConstructors A.defaultOptions) ''OneFieldRecordless)
+$(deriveTypeScript (setTagSingleConstructors A.defaultOptions) ''OneFieldRecordless)
 
 data OneField = OneField { simpleString :: String }
-$(deriveJSON (A.defaultOptions {tagSingleConstructors=True}) ''OneField)
-$(deriveTypeScript (A.defaultOptions {tagSingleConstructors=True}) ''OneField)
+$(deriveJSON (setTagSingleConstructors A.defaultOptions) ''OneField)
+$(deriveTypeScript (setTagSingleConstructors A.defaultOptions) ''OneField)
 
 data TwoFieldRecordless = TwoFieldRecordless Int String
-$(deriveJSON (A.defaultOptions {tagSingleConstructors=True}) ''TwoFieldRecordless)
-$(deriveTypeScript (A.defaultOptions {tagSingleConstructors=True}) ''TwoFieldRecordless)
+$(deriveJSON (setTagSingleConstructors A.defaultOptions) ''TwoFieldRecordless)
+$(deriveTypeScript (setTagSingleConstructors A.defaultOptions) ''TwoFieldRecordless)
 
 data TwoField = TwoField { doubleInt :: Int
                          , doubleString :: String }
-$(deriveJSON (A.defaultOptions {tagSingleConstructors=True}) ''TwoField)
-$(deriveTypeScript (A.defaultOptions {tagSingleConstructors=True}) ''TwoField)
+$(deriveJSON (setTagSingleConstructors A.defaultOptions) ''TwoField)
+$(deriveTypeScript (setTagSingleConstructors A.defaultOptions) ''TwoField)
 
 data TwoConstructor = Con1 { con1String :: String }
                     | Con2 { con2String :: String
                            , con2Int :: Int }
-$(deriveJSON (A.defaultOptions {tagSingleConstructors=True}) ''TwoConstructor)
-$(deriveTypeScript (A.defaultOptions {tagSingleConstructors=True}) ''TwoConstructor)
+$(deriveJSON (setTagSingleConstructors A.defaultOptions) ''TwoConstructor)
+$(deriveTypeScript (setTagSingleConstructors A.defaultOptions) ''TwoConstructor)
 
 declarations = ((getTypeScriptDeclaration (Proxy :: Proxy Unit)) <>
                  (getTypeScriptDeclaration (Proxy :: Proxy OneFieldRecordless)) <>

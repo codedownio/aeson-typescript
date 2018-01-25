@@ -18,31 +18,31 @@ import Util
 
 
 data Unit = Unit
-$(deriveJSON (A.defaultOptions {sumEncoding=ObjectWithSingleField, tagSingleConstructors=True}) ''Unit)
-$(deriveTypeScript (A.defaultOptions {sumEncoding=ObjectWithSingleField, tagSingleConstructors=True}) ''Unit)
+$(deriveJSON (setTagSingleConstructors $ A.defaultOptions {sumEncoding=ObjectWithSingleField}) ''Unit)
+$(deriveTypeScript (setTagSingleConstructors $ A.defaultOptions {sumEncoding=ObjectWithSingleField}) ''Unit)
 
 data OneFieldRecordless = OneFieldRecordless Int
-$(deriveJSON (A.defaultOptions {sumEncoding=ObjectWithSingleField, tagSingleConstructors=True}) ''OneFieldRecordless)
-$(deriveTypeScript (A.defaultOptions {sumEncoding=ObjectWithSingleField, tagSingleConstructors=True}) ''OneFieldRecordless)
+$(deriveJSON (setTagSingleConstructors $ A.defaultOptions {sumEncoding=ObjectWithSingleField}) ''OneFieldRecordless)
+$(deriveTypeScript (setTagSingleConstructors $ A.defaultOptions {sumEncoding=ObjectWithSingleField}) ''OneFieldRecordless)
 
 data OneField = OneField { simpleString :: String }
-$(deriveJSON (A.defaultOptions {sumEncoding=ObjectWithSingleField, tagSingleConstructors=True}) ''OneField)
-$(deriveTypeScript (A.defaultOptions {sumEncoding=ObjectWithSingleField, tagSingleConstructors=True}) ''OneField)
+$(deriveJSON (setTagSingleConstructors $ A.defaultOptions {sumEncoding=ObjectWithSingleField}) ''OneField)
+$(deriveTypeScript (setTagSingleConstructors $ A.defaultOptions {sumEncoding=ObjectWithSingleField}) ''OneField)
 
 data TwoFieldRecordless = TwoFieldRecordless Int String
-$(deriveJSON (A.defaultOptions {sumEncoding=ObjectWithSingleField, tagSingleConstructors=True}) ''TwoFieldRecordless)
-$(deriveTypeScript (A.defaultOptions {sumEncoding=ObjectWithSingleField, tagSingleConstructors=True}) ''TwoFieldRecordless)
+$(deriveJSON (setTagSingleConstructors $ A.defaultOptions {sumEncoding=ObjectWithSingleField}) ''TwoFieldRecordless)
+$(deriveTypeScript (setTagSingleConstructors $ A.defaultOptions {sumEncoding=ObjectWithSingleField}) ''TwoFieldRecordless)
 
 data TwoField = TwoField { doubleInt :: Int
                          , doubleString :: String }
-$(deriveJSON (A.defaultOptions {sumEncoding=ObjectWithSingleField, tagSingleConstructors=True}) ''TwoField)
-$(deriveTypeScript (A.defaultOptions {sumEncoding=ObjectWithSingleField, tagSingleConstructors=True}) ''TwoField)
+$(deriveJSON (setTagSingleConstructors $ A.defaultOptions {sumEncoding=ObjectWithSingleField}) ''TwoField)
+$(deriveTypeScript (setTagSingleConstructors $ A.defaultOptions {sumEncoding=ObjectWithSingleField}) ''TwoField)
 
 data TwoConstructor = Con1 { con1String :: String }
                     | Con2 { con2String :: String
                            , con2Int :: Int }
-$(deriveJSON (A.defaultOptions {sumEncoding=ObjectWithSingleField, tagSingleConstructors=True}) ''TwoConstructor)
-$(deriveTypeScript (A.defaultOptions {sumEncoding=ObjectWithSingleField, tagSingleConstructors=True}) ''TwoConstructor)
+$(deriveJSON (setTagSingleConstructors $ A.defaultOptions {sumEncoding=ObjectWithSingleField}) ''TwoConstructor)
+$(deriveTypeScript (setTagSingleConstructors $ A.defaultOptions {sumEncoding=ObjectWithSingleField}) ''TwoConstructor)
 
 
 declarations = ((getTypeScriptDeclaration (Proxy :: Proxy Unit)) <>

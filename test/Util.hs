@@ -1,4 +1,4 @@
-{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns #-}
+{-# LANGUAGE CPP, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns #-}
 
 module Util where
 
@@ -6,6 +6,7 @@ import Control.Monad
 import Data.Aeson as A
 import Data.Aeson.TypeScript.TH
 import Data.Aeson.TypeScript.Types
+import Data.Aeson.Types as A
 import qualified Data.ByteString.Lazy as B
 import Data.Proxy
 import Data.String
@@ -75,3 +76,12 @@ ensureTSCExists = doesFileExist tsc >>= \exists -> when (not exists) $ void $ do
   putStrLn "Invoking yarn to install tsc compiler (make sure yarn is installed)"
   (exitCode, stdout, stderr) <- readCreateProcessWithExitCode ((shell "yarn install") {cwd = Just "test_assets"}) ""
   when (exitCode /= ExitSuccess) $ putStrLn [i|Error installing yarn: '#{stderr}', '#{stdout}'|]
+
+
+-- Between Aeson 1.1.2.0 and 1.2.0.0, tagSingleConstructors was added
+setTagSingleConstructors :: Options -> Options
+#if MIN_VERSION_aeson(1,2,0)
+setTagSingleConstructors options = options {tagSingleConstructors=True}
+#else
+setTagSingleConstructors = id
+#endif
