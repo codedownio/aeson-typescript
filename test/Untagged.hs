@@ -1,4 +1,4 @@
-{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns #-}
+{-# LANGUAGE CPP, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns #-}
 
 module Untagged (tests) where
 
@@ -16,7 +16,9 @@ import Test.Tasty.Hspec (testSpec)
 import Test.Tasty.Runners
 import Util
 
-
+-- Between Aeson 0.11.3.0 and 1.0.0.0, UntaggedValue was added
+-- Disable these tests if it's not present
+#if MIN_VERSION_aeson(1,0,0)
 data Unit = Unit
 $(deriveJSON (A.defaultOptions {sumEncoding=UntaggedValue}) ''Unit)
 $(deriveTypeScript (A.defaultOptions {sumEncoding=UntaggedValue}) ''Unit)
@@ -118,6 +120,10 @@ let x7: TwoConstructor = {\"con2String\":\"asdf\",\"con2Int\":42};
 
   it "type checks everything with tsc" $ do
     testTypeCheckDeclarations declarations typesAndValues
-
+#else
+tests = unsafePerformIO $ testSpec "UntaggedValue" $ do
+  it "tests are disabled for this Aeson version" $ do
+    2 `shouldBe` 2
+#endif
 
 main = defaultMainWithIngredients defaultIngredients tests
