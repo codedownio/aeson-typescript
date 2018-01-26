@@ -12,7 +12,6 @@ import Data.Proxy
 import Data.String
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
-import Shelly hiding ((</>))
 import System.Directory
 import System.Exit
 import System.FilePath
@@ -34,7 +33,7 @@ let x: #{tsType} = #{A.encode obj};
   ensureTSCExists
 
   -- "--diagnostics", "--listFiles"
-  shelly $ bash (fromString tsc) ["--noEmit", "--skipLibCheck", "--traceResolution", "--noResolve", T.pack tsFile]
+  readCreateProcess (shell [i|#{tsc} --noEmit --skipLibCheck --traceResolution --noResolve #{T.pack tsFile}|]) ""
 
   return ()
   where tsDeclarations :: [TSDeclaration] = getTypeScriptDeclaration (Proxy :: Proxy a)
@@ -59,12 +58,9 @@ testTypeCheckDeclarations tsDeclarations typesAndVals = withSystemTempDirectory 
 
   ensureTSCExists
 
-  (output, code) <- shelly $ errExit False $ do
-      output <- bash (fromString tsc) ["--noEmit", "--skipLibCheck", "--traceResolution", "--noResolve", T.pack tsFile]
-      code <- lastExitCode
-      return (output, code)
+  (code, output, err) <- readProcessWithExitCode tsc ["--noEmit", "--skipLibCheck", "--traceResolution", "--noResolve", tsFile] ""
 
-  when (code /= 0) $ do
+  when (code /= ExitSuccess) $ do
     putStrLn [i|TSC check failed. File contents were\n\n#{contents}|]
     error [i|TSC check failed: #{output}|]
 

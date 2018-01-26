@@ -10,7 +10,6 @@ import Data.Proxy
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 import Prelude hiding (Double)
-import Shelly hiding ((</>))
 import System.FilePath
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec
