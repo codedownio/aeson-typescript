@@ -33,7 +33,7 @@ let x: #{tsType} = #{A.encode obj};
   ensureTSCExists
 
   -- "--diagnostics", "--listFiles"
-  readCreateProcess (shell [i|#{tsc} --noEmit --skipLibCheck --traceResolution --noResolve #{T.pack tsFile}|]) ""
+  readProcess tsc ["--noEmit", "--skipLibCheck", "--traceResolution", "--noResolve", tsFile] ""
 
   return ()
   where tsDeclarations :: [TSDeclaration] = getTypeScriptDeclaration (Proxy :: Proxy a)
