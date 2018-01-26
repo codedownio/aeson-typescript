@@ -69,55 +69,6 @@ typesAndValues = [(getTypeScriptType (Proxy :: Proxy Unit) , A.encode Unit)
                  ]
 
 tests = unsafePerformIO $ testSpec "UntaggedValue" $ do
-  it "generates the right output" $ do
-    let file = getTSFile declarations typesAndValues
-    file `shouldBe` [i|
-type Unit = IUnit;
-
-type IUnit = void[];
-
-type OneFieldRecordless = IOneFieldRecordless;
-
-type IOneFieldRecordless = number;
-
-type OneField = IOneField;
-
-interface IOneField {
-  simpleString: string;
-}
-
-type TwoFieldRecordless = ITwoFieldRecordless;
-
-type ITwoFieldRecordless = [number, string];
-
-type TwoField = ITwoField;
-
-interface ITwoField {
-  doubleInt: number;
-  doubleString: string;
-}
-
-type TwoConstructor = ICon1 | ICon2;
-
-interface ICon1 {
-  con1String: string;
-}
-
-interface ICon2 {
-  con2String: string;
-  con2Int: number;
-}
-
-let x1: Unit = [];
-let x2: OneFieldRecordless = 42;
-let x3: OneField = {\"simpleString\":\"asdf\"};
-let x4: TwoFieldRecordless = [42,\"asdf\"];
-let x5: TwoField = {\"doubleInt\":42,\"doubleString\":\"asdf\"};
-let x6: TwoConstructor = {\"con1String\":\"asdf\"};
-let x7: TwoConstructor = {\"con2String\":\"asdf\",\"con2Int\":42};
-
-|]
-
   it "type checks everything with tsc" $ do
     testTypeCheckDeclarations declarations typesAndValues
 #else
