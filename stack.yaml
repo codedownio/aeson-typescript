@@ -3,3 +3,6 @@ resolver: lts-10.0
 
 packages:
 - .
+
+extra-deps:
+- th-abstraction-0.2.6.0

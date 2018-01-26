@@ -201,8 +201,8 @@ handleConstructor options (DatatypeInfo {..}) genericVariables (ConstructorInfo 
     -- * Type declaration to use
     interfaceName = getInterfaceName constructorName <> (getGenericBrackets genericVariables)
     typeDeclarationToUse = if | shouldEncodeToString -> stringE [i|"#{(constructorTagModifier options) $ getTypeName $ constructorName}"|]
-                              | sumEncoding options == ObjectWithSingleField && shouldTag -> stringE [i|{#{show constructorNameToUse}: #{interfaceName}}|]
-                              | sumEncoding options == TwoElemArray && shouldTag -> stringE [i|[#{show constructorNameToUse}, #{interfaceName}]|]
+                              | (isObjectWithSingleField $ sumEncoding options) && shouldTag -> stringE [i|{#{show constructorNameToUse}: #{interfaceName}}|]
+                              | (isTwoElemArray $ sumEncoding options) && shouldTag -> stringE [i|[#{show constructorNameToUse}, #{interfaceName}]|]
                               | otherwise -> stringE interfaceName
 
     -- * Declaration
@@ -283,8 +283,14 @@ allConstructorsAreNullary constructors = and $ fmap isConstructorNullary constru
 isConstructorNullary :: ConstructorInfo -> Bool
 isConstructorNullary (ConstructorInfo {constructorVariant, constructorFields}) = (constructorVariant == NormalConstructor) && (constructorFields == [])
 
+-- In Template Haskell 2.10.0.0 and later, Pred is just a synonm for Type
+-- In earlier versions, it has constructors
 getDatatypePredicate :: Type -> Pred
+#if MIN_VERSION_template_haskell(2,10,0)
 getDatatypePredicate typ = AppT (ConT ''TypeScript) typ
+#else
+getDatatypePredicate typ = ClassP ''TypeScript [typ]
+#endif
 
 getTypeAsStringExp :: Type -> Exp
 getTypeAsStringExp typ = AppE (VarE 'getTypeScriptType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) typ))
@@ -327,3 +333,11 @@ getTagSingleConstructors options = tagSingleConstructors options
 #else
 getTagSingleConstructors options = False
 #endif
+
+-- Older versions of Aeson don't have an Eq instance for SumEncoding so we do this
+isObjectWithSingleField ObjectWithSingleField = True
+isObjectWithSingleField _ = False
+
+-- Older versions of Aeson don't have an Eq instance for SumEncoding so we do this
+isTwoElemArray TwoElemArray = True
+isTwoElemArray _ = False
