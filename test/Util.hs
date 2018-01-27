@@ -69,7 +69,8 @@ testTypeCheckDeclarations tsDeclarations typesAndVals = withSystemTempDirectory 
 
 ensureTSCExists :: IO ()
 ensureTSCExists = doesFileExist tsc >>= \exists -> when (not exists) $ void $ do
-  putStrLn "Invoking yarn to install tsc compiler (make sure yarn is installed)"
+  cwd <- getCurrentDirectory
+  putStrLn [i|Invoking yarn to install tsc compiler (make sure yarn is installed). CWD is #{cwd}|]
   (exitCode, stdout, stderr) <- readProcessWithExitCode "test_assets/yarn_install.sh" [] ""
   when (exitCode /= ExitSuccess) $ putStrLn [i|Error installing yarn: '#{stderr}', '#{stdout}'|]
 
