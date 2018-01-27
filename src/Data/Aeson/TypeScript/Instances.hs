@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, FlexibleInstances #-}
+{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, FlexibleInstances #-}
 
 module Data.Aeson.TypeScript.Instances where
 
@@ -18,7 +18,6 @@ import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified Data.Text.Lazy as TL
-import Data.Typeable
 import Language.Haskell.TH
 import Language.Haskell.TH.Datatype
 import Language.Haskell.TH.Quote
@@ -46,9 +45,11 @@ instance TypeScript Int where
 instance TypeScript Char where
   getTypeScriptType _ = "string"
 
-instance (Typeable a, TypeScript a) => TypeScript [a] where
-  getTypeScriptType x | typeOf x == typeOf (Proxy :: Proxy [Char]) = "string"
+instance {-# OVERLAPPABLE #-} (TypeScript a) => TypeScript [a] where
   getTypeScriptType _ = (getTypeScriptType (Proxy :: Proxy a)) ++ "[]"
+
+instance {-# OVERLAPPING #-} TypeScript [Char] where
+  getTypeScriptType _ = "string"
 
 instance (TypeScript a, TypeScript b) => TypeScript (Either a b) where
   getTypeScriptType _ = [i|Either<#{getTypeScriptType (Proxy :: Proxy a)}, #{getTypeScriptType (Proxy :: Proxy b)}>|]
