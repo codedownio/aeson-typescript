@@ -177,6 +177,9 @@ before_install:
 install:
 # Run "yarn install"
 - cd test_assets && yarn install
+# Install a global copy of the TypeScript compiler
+- yarn config set prefix ~/.yarn
+- yarn global add typescript@2.5.3
 # Normal Haskell install stuff
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
 - if [ -f configure.ac ]; then autoreconf -i; fi

@@ -13,12 +13,28 @@ import Data.String
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 import System.Directory
+import System.Environment
 import System.Exit
 import System.FilePath
 import System.IO.Temp
 import System.Process
 
-tsc = "test_assets/node_modules/.bin/tsc"
+localTSC = "test_assets/node_modules/.bin/tsc"
+
+isCI :: IO Bool
+isCI = lookupEnv "CI" >>= (return . (== (Just "true")))
+
+getTSC :: IO FilePath
+getTSC = do
+  isCI <- isCI
+  case isCI of
+    True -> do
+      putStrLn "Using global TSC"
+      return "tsc" -- Assume it's set up on the path
+    False -> do
+      putStrLn "Using local TSC"
+      ensureTSCExists
+      return localTSC
 
 testTypeCheck :: forall a. (TypeScript a, ToJSON a) => a -> IO ()
 testTypeCheck obj = withSystemTempDirectory "typescript_test" $ \folder -> do
@@ -30,9 +46,8 @@ testTypeCheck obj = withSystemTempDirectory "typescript_test" $ \folder -> do
 let x: #{tsType} = #{A.encode obj};
 |]
 
-  ensureTSCExists
-
   -- "--diagnostics", "--listFiles"
+  tsc <- getTSC
   readProcess tsc ["--noEmit", "--skipLibCheck", "--traceResolution", "--noResolve", tsFile] ""
 
   return ()
@@ -56,8 +71,7 @@ testTypeCheckDeclarations tsDeclarations typesAndVals = withSystemTempDirectory 
 
   writeFile tsFile contents
 
-  ensureTSCExists
-
+  tsc <- getTSC
   (code, output, err) <- readProcessWithExitCode tsc ["--noEmit", "--skipLibCheck", "--traceResolution", "--noResolve", tsFile] ""
 
   when (code /= ExitSuccess) $ do
@@ -68,7 +82,7 @@ testTypeCheckDeclarations tsDeclarations typesAndVals = withSystemTempDirectory 
 
 
 ensureTSCExists :: IO ()
-ensureTSCExists = doesFileExist tsc >>= \exists -> when (not exists) $ void $ do
+ensureTSCExists = doesFileExist localTSC >>= \exists -> when (not exists) $ void $ do
   cwd <- getCurrentDirectory
   putStrLn [i|Invoking yarn to install tsc compiler (make sure yarn is installed). CWD is #{cwd}|]
   (exitCode, stdout, stderr) <- readProcessWithExitCode "test_assets/yarn_install.sh" [] ""
