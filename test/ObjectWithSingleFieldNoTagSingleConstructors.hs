@@ -45,12 +45,12 @@ $(deriveJSON (A.defaultOptions {sumEncoding=ObjectWithSingleField}) ''TwoConstru
 $(deriveTypeScript (A.defaultOptions {sumEncoding=ObjectWithSingleField}) ''TwoConstructor)
 
 
-declarations = ((getTypeScriptDeclaration (Proxy :: Proxy Unit)) <>
-                 (getTypeScriptDeclaration (Proxy :: Proxy OneFieldRecordless)) <>
-                 (getTypeScriptDeclaration (Proxy :: Proxy OneField)) <>
-                 (getTypeScriptDeclaration (Proxy :: Proxy TwoFieldRecordless)) <>
-                 (getTypeScriptDeclaration (Proxy :: Proxy TwoField)) <>
-                 (getTypeScriptDeclaration (Proxy :: Proxy TwoConstructor))
+declarations = ((getTypeScriptDeclarations (Proxy :: Proxy Unit)) <>
+                 (getTypeScriptDeclarations (Proxy :: Proxy OneFieldRecordless)) <>
+                 (getTypeScriptDeclarations (Proxy :: Proxy OneField)) <>
+                 (getTypeScriptDeclarations (Proxy :: Proxy TwoFieldRecordless)) <>
+                 (getTypeScriptDeclarations (Proxy :: Proxy TwoField)) <>
+                 (getTypeScriptDeclarations (Proxy :: Proxy TwoConstructor))
                )
 
 typesAndValues = [(getTypeScriptType (Proxy :: Proxy Unit) , A.encode Unit)

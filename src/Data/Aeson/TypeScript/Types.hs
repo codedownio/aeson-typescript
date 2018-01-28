@@ -19,9 +19,9 @@ import Language.Haskell.TH.Datatype
 
 -- | The typeclass that defines how a type is turned into TypeScript.
 class TypeScript a where
-  getTypeScriptDeclaration :: Proxy a -> [TSDeclaration]
+  getTypeScriptDeclarations :: Proxy a -> [TSDeclaration]
   -- ^ Get the declaration(s) needed for this type.
-  getTypeScriptDeclaration _ = []
+  getTypeScriptDeclarations _ = []
 
   getTypeScriptType :: Proxy a -> String
   -- ^ Get the type as a string.

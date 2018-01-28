@@ -39,7 +39,7 @@ $(deriveJSON A.defaultOptions ''HigherKindWithUnary)
 tests = unsafePerformIO $ testSpec "Higher kinds" $ do
   describe "Kind * -> *" $ do
     it [i|makes the declaration and types correctly|] $ do
-      (getTypeScriptDeclaration (Proxy :: Proxy HigherKind)) `shouldBe` ([
+      (getTypeScriptDeclarations (Proxy :: Proxy HigherKind)) `shouldBe` ([
         TSTypeAlternatives "HigherKind" ["T"] ["IHigherKind<T>"],
         TSInterfaceDeclaration "IHigherKind" ["T"] [TSField False "higherKindList" "T[]"]
         ])
@@ -48,21 +48,21 @@ tests = unsafePerformIO $ testSpec "Higher kinds" $ do
       (getTypeScriptType (Proxy :: Proxy (HigherKind String))) `shouldBe` "HigherKind<string>"
 
     it [i|works when referenced in another type|] $ do
-      (getTypeScriptDeclaration (Proxy :: Proxy Foo)) `shouldBe` ([
+      (getTypeScriptDeclarations (Proxy :: Proxy Foo)) `shouldBe` ([
         TSTypeAlternatives "Foo" [] ["IFoo"],
         TSInterfaceDeclaration "IFoo" [] [TSField False "fooString" "string"
                                          , TSField False "fooHigherKindReference" "HigherKind<string>"]
         ])
 
     it [i|works with an interface inside|] $ do
-      (getTypeScriptDeclaration (Proxy :: Proxy HigherKindWithUnary)) `shouldBe` ([
+      (getTypeScriptDeclarations (Proxy :: Proxy HigherKindWithUnary)) `shouldBe` ([
         TSTypeAlternatives "HigherKindWithUnary" ["T"] ["IUnary<T>"],
         TSTypeAlternatives "IUnary" ["T"] ["number"]
         ])
 
   describe "Kind * -> * -> *" $ do
     it [i|makes the declaration and type correctly|] $ do
-      (getTypeScriptDeclaration (Proxy :: Proxy DoubleHigherKind)) `shouldBe` ([
+      (getTypeScriptDeclarations (Proxy :: Proxy DoubleHigherKind)) `shouldBe` ([
         TSTypeAlternatives "DoubleHigherKind" ["T1","T2"] ["IDoubleHigherKind<T1, T2>"],
         TSInterfaceDeclaration "IDoubleHigherKind" ["T1","T2"] [TSField False "someList" "T2[]"
                                                                , TSField False "higherKindThing" "HigherKind<T1>"]
@@ -73,9 +73,9 @@ tests = unsafePerformIO $ testSpec "Higher kinds" $ do
 
   describe "TSC compiler checks" $ do
     it "type checks everything with tsc" $ do
-      let declarations = ((getTypeScriptDeclaration (Proxy :: Proxy HigherKind)) <>
-                          (getTypeScriptDeclaration (Proxy :: Proxy DoubleHigherKind)) <>
-                          (getTypeScriptDeclaration (Proxy :: Proxy HigherKindWithUnary))
+      let declarations = ((getTypeScriptDeclarations (Proxy :: Proxy HigherKind)) <>
+                          (getTypeScriptDeclarations (Proxy :: Proxy DoubleHigherKind)) <>
+                          (getTypeScriptDeclarations (Proxy :: Proxy HigherKindWithUnary))
                          )
 
       let typesAndValues = [(getTypeScriptType (Proxy :: Proxy (HigherKind Int)) , A.encode (HigherKind [42 :: Int]))
@@ -94,7 +94,7 @@ main = defaultMainWithIngredients defaultIngredients tests
 
 
 main' = putStrLn $ formatTSDeclarations (
-   (getTypeScriptDeclaration (Proxy :: Proxy HigherKind)) <>
-   (getTypeScriptDeclaration (Proxy :: Proxy DoubleHigherKind)) <>
-   (getTypeScriptDeclaration (Proxy :: Proxy HigherKindWithUnary))
+   (getTypeScriptDeclarations (Proxy :: Proxy HigherKind)) <>
+   (getTypeScriptDeclarations (Proxy :: Proxy DoubleHigherKind)) <>
+   (getTypeScriptDeclarations (Proxy :: Proxy HigherKindWithUnary))
   )

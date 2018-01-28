@@ -13,7 +13,6 @@ extra-source-files:
 
 # Metadata used when publishing your package
 synopsis:            Generate TypeScript definition files from your ADTs
-# category:            Web
 
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is

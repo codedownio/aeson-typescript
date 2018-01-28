@@ -44,11 +44,11 @@ data EvenHigherKind a b = EvenHigherKind { someList :: [b]
 $(deriveTypeScript A.defaultOptions ''EvenHigherKind)
 
 main = putStrLn $ formatTSDeclarations (
-  (getTypeScriptDeclaration (Proxy :: Proxy HigherKind))
-  <> (getTypeScriptDeclaration (Proxy :: Proxy Foo))
-  <> (getTypeScriptDeclaration (Proxy :: Proxy Baz))
-  <> (getTypeScriptDeclaration (Proxy :: Proxy D))
-  <> (getTypeScriptDeclaration (Proxy :: Proxy EvenHigherKind))
+  (getTypeScriptDeclarations (Proxy :: Proxy HigherKind))
+  <> (getTypeScriptDeclarations (Proxy :: Proxy Foo))
+  <> (getTypeScriptDeclarations (Proxy :: Proxy Baz))
+  <> (getTypeScriptDeclarations (Proxy :: Proxy D))
+  <> (getTypeScriptDeclarations (Proxy :: Proxy EvenHigherKind))
   )
 
 

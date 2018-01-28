@@ -51,7 +51,7 @@ let x: #{tsType} = #{A.encode obj};
   readProcess tsc ["--noEmit", "--skipLibCheck", "--traceResolution", "--noResolve", tsFile] ""
 
   return ()
-  where tsDeclarations :: [TSDeclaration] = getTypeScriptDeclaration (Proxy :: Proxy a)
+  where tsDeclarations :: [TSDeclaration] = getTypeScriptDeclarations (Proxy :: Proxy a)
         tsType :: String = getTypeScriptType (Proxy :: Proxy a)
 
 

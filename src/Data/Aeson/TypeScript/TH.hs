@@ -35,7 +35,7 @@ $('deriveTypeScript' ('defaultOptions' {'fieldLabelModifier' = 'drop' 4, 'constr
 Now we can use the newly created instances.
 
 @
->>> putStrLn $ formatTSDeclarations $ getTypeScriptDeclaration (Proxy :: Proxy D)
+>>> putStrLn $ formatTSDeclarations $ getTypeScriptDeclarations (Proxy :: Proxy D)
 
 type D\<T\> = "nullary" | IUnary\<T\> | IProduct\<T\> | IRecord\<T\>;
 
@@ -191,7 +191,7 @@ getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
 
     return $ NormalB $ ListE (typeDeclaration : interfaceDeclarations)
 
-  return $ FunD 'getTypeScriptDeclaration [Clause [WildP] declarationFnBody []]
+  return $ FunD 'getTypeScriptDeclarations [Clause [WildP] declarationFnBody []]
 
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
