@@ -30,10 +30,8 @@ getTSC = do
   isCI <- isCI
   case isCI of
     True -> do
-      putStrLn "Using global TSC"
       return "tsc" -- Assume it's set up on the path
     False -> do
-      putStrLn "Using local TSC"
       ensureTSCExists
       return localTSC
 
