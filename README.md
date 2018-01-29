@@ -1,5 +1,5 @@
 
-# Welcome to `aeson-typescript` [![Hackage](https://img.shields.io/hackage/v/aeson.svg)](https://hackage.haskell.org/package/aeson-typescript) [![Build Status](https://travis-ci.org/bos/aeson.svg)](https://travis-ci.org/codedownio/aeson-typescript)
+# Welcome to `aeson-typescript` [![Hackage](https://img.shields.io/hackage/v/aeson-typescript.svg)](https://hackage.haskell.org/package/aeson-typescript) [![Build Status](https://travis-ci.org/codedownio/aeson-typescript.svg)](https://travis-ci.org/codedownio/aeson-typescript)
 
 This library provides a way to generate TypeScript `.d.ts` files that match your existing Aeson `ToJSON` instances.
 If you already use Aeson's Template Haskell support to derive your instances, then deriving TypeScript is as simple as
