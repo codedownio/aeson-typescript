@@ -46,7 +46,7 @@ interface IRecord<T> {
 ```
 
 It's important to make sure your JSON and TypeScript are being derived with the same options. For this reason, we
-include the convenience 'HasJSONOptions' typeclass, which lets you write the options only once, like this:
+include the convenience `HasJSONOptions` typeclass, which lets you write the options only once, like this:
 
 ```haskell
 instance HasJSONOptions MyType where getJSONOptions _ = (defaultOptions {fieldLabelModifier = drop 4})
@@ -54,3 +54,49 @@ instance HasJSONOptions MyType where getJSONOptions _ = (defaultOptions {fieldLa
 $(deriveJSON (getJSONOptions (Proxy :: Proxy MyType)) ''MyType)
 $(deriveTypeScript (getJSONOptions (Proxy :: Proxy MyType)) ''MyType)
 ```
+
+# Suggestions for use
+
+This library was written to make it easier to typecheck your TypeScript frontend against your Haskell backend. Here's how I like to integrate it into my workflow:
+
+The idea is to set up a separate Haskell executable in your Cabal file whose sole purpose is to generate types. For example, in your hpack `package.yaml` file add a new executable like this:
+
+```yaml
+executables:
+  ...
+  tsdef:
+    main: Main.hs
+    source-dirs: tsdef
+    dependencies:
+    - my-main-app
+    ...
+```
+
+And `tsdef/Main.hs` should look like this:
+
+```haskell
+module Main where
+
+import Data.Proxy
+import Data.Monoid
+import MyLibraries
+
+$(deriveTypeScript (getJSONOptions (Proxy :: Proxy MyType1)) ''MyType1)
+$(deriveTypeScript (getJSONOptions (Proxy :: Proxy MyType2)) ''MyType2)
+...
+
+main = putStrLn $ formatTSDeclarations (
+  (getTypeScriptDeclaration (Proxy :: Proxy MyType1)) <>
+  (getTypeScriptDeclaration (Proxy :: Proxy MyType2)) <>
+  ...
+)
+```
+
+Now you can generate the types by running `stack runhaskell tsdef/Main.hs > types.d.ts`. I like to make this an automatic step in my Gulpfile, Webpack config, etc.
+
+
+# See also
+
+If you want a much more opinionated web framework for generating APIs, check out [servant](http://haskell-servant.readthedocs.io/en/stable/). (Although it doesn't seem to support TypeScript client generation at the moment.)
+
+For another very powerful framework that can generate TypeScript client code based on an API specification, see [Swagger/OpenAPI](https://github.com/swagger-api/swagger-codegen).
