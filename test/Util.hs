@@ -19,7 +19,8 @@ import System.FilePath
 import System.IO.Temp
 import System.Process
 
-localTSC = "test_assets/node_modules/.bin/tsc"
+yarnInstallScript = "test/assets/yarn_install.sh"
+localTSC = "test/assets/node_modules/.bin/tsc"
 
 isCI :: IO Bool
 isCI = lookupEnv "CI" >>= (return . (== (Just "true")))
@@ -85,7 +86,7 @@ ensureTSCExists :: IO ()
 ensureTSCExists = doesFileExist localTSC >>= \exists -> when (not exists) $ void $ do
   cwd <- getCurrentDirectory
   putStrLn [i|Invoking yarn to install tsc compiler (make sure yarn is installed). CWD is #{cwd}|]
-  (exitCode, stdout, stderr) <- readProcessWithExitCode "test_assets/yarn_install.sh" [] ""
+  (exitCode, stdout, stderr) <- readProcessWithExitCode yarnInstallScript [] ""
   when (exitCode /= ExitSuccess) $ putStrLn [i|Error installing yarn: '#{stderr}', '#{stdout}'|]
 
 

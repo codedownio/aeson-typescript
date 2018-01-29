@@ -176,7 +176,7 @@ before_install:
 
 install:
 # Run "yarn install"
-- cd test_assets && yarn install
+- cd test/assets && yarn install
 # Install a global copy of the TypeScript compiler
 - yarn config set prefix ~/.yarn
 - yarn global add typescript@2.5.3
