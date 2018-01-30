@@ -38,6 +38,12 @@ instance TypeScript TL.Text where
 instance TypeScript Integer where
   getTypeScriptType _ = "number"
 
+instance TypeScript Float where
+  getTypeScriptType _ = "number"
+
+instance TypeScript Double where
+  getTypeScriptType _ = "number"
+
 instance TypeScript Bool where
   getTypeScriptType _ = "boolean"
 
