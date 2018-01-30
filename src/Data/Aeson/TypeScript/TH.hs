@@ -80,6 +80,7 @@ module Data.Aeson.TypeScript.TH (
   module Data.Aeson.TypeScript.Instances
   ) where
 
+import Control.Monad
 import Data.Aeson as A
 import Data.Aeson.TypeScript.Formatting
 import Data.Aeson.TypeScript.Instances ()
@@ -149,6 +150,12 @@ deriveTypeScript :: Options
                  -> Q [Dec]
 deriveTypeScript options name = do
   datatypeInfo@(DatatypeInfo {..}) <- reifyDatatype name
+
+  -- Check that necessary language extensions are turned on
+  scopedTypeVariablesEnabled <- isExtEnabled ScopedTypeVariables
+  polyKindsEnabled <- isExtEnabled PolyKinds
+  when (not scopedTypeVariablesEnabled) $ error [i|The ScopedTypeVariables extension is required; please enable it before calling deriveTypeScript. (For example: put {-# LANGUAGE ScopedTypeVariables #-} at the top of the file.)|]
+  when ((not polyKindsEnabled) && (length datatypeVars > 0)) $ error [i|The PolyKinds extension is required since type #{datatypeName} is a higher order type; please enable it before calling deriveTypeScript. (For example: put {-# LANGUAGE PolyKinds #-} at the top of the file.)|]
 
   let getFreeVariableName (SigT (VarT name) kind) = Just name
       getFreeVariableName typ = Nothing
