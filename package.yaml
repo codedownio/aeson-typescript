@@ -10,6 +10,9 @@ copyright:           "2017 CodeDown"
 extra-source-files:
 - README.md
 - ChangeLog.md
+- test/assets/package.json
+- test/assets/yarn_install.sh
+- test/assets/yarn.lock
 
 # Metadata used when publishing your package
 synopsis:            Generate TypeScript definition files from your ADTs
