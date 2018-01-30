@@ -151,11 +151,7 @@ deriveTypeScript :: Options
 deriveTypeScript options name = do
   datatypeInfo@(DatatypeInfo {..}) <- reifyDatatype name
 
-  -- Check that necessary language extensions are turned on
-  scopedTypeVariablesEnabled <- isExtEnabled ScopedTypeVariables
-  kindSignaturesEnabled <- isExtEnabled KindSignatures
-  when (not scopedTypeVariablesEnabled) $ error [i|The ScopedTypeVariables extension is required; please enable it before calling deriveTypeScript. (For example: put {-# LANGUAGE ScopedTypeVariables #-} at the top of the file.)|]
-  when ((not kindSignaturesEnabled) && (length datatypeVars > 0)) $ error [i|The KindSignatures extension is required since type #{datatypeName} is a higher order type; please enable it before calling deriveTypeScript. (For example: put {-# LANGUAGE KindSignatures #-} at the top of the file.)|]
+  assertExtensionsTurnedOn datatypeInfo
 
   let getFreeVariableName (SigT (VarT name) kind) = Just name
       getFreeVariableName typ = Nothing
@@ -339,6 +335,19 @@ getTagSingleConstructors :: Options -> Bool
 getTagSingleConstructors options = tagSingleConstructors options
 #else
 getTagSingleConstructors options = False
+#endif
+
+-- Between Template Haskell 2.10 and 2.11, the ability to look up which extensions are turned on was added
+assertExtensionsTurnedOn :: DatatypeInfo -> Q ()
+#if MIN_VERSION_template_haskell(2,11,0)
+assertExtensionsTurnedOn (DatatypeInfo {..}) = do
+  -- Check that necessary language extensions are turned on
+  scopedTypeVariablesEnabled <- isExtEnabled ScopedTypeVariables
+  kindSignaturesEnabled <- isExtEnabled KindSignatures
+  when (not scopedTypeVariablesEnabled) $ error [i|The ScopedTypeVariables extension is required; please enable it before calling deriveTypeScript. (For example: put {-# LANGUAGE ScopedTypeVariables #-} at the top of the file.)|]
+  when ((not kindSignaturesEnabled) && (length datatypeVars > 0)) $ error [i|The KindSignatures extension is required since type #{datatypeName} is a higher order type; please enable it before calling deriveTypeScript. (For example: put {-# LANGUAGE KindSignatures #-} at the top of the file.)|]
+#else
+assertExtensionsTurnedOn (DataTypeInfo {..}) = return ()
 #endif
 
 -- Older versions of Aeson don't have an Eq instance for SumEncoding so we do this
