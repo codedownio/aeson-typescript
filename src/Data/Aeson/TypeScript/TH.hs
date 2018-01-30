@@ -347,7 +347,7 @@ assertExtensionsTurnedOn (DatatypeInfo {..}) = do
   when (not scopedTypeVariablesEnabled) $ error [i|The ScopedTypeVariables extension is required; please enable it before calling deriveTypeScript. (For example: put {-# LANGUAGE ScopedTypeVariables #-} at the top of the file.)|]
   when ((not kindSignaturesEnabled) && (length datatypeVars > 0)) $ error [i|The KindSignatures extension is required since type #{datatypeName} is a higher order type; please enable it before calling deriveTypeScript. (For example: put {-# LANGUAGE KindSignatures #-} at the top of the file.)|]
 #else
-assertExtensionsTurnedOn (DataTypeInfo {..}) = return ()
+assertExtensionsTurnedOn _ = return ()
 #endif
 
 -- Older versions of Aeson don't have an Eq instance for SumEncoding so we do this
