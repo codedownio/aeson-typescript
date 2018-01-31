@@ -19,6 +19,7 @@ import System.FilePath
 import System.IO.Temp
 import System.Process
 
+npmInstallScript = "test/assets/npm_install.sh"
 yarnInstallScript = "test/assets/yarn_install.sh"
 localTSC = "test/assets/node_modules/.bin/tsc"
 
@@ -83,8 +84,11 @@ testTypeCheckDeclarations tsDeclarations typesAndVals = withSystemTempDirectory 
 ensureTSCExists :: IO ()
 ensureTSCExists = doesFileExist localTSC >>= \exists -> when (not exists) $ void $ do
   cwd <- getCurrentDirectory
+
+  installScript <- chooseInstallScript
+
   putStrLn [i|Invoking yarn to install tsc compiler (make sure yarn is installed). CWD is #{cwd}|]
-  (exitCode, stdout, stderr) <- readProcessWithExitCode yarnInstallScript [] ""
+  (exitCode, stdout, stderr) <- readProcessWithExitCode installScript [] ""
   when (exitCode /= ExitSuccess) $ putStrLn [i|Error installing yarn: '#{stderr}', '#{stdout}'|]
 
 
@@ -95,3 +99,14 @@ setTagSingleConstructors options = options {tagSingleConstructors=True}
 #else
 setTagSingleConstructors = id
 #endif
+
+chooseInstallScript :: IO String
+chooseInstallScript = do
+  yarn <- findExecutable "yarn"
+  case yarn of
+    Just _ -> return yarnInstallScript
+    Nothing -> do
+      npm <- findExecutable "npm"
+      case npm of
+        Just _ -> return npmInstallScript
+        Nothing -> error [i|Couldn't find either yarn or npm; one of them is needed to install a TypeScript compiler.|]

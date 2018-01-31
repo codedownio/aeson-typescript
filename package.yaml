@@ -11,6 +11,7 @@ extra-source-files:
 - README.md
 - ChangeLog.md
 - test/assets/package.json
+- test/assets/npm_install.sh
 - test/assets/yarn_install.sh
 - test/assets/yarn.lock
 
