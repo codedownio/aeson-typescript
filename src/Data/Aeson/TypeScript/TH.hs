@@ -57,8 +57,8 @@ include the convenience 'HasJSONOptions' typeclass, which lets you write the opt
 @
 instance HasJSONOptions MyType where getJSONOptions _ = ('defaultOptions' {'fieldLabelModifier' = 'drop' 4})
 
-$(deriveJSON (getJSONOptions (Proxy :: Proxy MyType)) ''MyType)
-$(deriveTypeScript (getJSONOptions (Proxy :: Proxy MyType)) ''MyType)
+$('deriveJSON' ('getJSONOptions' (Proxy :: Proxy MyType)) ''MyType)
+$('deriveTypeScript' ('getJSONOptions' (Proxy :: Proxy MyType)) ''MyType)
 @
 
 Or, if you want to be even more concise and don't mind defining the instances in the same file,
@@ -66,7 +66,7 @@ Or, if you want to be even more concise and don't mind defining the instances in
 @
 myOptions = 'defaultOptions' {'fieldLabelModifier' = 'drop' 4}
 
-$(deriveJSONAndTypeScript myOptions ''MyType)
+$('deriveJSONAndTypeScript' myOptions ''MyType)
 @
 
 Remembering that the Template Haskell 'Q' monad is an ordinary monad, you can derive instances for several types at once like this:
@@ -79,8 +79,8 @@ Once you've defined all necessary instances, you can write a main function to du
 
 @
 main = putStrLn $ 'formatTSDeclarations' (
-  ('getTypeScriptDeclaration' (Proxy :: Proxy MyType1)) <>
-  ('getTypeScriptDeclaration' (Proxy :: Proxy MyType2)) <>
+  ('getTypeScriptDeclarations' (Proxy :: Proxy MyType1)) <>
+  ('getTypeScriptDeclarations' (Proxy :: Proxy MyType2)) <>
   ...
 )
 @
