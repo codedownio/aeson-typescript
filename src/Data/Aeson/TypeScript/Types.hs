@@ -18,6 +18,29 @@ import Language.Haskell.TH
 import Language.Haskell.TH.Datatype
 
 -- | The typeclass that defines how a type is turned into TypeScript.
+--
+-- 'getTypeScriptDeclarations' describes the top-level declarations that are needed for a type,
+-- while 'getTypeScriptType' describes how references to the type should be translated. 'getTypeScriptOptional'
+-- exists purely so that 'Maybe' types can be encoded with a question mark.
+--
+--  Instances for common types are built-in and are usually very simple; for example,
+--
+-- @
+-- instance TypeScript Bool where
+--   getTypeScriptType _ = "boolean"
+-- @
+--
+-- Most of the time you should not need to write instances by hand; in fact, the 'TSDeclaration'
+-- constructors are deliberately opaque. However, you may occasionally need to specify the type of something.
+-- For example, since 'UTCTime' is encoded to a Javascript timestamp string and is not built-in to this library:
+--
+-- @
+-- import Data.Time.Clock (UTCTime)
+--
+-- instance TypeScript UTCTime where
+--   getTypeScriptType _ = "string"
+-- @
+--
 class TypeScript a where
   getTypeScriptDeclarations :: Proxy a -> [TSDeclaration]
   -- ^ Get the declaration(s) needed for this type.
@@ -45,7 +68,7 @@ data TSField = TSField { fieldOptional :: Bool
 newtype TSString a = TSString { unpackTSString :: String } deriving Show
 
 instance IsString (TSString a) where
-  fromString x = TSString x
+  fromString = TSString
 
 -- * Formatting options
 

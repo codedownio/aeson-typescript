@@ -11,7 +11,7 @@ This library provides a way to generate TypeScript @.d.ts@ files that match your
 If you already use Aeson's Template Haskell support to derive your instances, then deriving TypeScript is as simple as
 
 @
-$(deriveTypeScript myAesonOptions ''MyType)
+$('deriveTypeScript' myAesonOptions ''MyType)
 @
 
 For example,
@@ -35,7 +35,7 @@ $('deriveTypeScript' ('defaultOptions' {'fieldLabelModifier' = 'drop' 4, 'constr
 Now we can use the newly created instances.
 
 @
->>> putStrLn $ formatTSDeclarations $ getTypeScriptDeclarations (Proxy :: Proxy D)
+>>> putStrLn $ 'formatTSDeclarations' $ 'getTypeScriptDeclarations' (Proxy :: Proxy D)
 
 type D\<T\> = "nullary" | IUnary\<T\> | IProduct\<T\> | IRecord\<T\>;
 
@@ -61,6 +61,30 @@ $(deriveJSON (getJSONOptions (Proxy :: Proxy MyType)) ''MyType)
 $(deriveTypeScript (getJSONOptions (Proxy :: Proxy MyType)) ''MyType)
 @
 
+Or, if you want to be even more concise and don't mind defining the instances in the same file,
+
+@
+myOptions = 'defaultOptions' {'fieldLabelModifier' = 'drop' 4}
+
+$(deriveJSONAndTypeScript myOptions ''MyType)
+@
+
+Remembering that the Template Haskell 'Q' monad is an ordinary monad, you can derive instances for several types at once like this:
+
+@
+$('mconcat' \<$\> 'traverse' ('deriveJSONAndTypeScript' myOptions) [''MyType1, ''MyType2, ''MyType3])
+@
+
+Once you've defined all necessary instances, you can write a main function to dump them out into a @.d.ts@ file. For example:
+
+@
+main = putStrLn $ 'formatTSDeclarations' (
+  ('getTypeScriptDeclaration' (Proxy :: Proxy MyType1)) <>
+  ('getTypeScriptDeclaration' (Proxy :: Proxy MyType2)) <>
+  ...
+)
+@
+
 -}
 
 module Data.Aeson.TypeScript.TH (
@@ -69,19 +93,24 @@ module Data.Aeson.TypeScript.TH (
   -- * The main typeclass
   TypeScript(..),
 
+  TSDeclaration,
+
   -- * Formatting declarations
   formatTSDeclarations,
+  formatTSDeclarations',
   formatTSDeclaration,
   FormattingOptions(..),
 
   -- * Convenience tools
   HasJSONOptions(..),
+  deriveJSONAndTypeScript,
 
   module Data.Aeson.TypeScript.Instances
   ) where
 
 import Control.Monad
 import Data.Aeson as A
+import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.Formatting
 import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Types
@@ -142,7 +171,7 @@ instance TypeScript T10 where
   getTypeScriptType _ = "T10"
 
 
--- | Generates a 'TypeScript' instance declaration for the given data type or data family instance constructor.
+-- | Generates a 'TypeScript' instance declaration for the given data type.
 deriveTypeScript :: Options
                  -- ^ Encoding options.
                  -> Name
@@ -265,6 +294,21 @@ getTypeExpression (DatatypeInfo {datatypeVars=vars, ..}) = do
   let brackets = AppE (VarE 'mconcat) (ListE [stringE "<", headType, tailsWithCommas, stringE ">"])
 
   return $ (AppE (AppE (VarE 'mappend) baseName) brackets)
+
+-- * Convenience functions
+
+-- | Convenience function to generate 'A.ToJSON', 'A.FromJSON', and 'TypeScript' instances simultaneously, so the instances are guaranteed to be in sync.
+--
+-- This function is given mainly as an illustration. If you want some other permutation of instances, such as 'A.ToJSON' and 'A.TypeScript' only, just take a look at the source and write your own version.
+deriveJSONAndTypeScript :: Options
+                        -- ^ Encoding options.
+                        -> Name
+                        -- ^ Name of the type for which to generate 'A.ToJSON', 'A.FromJSON', and 'TypeScript' instance declarations.
+                        -> Q [Dec]
+deriveJSONAndTypeScript options name = do
+  ts <- deriveTypeScript options name
+  json <- A.deriveJSON options name
+  return $ ts <> json
 
 -- * Util stuff
 

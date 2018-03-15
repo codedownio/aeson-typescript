@@ -55,6 +55,21 @@ $(deriveJSON (getJSONOptions (Proxy :: Proxy MyType)) ''MyType)
 $(deriveTypeScript (getJSONOptions (Proxy :: Proxy MyType)) ''MyType)
 ```
 
+Or, if you want to be even more concise and don't mind defining the instances in the same file,
+
+```haskell
+myOptions = defaultOptions {fieldLabelModifier = drop 4}
+
+$(deriveJSONAndTypeScript myOptions ''MyType)
+```
+
+Remembering that the Template Haskell `Q` monad is an ordinary monad, you can derive instances for several types at once like this:
+
+```haskell
+$(mconcat <$> traverse (deriveJSONAndTypeScript myOptions) [''MyType1, ''MyType2, ''MyType3])
+```
+
+
 # Suggestions for use
 
 This library was written to make it easier to typecheck your TypeScript frontend against your Haskell backend. Here's how I like to integrate it into my workflow:
