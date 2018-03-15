@@ -300,6 +300,8 @@ getTypeExpression (DatatypeInfo {datatypeVars=vars, ..}) = do
 -- | Convenience function to generate 'A.ToJSON', 'A.FromJSON', and 'TypeScript' instances simultaneously, so the instances are guaranteed to be in sync.
 --
 -- This function is given mainly as an illustration. If you want some other permutation of instances, such as 'A.ToJSON' and 'A.TypeScript' only, just take a look at the source and write your own version.
+--
+-- @since 0.1.0.4
 deriveJSONAndTypeScript :: Options
                         -- ^ Encoding options.
                         -> Name

@@ -10,6 +10,7 @@ import qualified Data.Aeson.Types as A
 import Data.Data
 import Data.Monoid
 import Data.Proxy
+import Data.Set
 import Data.String
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
@@ -19,9 +20,9 @@ import Language.Haskell.TH.Datatype
 
 -- | The typeclass that defines how a type is turned into TypeScript.
 --
--- 'getTypeScriptDeclarations' describes the top-level declarations that are needed for a type,
--- while 'getTypeScriptType' describes how references to the type should be translated. 'getTypeScriptOptional'
--- exists purely so that 'Maybe' types can be encoded with a question mark.
+-- The 'getTypeScriptDeclarations' method describes the top-level declarations that are needed for a type,
+-- while 'getTypeScriptType' describes how references to the type should be translated. The 'getTypeScriptOptional'
+-- method exists purely so that 'Maybe' types can be encoded with a question mark.
 --
 --  Instances for common types are built-in and are usually very simple; for example,
 --
@@ -32,7 +33,7 @@ import Language.Haskell.TH.Datatype
 --
 -- Most of the time you should not need to write instances by hand; in fact, the 'TSDeclaration'
 -- constructors are deliberately opaque. However, you may occasionally need to specify the type of something.
--- For example, since 'UTCTime' is encoded to a Javascript timestamp string and is not built-in to this library:
+-- For example, since 'UTCTime' is encoded to a JSON string and is not built-in to this library:
 --
 -- @
 -- import Data.Time.Clock (UTCTime)
@@ -41,6 +42,13 @@ import Language.Haskell.TH.Datatype
 --   getTypeScriptType _ = "string"
 -- @
 --
+-- If you need to write a definition for a higher-order type, it may depend on a type parameter. For example,
+-- a 'Set' is encoded to a JSON list of the underlying type:
+--
+-- @
+-- instance (TypeScript a) => TypeScript (Set a) where
+--   getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a) <> "[]";
+-- @
 class TypeScript a where
   getTypeScriptDeclarations :: Proxy a -> [TSDeclaration]
   -- ^ Get the declaration(s) needed for this type.

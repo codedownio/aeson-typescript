@@ -87,4 +87,4 @@ instance (TypeScript a, TypeScript b) => TypeScript (HashMap a b) where
   getTypeScriptType _ = [i|{[k: #{getTypeScriptType (Proxy :: Proxy a)}]: #{getTypeScriptType (Proxy :: Proxy b)}}|]
 
 instance (TypeScript a) => TypeScript (Set a) where
-  getTypeScriptType _ = (((getTypeScriptType (Proxy :: Proxy a))) <> "[]");
+  getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a) <> "[]";
