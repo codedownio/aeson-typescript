@@ -57,7 +57,4 @@ tests:
     - filepath
     - hspec
     - process
-    - tasty
-    - tasty-ant-xml
-    - tasty-hspec
     - temporary

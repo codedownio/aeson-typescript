@@ -1,7 +1,7 @@
 
 module Main where
 
-import Test.Tasty
+import Test.Hspec
 
 import HigherKind as HigherKind
 import ObjectWithSingleFieldNoTagSingleConstructors as ObjectWithSingleFieldNoTagSingleConstructors
@@ -12,14 +12,12 @@ import TwoElemArrayNoTagSingleConstructors as TwoElemArrayNoTagSingleConstructor
 import TwoElemArrayTagSingleConstructors as TwoElemArrayTagSingleConstructors
 import Untagged as Untagged
 
-allTests :: TestTree
-allTests = testGroup "All unit tests" [ObjectWithSingleFieldTagSingleConstructors.tests
-                                      , ObjectWithSingleFieldNoTagSingleConstructors.tests
-                                      , TaggedObjectTagSingleConstructors.tests
-                                      , TaggedObjectNoTagSingleConstructors.tests
-                                      , TwoElemArrayTagSingleConstructors.tests
-                                      , TwoElemArrayNoTagSingleConstructors.tests
-                                      , Untagged.tests
-                                      , HigherKind.tests]
-
-main = defaultMainWithIngredients defaultIngredients $ allTests
+main = hspec $ do
+  ObjectWithSingleFieldTagSingleConstructors.tests
+  ObjectWithSingleFieldNoTagSingleConstructors.tests
+  TaggedObjectTagSingleConstructors.tests
+  TaggedObjectNoTagSingleConstructors.tests
+  TwoElemArrayTagSingleConstructors.tests
+  TwoElemArrayNoTagSingleConstructors.tests
+  Untagged.tests
+  HigherKind.tests

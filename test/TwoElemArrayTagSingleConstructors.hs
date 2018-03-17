@@ -11,9 +11,6 @@ import Data.String.Interpolate.IsString
 import Prelude hiding (Double)
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec
-import Test.Tasty
-import Test.Tasty.Hspec (testSpec)
-import Test.Tasty.Runners
 import Util
 
 data Unit = Unit
@@ -61,8 +58,8 @@ typesAndValues = [(getTypeScriptType (Proxy :: Proxy Unit) , A.encode Unit)
                  , (getTypeScriptType (Proxy :: Proxy TwoConstructor) , A.encode $ Con2 "asdf" 42)
                  ]
 
-tests = unsafePerformIO $ testSpec "TwoElemArray with tagSingleConstructors=True" $ do
+tests = describe "TwoElemArray with tagSingleConstructors=True" $ do
   it "type checks everything with tsc" $ do
     testTypeCheckDeclarations declarations typesAndValues
 
-main = defaultMainWithIngredients defaultIngredients tests
+main = hspec tests

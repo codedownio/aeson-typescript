@@ -12,9 +12,6 @@ import Data.String.Interpolate.IsString
 import Prelude hiding (Double)
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec
-import Test.Tasty
-import Test.Tasty.Hspec (testSpec)
-import Test.Tasty.Runners
 import Util
 
 
@@ -36,7 +33,7 @@ $(deriveTypeScript A.defaultOptions ''HigherKindWithUnary)
 $(deriveJSON A.defaultOptions ''HigherKindWithUnary)
 
 
-tests = unsafePerformIO $ testSpec "Higher kinds" $ do
+tests = describe "Higher kinds" $ do
   describe "Kind * -> *" $ do
     it [i|makes the declaration and types correctly|] $ do
       (getTypeScriptDeclarations (Proxy :: Proxy HigherKind)) `shouldBe` ([
@@ -90,7 +87,7 @@ tests = unsafePerformIO $ testSpec "Higher kinds" $ do
       testTypeCheckDeclarations declarations typesAndValues
 
 
-main = defaultMainWithIngredients defaultIngredients tests
+main = hspec tests
 
 
 main' = putStrLn $ formatTSDeclarations (

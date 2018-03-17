@@ -11,9 +11,6 @@ import Data.String.Interpolate.IsString
 import Prelude hiding (Double)
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec
-import Test.Tasty
-import Test.Tasty.Hspec (testSpec)
-import Test.Tasty.Runners
 import Util
 
 
@@ -63,8 +60,8 @@ typesAndValues = [(getTypeScriptType (Proxy :: Proxy Unit) , A.encode Unit)
                  ]
 
 
-tests = unsafePerformIO $ testSpec "ObjectWithSingleField with tagSingleConstructors=True" $ do
+tests = describe "ObjectWithSingleField with tagSingleConstructors=True" $ do
   it "type checks everything with tsc" $ do
     testTypeCheckDeclarations declarations typesAndValues
 
-main = defaultMainWithIngredients defaultIngredients tests
+main = hspec tests

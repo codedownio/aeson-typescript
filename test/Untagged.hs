@@ -11,9 +11,6 @@ import Data.String.Interpolate.IsString
 import Prelude hiding (Double)
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec
-import Test.Tasty
-import Test.Tasty.Hspec (testSpec)
-import Test.Tasty.Runners
 import Util
 
 -- Between Aeson 0.11.3.0 and 1.0.0.0, UntaggedValue was added
@@ -68,13 +65,13 @@ typesAndValues = [(getTypeScriptType (Proxy :: Proxy Unit) , A.encode Unit)
                  , (getTypeScriptType (Proxy :: Proxy TwoConstructor) , A.encode $ Con2 "asdf" 42)
                  ]
 
-tests = unsafePerformIO $ testSpec "UntaggedValue" $ do
+tests = describe "UntaggedValue" $ do
   it "type checks everything with tsc" $ do
     testTypeCheckDeclarations declarations typesAndValues
 #else
-tests = unsafePerformIO $ testSpec "UntaggedValue" $ do
+tests = describe "UntaggedValue" $ do
   it "tests are disabled for this Aeson version" $ do
     2 `shouldBe` 2
 #endif
 
-main = defaultMainWithIngredients defaultIngredients tests
+main = hspec tests

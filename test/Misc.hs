@@ -15,9 +15,6 @@ import Language.Haskell.TH.Datatype
 import Prelude hiding (Double)
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec
-import Test.Tasty
-import Test.Tasty.Hspec (testSpec)
-import Test.Tasty.Runners
 
 import Debug.Trace
 
