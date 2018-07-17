@@ -53,7 +53,8 @@ declarations = ((getTypeScriptDeclarations (Proxy :: Proxy Unit)) <>
                  (getTypeScriptDeclarations (Proxy :: Proxy OneField)) <>
                  (getTypeScriptDeclarations (Proxy :: Proxy TwoFieldRecordless)) <>
                  (getTypeScriptDeclarations (Proxy :: Proxy TwoField)) <>
-                 (getTypeScriptDeclarations (Proxy :: Proxy TwoConstructor))
+                 (getTypeScriptDeclarations (Proxy :: Proxy TwoConstructor)) <>
+                 (getTypeScriptDeclarations (Proxy :: Proxy MixedNullary))
                )
 
 typesAndValues = [(getTypeScriptType (Proxy :: Proxy Unit) , A.encode Unit)
@@ -63,6 +64,8 @@ typesAndValues = [(getTypeScriptType (Proxy :: Proxy Unit) , A.encode Unit)
                  , (getTypeScriptType (Proxy :: Proxy TwoField) , A.encode $ TwoField 42 "asdf")
                  , (getTypeScriptType (Proxy :: Proxy TwoConstructor) , A.encode $ Con1 "asdf")
                  , (getTypeScriptType (Proxy :: Proxy TwoConstructor) , A.encode $ Con2 "asdf" 42)
+                 , (getTypeScriptType (Proxy :: Proxy MixedNullary) , A.encode $ Normal)
+                 , (getTypeScriptType (Proxy :: Proxy MixedNullary) , A.encode $ Other "asdf")
                  ]
 
 tests = describe "UntaggedValue" $ do

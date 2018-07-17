@@ -15,12 +15,12 @@ import Language.Haskell.TH.Datatype
 import Prelude hiding (Double)
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec
-
-import Debug.Trace
+import Util
 
 data HigherKind a = HigherKind { higherKindList :: [a] }
 
 $(deriveTypeScript A.defaultOptions ''HigherKind)
+$(deriveJSON A.defaultOptions ''HigherKind)
 
 data Foo = Foo { fooString :: String
                , fooInt :: Int }
@@ -33,20 +33,39 @@ data Baz = Baz { bazString :: String }
 
 $(deriveTypeScript A.defaultOptions ''Foo)
 $(deriveTypeScript A.defaultOptions ''Baz)
+$(deriveJSON A.defaultOptions ''Foo)
+$(deriveJSON A.defaultOptions ''Baz)
 
 
 data EvenHigherKind a b = EvenHigherKind { someList :: [b]
                                          , higherKindThing :: HigherKind a }
 
 $(deriveTypeScript A.defaultOptions ''EvenHigherKind)
+$(deriveJSON A.defaultOptions ''EvenHigherKind)
 
-main = putStrLn $ formatTSDeclarations (
-  (getTypeScriptDeclarations (Proxy :: Proxy HigherKind))
-  <> (getTypeScriptDeclarations (Proxy :: Proxy Foo))
-  <> (getTypeScriptDeclarations (Proxy :: Proxy Baz))
-  <> (getTypeScriptDeclarations (Proxy :: Proxy D))
-  <> (getTypeScriptDeclarations (Proxy :: Proxy EvenHigherKind))
-  )
+declarations = (getTypeScriptDeclarations (Proxy :: Proxy HigherKind))
+            <> (getTypeScriptDeclarations (Proxy :: Proxy Foo))
+            <> (getTypeScriptDeclarations (Proxy :: Proxy Baz))
+            <> (getTypeScriptDeclarations (Proxy :: Proxy D))
+            <> (getTypeScriptDeclarations (Proxy :: Proxy EvenHigherKind))
+
+typesAndValues = [ (getTypeScriptType (Proxy :: Proxy (HigherKind String)) , A.encode (HigherKind ["asdf","ghj"] :: HigherKind String))
+                 , (getTypeScriptType (Proxy :: Proxy Foo) , A.encode (Foo "asdf" 42))
+                 , (getTypeScriptType (Proxy :: Proxy Foo) , A.encode (Bar "asdf" Nothing (Baz "ghj") (HigherKind ["asdf","ghj"])))
+                 , (getTypeScriptType (Proxy :: Proxy Foo) , A.encode (Bar "asdf" (Just 42) (Baz "ghj") (HigherKind ["asdf","ghj"])))
+                 , (getTypeScriptType (Proxy :: Proxy Baz) , A.encode (Baz "asdf"))
+                 , (getTypeScriptType (Proxy :: Proxy (EvenHigherKind Int String)) , A.encode (EvenHigherKind ["asdf","ghi"] (HigherKind [1,2,3]) :: EvenHigherKind Int String))
+                 , (getTypeScriptType (Proxy :: Proxy (D Int)) , A.encode (Nullary :: D Int))
+                 , (getTypeScriptType (Proxy :: Proxy (D Int)) , A.encode (Unary 42 :: D Int))
+                 , (getTypeScriptType (Proxy :: Proxy (D Int)) , A.encode (Product "asdf" 'g' 42 :: D Int))
+                 , (getTypeScriptType (Proxy :: Proxy (D Int)) , A.encode d)
+                 ]
+
+tests = describe "Misc" $ do
+  it "type checks everything with tsc" $ do
+    testTypeCheckDeclarations declarations typesAndValues
+
+main = putStrLn $ formatTSDeclarations declarations
 
 
 data D a = Nullary
