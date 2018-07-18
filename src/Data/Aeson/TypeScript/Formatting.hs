@@ -2,21 +2,12 @@
 
 module Data.Aeson.TypeScript.Formatting where
 
-import Control.Monad
-import Control.Monad.Writer
-import Control.Monad.Writer.Lazy
-import qualified Data.Aeson as A
 import Data.Aeson.TypeScript.Types
-import Data.Data
-import Data.Monoid
-import Data.String
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
-import qualified Data.Text.IO as T
-import Language.Haskell.TH
-import Language.Haskell.TH.Datatype
 
 -- | Same as 'formatTSDeclarations'', but uses default formatting options.
+formatTSDeclarations :: [TSDeclaration] -> String
 formatTSDeclarations = formatTSDeclarations' defaultFormattingOptions
 
 -- | Format a single TypeScript declaration. This version accepts a FormattingOptions object in case you want more control over the output.

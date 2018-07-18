@@ -5,26 +5,14 @@
 
 module Data.Aeson.TypeScript.Instances where
 
-import Control.Monad
-import Control.Monad.Writer
-import Control.Monad.Writer.Lazy
 import qualified Data.Aeson as A
-import qualified Data.Aeson.TH as A
 import Data.Aeson.TypeScript.Types
 import Data.Data
 import Data.HashMap.Strict
-import Data.Monoid
-import Data.Proxy
 import Data.Set
-import Data.String
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
-import qualified Data.Text.IO as T
 import qualified Data.Text.Lazy as TL
-import Language.Haskell.TH
-import Language.Haskell.TH.Datatype
-import Language.Haskell.TH.Quote
-import Language.Haskell.TH.Syntax
 
 instance TypeScript () where
   getTypeScriptType _ = "void"

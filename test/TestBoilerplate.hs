@@ -7,10 +7,7 @@ import qualified Data.Aeson as A
 import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.TH
 import Data.Proxy
-import Data.String.Interpolate
 import Language.Haskell.TH
-import Language.Haskell.TH.Datatype
-import Language.Haskell.TH.Quote
 
 data Unit = Unit
 data OneFieldRecordless = OneFieldRecordless Int
@@ -35,18 +32,26 @@ testDeclarations testName aesonOptions = do
     deriveInstances ''Complex
 
   typesAndValues :: Exp <- [e|[(getTypeScriptType (Proxy :: Proxy Unit), A.encode Unit)
+
                               , (getTypeScriptType (Proxy :: Proxy OneFieldRecordless), A.encode $ OneFieldRecordless 42)
+
                               , (getTypeScriptType (Proxy :: Proxy OneField), A.encode $ OneField "asdf")
+
                               , (getTypeScriptType (Proxy :: Proxy TwoFieldRecordless), A.encode $ TwoFieldRecordless 42 "asdf")
+
                               , (getTypeScriptType (Proxy :: Proxy TwoField), A.encode $ TwoField 42 "asdf")
+
                               , (getTypeScriptType (Proxy :: Proxy TwoConstructor), A.encode $ Con1 "asdf")
                               , (getTypeScriptType (Proxy :: Proxy TwoConstructor), A.encode $ Con2 "asdf" 42)
+
                               , (getTypeScriptType (Proxy :: Proxy Hybrid), A.encode $ HybridSimple 42)
                               , (getTypeScriptType (Proxy :: Proxy Hybrid), A.encode $ HybridRecord "asdf")
+
                               , (getTypeScriptType (Proxy :: Proxy (Complex Int)), A.encode (Nullary :: Complex Int))
                               , (getTypeScriptType (Proxy :: Proxy (Complex Int)), A.encode (Unary 42 :: Complex Int))
                               , (getTypeScriptType (Proxy :: Proxy (Complex Int)), A.encode (Product "asdf" 'g' 42 :: Complex Int))
-                              , (getTypeScriptType (Proxy :: Proxy (Complex Int)), A.encode ((Record { testOne = 3, testTwo = True, testThree = Product "test" 'A' 123}) :: Complex Int))]|]
+                              , (getTypeScriptType (Proxy :: Proxy (Complex Int)), A.encode ((Record { testOne = 3, testTwo = True, testThree = Product "test" 'A' 123}) :: Complex Int))]
+                           |]
 
   declarations :: Exp <- [e|getTypeScriptDeclarations (Proxy :: Proxy Unit)
                          <> getTypeScriptDeclarations (Proxy :: Proxy OneFieldRecordless)

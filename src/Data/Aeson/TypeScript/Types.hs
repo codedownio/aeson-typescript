@@ -2,21 +2,9 @@
 
 module Data.Aeson.TypeScript.Types where
 
-import Control.Monad
-import Control.Monad.Writer
-import Control.Monad.Writer.Lazy
 import qualified Data.Aeson as A
-import qualified Data.Aeson.Types as A
 import Data.Data
-import Data.Monoid
-import Data.Proxy
-import Data.Set
 import Data.String
-import Data.String.Interpolate.IsString
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
-import Language.Haskell.TH
-import Language.Haskell.TH.Datatype
 
 -- | The typeclass that defines how a type is turned into TypeScript.
 --

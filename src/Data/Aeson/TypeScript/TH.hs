@@ -114,11 +114,8 @@ import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.Formatting
 import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Types
-import Data.Aeson.Types as A
-import Data.List (inits, tails)
 import qualified Data.Map as M
 import Data.Maybe
-import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
