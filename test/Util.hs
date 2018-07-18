@@ -82,7 +82,7 @@ testTypeCheckDeclarations tsDeclarations typesAndVals = withSystemTempDirectory 
 
 
 ensureTSCExists :: IO ()
-ensureTSCExists = doesFileExist localTSC >>= \exists -> when (not exists) $ void $ do
+ensureTSCExists = doesFileExist localTSC >>= \exists -> unless exists $ void $ do
   cwd <- getCurrentDirectory
 
   installScript <- chooseInstallScript

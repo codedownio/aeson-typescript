@@ -10,7 +10,6 @@ import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString
 import Prelude hiding (Double)
-import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec
 import Util
 
