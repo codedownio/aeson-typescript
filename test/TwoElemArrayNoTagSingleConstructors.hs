@@ -1,4 +1,4 @@
-{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns #-}
+{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns, KindSignatures #-}
 
 module TwoElemArrayNoTagSingleConstructors (tests) where
 
@@ -39,6 +39,16 @@ data TwoConstructor = Con1 { con1String :: String }
                            , con2Int :: Int }
 $(deriveJSON (A.defaultOptions {sumEncoding=TwoElemArray}) ''TwoConstructor)
 $(deriveTypeScript (A.defaultOptions {sumEncoding=TwoElemArray}) ''TwoConstructor)
+
+data Complex a = Nullary
+               | Unary Int
+               | Product String Char a
+               | Record { testOne   :: Int
+                        , testTwo   :: Bool
+                        , testThree :: Complex a
+                        } deriving Eq
+$(deriveJSON (A.defaultOptions {sumEncoding=TwoElemArray}) ''Complex)
+$(deriveTypeScript (A.defaultOptions {sumEncoding=TwoElemArray}) ''Complex)
 
 
 declarations = ((getTypeScriptDeclarations (Proxy :: Proxy Unit)) <>

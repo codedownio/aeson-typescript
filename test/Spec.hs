@@ -4,7 +4,6 @@ module Main where
 import Test.Hspec
 
 import qualified HigherKind as HigherKind
-import qualified Misc as Misc
 import qualified ObjectWithSingleFieldNoTagSingleConstructors as ObjectWithSingleFieldNoTagSingleConstructors
 import qualified ObjectWithSingleFieldTagSingleConstructors as ObjectWithSingleFieldTagSingleConstructors
 import qualified TaggedObjectNoTagSingleConstructors as TaggedObjectNoTagSingleConstructors
@@ -22,4 +21,3 @@ main = hspec $ do
   TwoElemArrayNoTagSingleConstructors.tests
   Untagged.tests
   HigherKind.tests
-  Misc.tests
