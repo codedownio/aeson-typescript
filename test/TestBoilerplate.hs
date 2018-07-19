@@ -8,6 +8,8 @@ import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.TH
 import Data.Proxy
 import Language.Haskell.TH
+import Test.Hspec
+import Util
 
 data Unit = Unit
 data OneFieldRecordless = OneFieldRecordless Int
