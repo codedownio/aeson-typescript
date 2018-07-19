@@ -386,7 +386,7 @@ getTagSingleConstructors :: Options -> Bool
 #if MIN_VERSION_aeson(1,2,0)
 getTagSingleConstructors options = tagSingleConstructors options
 #else
-getTagSingleConstructors options = False
+getTagSingleConstructors _ = False
 #endif
 
 -- Between Template Haskell 2.10 and 2.11, the ability to look up which extensions are turned on was added
@@ -411,5 +411,8 @@ isTwoElemArray TwoElemArray = True
 isTwoElemArray _ = False
 
 -- Older versions of Aeson don't have an Eq instance for SumEncoding so we do this
+-- UntaggedValue was added between Aeson 0.11.3.0 and 1.0.0.0
+#if MIN_VERSION_aeson(1,0,0)
 isUntaggedValue UntaggedValue = True
+#endif
 isUntaggedValue _ = False
