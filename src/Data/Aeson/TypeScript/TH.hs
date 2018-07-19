@@ -37,11 +37,21 @@ Now we can use the newly created instances.
 @
 >>> putStrLn $ 'formatTSDeclarations' $ 'getTypeScriptDeclarations' (Proxy :: Proxy D)
 
-type D\<T\> = "nullary" | IUnary\<T\> | IProduct\<T\> | IRecord\<T\>;
+type D\<T\> = INullary\<T\> | IUnary\<T\> | IProduct\<T\> | IRecord\<T\>;
 
-type IUnary\<T\> = number;
+interface INullary\<T\> {
+  tag: "nullary";
+}
 
-type IProduct\<T\> = [string, string, T];
+interface IUnary\<T\> {
+  tag: "unary";
+  contents: number;
+}
+
+interface IProduct\<T\> {
+  tag: "product";
+  contents: [string, string, T];
+}
 
 interface IRecord\<T\> {
   tag: "record";
