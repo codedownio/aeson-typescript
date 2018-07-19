@@ -116,6 +116,7 @@ import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Types
 import qualified Data.Map as M
 import Data.Maybe
+import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
@@ -223,7 +224,7 @@ getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
 handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> (Exp, Maybe Exp)
 handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) =
-  if | isSingleConstructorType && not (tagSingleConstructors options) -> (stringE interfaceName, singleConstructorEncoding)
+  if | isSingleConstructorType && not (getTagSingleConstructors options) -> (stringE interfaceName, singleConstructorEncoding)
 
      | allConstructorsAreNullary datatypeCons && allNullaryToStringTag options -> stringEncoding
      -- With UntaggedValue, nullary constructors are encoded as strings

@@ -3,6 +3,7 @@
 module Data.Aeson.TypeScript.Types where
 
 import qualified Data.Aeson as A
+import qualified Data.Aeson.TH as A
 import Data.Data
 import Data.String
 

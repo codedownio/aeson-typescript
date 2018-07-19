@@ -3,6 +3,7 @@
 module Data.Aeson.TypeScript.Formatting where
 
 import Data.Aeson.TypeScript.Types
+import Data.Monoid
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 

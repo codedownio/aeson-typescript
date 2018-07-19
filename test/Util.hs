@@ -4,6 +4,7 @@ module Util where
 
 import Control.Monad
 import Data.Aeson as A
+import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.TH
 import qualified Data.ByteString.Lazy as B
 import Data.Proxy

@@ -3,6 +3,7 @@
 module ObjectWithSingleFieldNoTagSingleConstructors (tests) where
 
 import Data.Aeson as A
+import Data.Aeson.TH as A
 import Test.Hspec
 import TestBoilerplate
 import Util
