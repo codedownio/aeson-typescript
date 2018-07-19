@@ -224,14 +224,19 @@ getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
 handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> (Exp, Maybe Exp)
 handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) =
   if | isSingleConstructorType && not (tagSingleConstructors options) -> (stringE interfaceName, singleConstructorEncoding)
-     | allConstructorsAreNullary datatypeCons && (allNullaryToStringTag options) -> (stringE [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|], Nothing)
+
+     | allConstructorsAreNullary datatypeCons && allNullaryToStringTag options -> stringEncoding
+     -- With UntaggedValue, nullary constructors are encoded as strings
+     | (isUntaggedValue $ sumEncoding options) && isConstructorNullary ci -> stringEncoding
 
      -- Treat as a sum
      | isObjectWithSingleField $ sumEncoding options -> (stringE [i|{#{show constructorNameToUse}: #{interfaceName}}|], singleConstructorEncoding)
      | isTwoElemArray $ sumEncoding options -> (stringE [i|[#{show constructorNameToUse}, #{interfaceName}]|], singleConstructorEncoding)
+     | isUntaggedValue $ sumEncoding options -> (stringE interfaceName, singleConstructorEncoding)
      | otherwise -> (stringE interfaceName, taggedConstructorEncoding)
 
   where
+    stringEncoding = (stringE [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|], Nothing)
 
     singleConstructorEncoding = if | constructorVariant ci == NormalConstructor -> tupleEncoding
                                    | otherwise -> Just $ assembleInterfaceDeclaration options (constructorName ci) genericVariables (ListE (getTSFields namesAndTypes))
@@ -403,3 +408,7 @@ isObjectWithSingleField _ = False
 -- Older versions of Aeson don't have an Eq instance for SumEncoding so we do this
 isTwoElemArray TwoElemArray = True
 isTwoElemArray _ = False
+
+-- Older versions of Aeson don't have an Eq instance for SumEncoding so we do this
+isUntaggedValue UntaggedValue = True
+isUntaggedValue _ = False
