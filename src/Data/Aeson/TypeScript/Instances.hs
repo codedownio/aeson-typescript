@@ -9,6 +9,7 @@ import qualified Data.Aeson as A
 import Data.Aeson.TypeScript.Types
 import Data.Data
 import Data.HashMap.Strict
+import Data.Monoid
 import Data.Set
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
