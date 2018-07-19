@@ -222,50 +222,46 @@ getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
 handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> (Exp, Maybe Exp)
-handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) = (typeDeclarationToUse, declaration)
+handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) =
+  if | isSingleConstructorType && not (tagSingleConstructors options) -> (stringE interfaceName, singleConstructorEncoding)
+     | allConstructorsAreNullary datatypeCons && (allNullaryToStringTag options) -> (stringE [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|], Nothing)
+
+     -- Treat as a sum
+     | isObjectWithSingleField $ sumEncoding options -> (stringE [i|{#{show constructorNameToUse}: #{interfaceName}}|], singleConstructorEncoding)
+     | isTwoElemArray $ sumEncoding options -> (stringE [i|[#{show constructorNameToUse}, #{interfaceName}]|], singleConstructorEncoding)
+     | otherwise -> (stringE interfaceName, taggedConstructorEncoding)
+
   where
+
+    singleConstructorEncoding = if | constructorVariant ci == NormalConstructor -> tupleEncoding
+                                   | otherwise -> Just $ assembleInterfaceDeclaration options (constructorName ci) genericVariables (ListE (getTSFields namesAndTypes))
+
+    taggedConstructorEncoding = Just $ assembleInterfaceDeclaration options (constructorName ci) genericVariables (ListE (tagField ++ getTSFields namesAndTypes))
+
     -- * Type declaration to use
     interfaceName = getInterfaceName (constructorName ci) <> getGenericBrackets genericVariables
-    typeDeclarationToUse = if | shouldEncodeToString -> stringE [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|]
-                              | (isObjectWithSingleField $ (sumEncoding options)) && shouldTag -> stringE [i|{#{show constructorNameToUse}: #{interfaceName}}|]
-                              | (isTwoElemArray $ (sumEncoding options)) && shouldTag -> stringE [i|[#{show constructorNameToUse}, #{interfaceName}]|]
-                              | otherwise -> stringE interfaceName
 
-    -- * Declaration
-    shouldEncodeToTuple = if | isTaggedObject options -> if | getTagSingleConstructors options -> False
-                                                            | otherwise -> allConstructorsAreNormal
-                             | otherwise -> True
+    tupleEncoding = Just $ applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ getInterfaceName (constructorName ci)
+                                                                   , ListE [stringE x | x <- genericVariables]
+                                                                   , ListE [getTypeAsStringExp contentsTupleType]]
 
-    shouldEncodeToString = if | shouldEncodeToTuple -> False
-                              | (allNullaryToStringTag options) && (allConstructorsAreNullary datatypeCons) -> True
-                              | sumEncoding options == UntaggedValue && isConstructorNullary ci -> True
-                              | otherwise -> False
+    namesAndTypes :: [(String, Type)] = case constructorVariant ci of
+      RecordConstructor names -> zip (fmap ((fieldLabelModifier options) . lastNameComponent') names) (constructorFields ci)
+      NormalConstructor -> case sumEncoding options of
+        TaggedObject _ contentsFieldName -> if | isConstructorNullary ci -> []
+                                                          | otherwise -> [(contentsFieldName, contentsTupleType)]
+        _ -> [(constructorNameToUse, contentsTupleType)]
 
-    declaration = if | shouldEncodeToTuple -> Just $ applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ getInterfaceName (constructorName ci),
-                                                                                              ListE [stringE x | x <- genericVariables],
-                                                                                              ListE [getTypeAsStringExp contentsTupleType]]
-                     | shouldEncodeToString -> Nothing
+    tagField = case sumEncoding options of
+      TaggedObject tagFieldName _ -> [(AppE (AppE (AppE (ConE 'TSField) (ConE 'False))
+                                              (stringE tagFieldName))
+                                        (stringE [i|"#{constructorNameToUse}"|]))]
+      _ -> []
 
-                     | otherwise -> Just $ assembleInterfaceDeclaration options (constructorName ci) genericVariables (ListE (tagField ++ getTSFields namesAndTypes))
-                          where
-                            namesAndTypes :: [(String, Type)] = case constructorVariant ci of
-                              RecordConstructor names -> zip (fmap ((fieldLabelModifier options) . lastNameComponent') names) (constructorFields ci)
-                              NormalConstructor -> case sumEncoding options of
-                                TaggedObject tagFieldName contentsFieldName -> if | isConstructorNullary ci -> []
-                                                                                  | otherwise -> [(contentsFieldName, contentsTupleType)]
-                                _ -> [(constructorNameToUse, contentsTupleType)]
+    isSingleConstructorType = length datatypeCons == 1
 
-                            tagField = case sumEncoding options of
-                              TaggedObject tagFieldName contentsFieldName | shouldTag -> [(AppE (AppE (AppE (ConE 'TSField) (ConE 'False))
-                                                                                                 (stringE tagFieldName))
-                                                                                           (stringE [i|"#{constructorNameToUse}"|]))]
-                              _ -> []
-
-    shouldTag = (length datatypeCons > 1) || (tagSingleConstructors options)
     constructorNameToUse = (constructorTagModifier options) $ lastNameComponent' (constructorName ci)
     contentsTupleType = getTupleType (constructorFields ci)
-
-    allConstructorsAreNormal = all (\x -> constructorVariant x == NormalConstructor) datatypeCons
 
 -- | Helper for handleConstructor
 getTSFields :: [(String, Type)] -> [Exp]

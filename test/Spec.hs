@@ -10,7 +10,8 @@ import qualified TaggedObjectNoTagSingleConstructors
 import qualified TaggedObjectTagSingleConstructors
 import qualified TwoElemArrayNoTagSingleConstructors
 import qualified TwoElemArrayTagSingleConstructors
-import qualified Untagged
+import qualified UntaggedNoTagSingleConstructors
+import qualified UntaggedTagSingleConstructors
 
 main = hspec $ do
   ObjectWithSingleFieldTagSingleConstructors.tests
@@ -19,5 +20,6 @@ main = hspec $ do
   TaggedObjectNoTagSingleConstructors.tests
   TwoElemArrayTagSingleConstructors.tests
   TwoElemArrayNoTagSingleConstructors.tests
-  Untagged.tests
+  UntaggedTagSingleConstructors.tests
+  UntaggedNoTagSingleConstructors.tests
   HigherKind.tests
