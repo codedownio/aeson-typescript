@@ -33,7 +33,7 @@ dependencies:
 - mtl
 - template-haskell
 - text
-- th-abstraction
+- th-abstraction < 0.3
 - unordered-containers
 
 library:
