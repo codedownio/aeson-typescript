@@ -102,6 +102,14 @@ matrix:
     compiler: ": #stack 8.4.1"
     addons: {apt: {packages: [libgmp-dev]}}
 
+  - env: BUILD=stack ARGS="--resolver lts-13.11"
+    compiler: ": #stack 8.6.3"
+    addons: {apt: {packages: [libgmp-dev]}}
+
+  - env: BUILD=stack ARGS="--resolver lts-13.19"
+    compiler: ": #stack 8.6.4"
+    addons: {apt: {packages: [libgmp-dev]}}
+
   # Nightly builds are allowed to fail
   - env: BUILD=stack ARGS="--resolver nightly"
     compiler: ": #stack nightly"
