@@ -69,12 +69,17 @@ instance IsString (TSString a) where
 
 -- * Formatting options
 
-data FormattingOptions = FormattingOptions {
-  numIndentSpaces :: Int
+data FormattingOptions = FormattingOptions
+  { numIndentSpaces       :: Int
   -- ^ How many spaces to indent TypeScript blocks
+  , interfaceNameModifier :: String -> String
+  -- ^ How to modify an output interface or type name
   }
 
-defaultFormattingOptions = FormattingOptions 2
+defaultFormattingOptions = FormattingOptions
+  { numIndentSpaces = 2
+  , interfaceNameModifier = id
+  }
 
 -- | Convenience typeclass class you can use to "attach" a set of Aeson encoding options to a type.
 class HasJSONOptions a where
