@@ -14,7 +14,7 @@ formatTSDeclarations = formatTSDeclarations' defaultFormattingOptions
 -- | Format a single TypeScript declaration. This version accepts a FormattingOptions object in case you want more control over the output.
 formatTSDeclaration :: FormattingOptions -> TSDeclaration -> String
 formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVariables names) =
-  [i|type #{interfaceNameModifier name}#{getGenericBrackets genericVariables} = #{alternatives};|]
+  [i|type #{typeNameModifier name}#{getGenericBrackets genericVariables} = #{alternatives};|]
   where alternatives = T.intercalate " | " (fmap T.pack names)
 
 formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceName genericVariables members) = [i|interface #{modifiedInterfaceName}#{getGenericBrackets genericVariables} {

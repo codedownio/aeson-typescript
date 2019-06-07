@@ -73,12 +73,15 @@ data FormattingOptions = FormattingOptions
   { numIndentSpaces       :: Int
   -- ^ How many spaces to indent TypeScript blocks
   , interfaceNameModifier :: String -> String
-  -- ^ How to modify an output interface or type name
+  -- ^ How to modify an output interface name
+  , typeNameModifier :: String -> String
+  -- ^ How to modify an output type name
   }
 
 defaultFormattingOptions = FormattingOptions
   { numIndentSpaces = 2
   , interfaceNameModifier = id
+  , typeNameModifier = id
   }
 
 -- | Convenience typeclass class you can use to "attach" a set of Aeson encoding options to a type.
