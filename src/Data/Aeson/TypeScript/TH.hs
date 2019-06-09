@@ -197,9 +197,15 @@ deriveTypeScript options name = do
         1 -> [ConT ''T]
         n -> take (length datatypeVars) [ConT ''T1, ConT ''T2, ConT ''T3, ConT ''T4, ConT ''T5, ConT ''T6, ConT ''T7, ConT ''T8, ConT ''T9, ConT ''T10]
 
+#if MIN_VERSION_th_abstraction(0,3,0)
+  let subMap = M.fromList $ zip (catMaybes $ fmap getFreeVariableName datatypeInstTypes) templateVarsToUse
+  let fullyQualifiedDatatypeInfo = (datatypeInfo {datatypeInstTypes = templateVarsToUse
+                                                 , datatypeCons = fmap (applySubstitution subMap) datatypeCons})
+#else
   let subMap = M.fromList $ zip (catMaybes $ fmap getFreeVariableName datatypeVars) templateVarsToUse
   let fullyQualifiedDatatypeInfo = (datatypeInfo {datatypeVars = templateVarsToUse
                                                  , datatypeCons = fmap (applySubstitution subMap) datatypeCons})
+#endif
   getTypeFn <- getTypeExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
   getDeclarationFn <- getDeclarationFunctionBody options name fullyQualifiedDatatypeInfo
   let fullyGenericInstance = mkInstance [] (AppT (ConT ''TypeScript) (ConT name)) [getTypeFn, getDeclarationFn]
@@ -207,7 +213,11 @@ deriveTypeScript options name = do
   otherInstances <- case length datatypeVars > 0 of
     True -> do
       otherGetTypeFn <- getTypeExpression datatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
+#if MIN_VERSION_th_abstraction(0,3,0)
+      return [mkInstance (fmap getDatatypePredicate datatypeInstTypes) (AppT (ConT ''TypeScript) (foldl (\x y -> AppT x y) (ConT name) datatypeInstTypes)) [otherGetTypeFn]]
+#else
       return [mkInstance (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) (foldl (\x y -> AppT x y) (ConT name) datatypeVars)) [otherGetTypeFn]]
+#endif
     False -> return []
 
   return $ fullyGenericInstance : otherInstances
@@ -297,9 +307,15 @@ assembleInterfaceDeclaration options constructorName genericVariables members = 
 -- | Get an expression to be used for getTypeScriptType.
 -- For datatypes of kind * this is easy, since we can just evaluate the string literal in TH.
 -- For higher-kinded types, we need to make an expression which evaluates the template types and fills it in.
+#if MIN_VERSION_th_abstraction(0,3,0)
+getTypeExpression :: DatatypeInfo -> Q Exp
+getTypeExpression (DatatypeInfo {datatypeInstTypes=[], ..}) = return $ stringE $ getTypeName datatypeName
+getTypeExpression (DatatypeInfo {datatypeInstTypes=vars, ..}) = do
+#else
 getTypeExpression :: DatatypeInfo -> Q Exp
 getTypeExpression (DatatypeInfo {datatypeVars=[], ..}) = return $ stringE $ getTypeName datatypeName
 getTypeExpression (DatatypeInfo {datatypeVars=vars, ..}) = do
+#endif
   let baseName = stringE $ getTypeName datatypeName
   let typeNames = ListE [getTypeAsStringExp typ | typ <- vars]
   let headType = AppE (VarE 'head) typeNames
