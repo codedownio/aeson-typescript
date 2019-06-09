@@ -110,6 +110,12 @@ matrix:
     compiler: ": #stack 8.6.4"
     addons: {apt: {packages: [libgmp-dev]}}
 
+  # To test against th-abstraction 0.3, which is not contained in
+  # earlier snapshots:
+  - env: BUILD=stack ARGS="--resolver nightly-2019-06-09"
+    compiler: ": #stack nightly-2019-06-09"
+    addons: {apt: {packages: [libgmp-dev]}}
+
   # Nightly builds are allowed to fail
   - env: BUILD=stack ARGS="--resolver nightly"
     compiler: ": #stack nightly"
