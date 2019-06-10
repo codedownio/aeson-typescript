@@ -17,7 +17,8 @@ formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVar
   [i|type #{typeNameModifier name}#{getGenericBrackets genericVariables} = #{alternatives};|]
   where alternatives = T.intercalate " | " (fmap T.pack names)
 
-formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceName genericVariables members) = [i|interface #{modifiedInterfaceName}#{getGenericBrackets genericVariables} {
+formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceName genericVariables members) =
+  [i|interface #{modifiedInterfaceName}#{getGenericBrackets genericVariables} {
 #{lines}
 }|] where lines = T.intercalate "\n" $ fmap T.pack [(replicate numIndentSpaces ' ') <> formatTSField member <> ";"| member <- members]
           modifiedInterfaceName = (\(i, name) -> i <> interfaceNameModifier name) . splitAt 1 $ interfaceName

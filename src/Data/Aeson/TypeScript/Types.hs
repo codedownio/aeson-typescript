@@ -73,9 +73,9 @@ data FormattingOptions = FormattingOptions
   { numIndentSpaces       :: Int
   -- ^ How many spaces to indent TypeScript blocks
   , interfaceNameModifier :: String -> String
-  -- ^ How to modify an output interface name
+  -- ^ Function applied to generated interface names
   , typeNameModifier :: String -> String
-  -- ^ How to modify an output type name
+  -- ^ Function applied to generated type names
   }
 
 defaultFormattingOptions = FormattingOptions
