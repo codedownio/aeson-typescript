@@ -13,11 +13,14 @@ formatTSDeclarations = formatTSDeclarations' defaultFormattingOptions
 
 -- | Format a single TypeScript declaration. This version accepts a FormattingOptions object in case you want more control over the output.
 formatTSDeclaration :: FormattingOptions -> TSDeclaration -> String
-formatTSDeclaration (FormattingOptions {numIndentSpaces}) (TSTypeAlternatives name genericVariables names) = [i|type #{name}#{getGenericBrackets genericVariables} = #{alternatives};|]
+formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVariables names) =
+  [i|type #{typeNameModifier name}#{getGenericBrackets genericVariables} = #{alternatives};|]
   where alternatives = T.intercalate " | " (fmap T.pack names)
-formatTSDeclaration (FormattingOptions {numIndentSpaces}) (TSInterfaceDeclaration interfaceName genericVariables members) = [i|interface #{interfaceName}#{getGenericBrackets genericVariables} {
+
+formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceName genericVariables members) = [i|interface #{modifiedInterfaceName}#{getGenericBrackets genericVariables} {
 #{lines}
 }|] where lines = T.intercalate "\n" $ fmap T.pack [(replicate numIndentSpaces ' ') <> formatTSField member <> ";"| member <- members]
+          modifiedInterfaceName = (\(i, name) -> i <> interfaceNameModifier name) . splitAt 1 $ interfaceName
 
 -- | Format a list of TypeScript declarations into a string, suitable for putting directly into a @.d.ts@ file.
 formatTSDeclarations' :: FormattingOptions -> [TSDeclaration] -> String
