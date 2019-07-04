@@ -103,7 +103,8 @@ module Data.Aeson.TypeScript.TH (
   -- * The main typeclass
   TypeScript(..),
 
-  TSDeclaration,
+  TSDeclaration(..),
+  TSField(..),
 
   -- * Formatting declarations
   formatTSDeclarations,
