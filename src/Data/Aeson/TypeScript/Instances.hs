@@ -9,6 +9,7 @@ import qualified Data.Aeson as A
 import Data.Aeson.TypeScript.Types
 import Data.Data
 import Data.HashMap.Strict
+import Data.Map
 import Data.Monoid
 import Data.Set
 import Data.String.Interpolate.IsString
@@ -73,6 +74,9 @@ instance TypeScript A.Value where
   getTypeScriptType _ = "any";
 
 instance (TypeScript a, TypeScript b) => TypeScript (HashMap a b) where
+  getTypeScriptType _ = [i|{[k: #{getTypeScriptType (Proxy :: Proxy a)}]: #{getTypeScriptType (Proxy :: Proxy b)}}|]
+
+instance (TypeScript a, TypeScript b) => TypeScript (Map a b) where
   getTypeScriptType _ = [i|{[k: #{getTypeScriptType (Proxy :: Proxy a)}]: #{getTypeScriptType (Proxy :: Proxy b)}}|]
 
 instance (TypeScript a) => TypeScript (Set a) where
