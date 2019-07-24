@@ -244,8 +244,8 @@ getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
 handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> (Exp, Maybe Exp)
 handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) =
-  if | isSingleConstructorType && not (getTagSingleConstructors options) -> (stringE interfaceName, singleConstructorEncoding)
-
+  if | isSingleConstructorType && isUnaryRecord ci && unwrapUnaryRecords options -> (getTypeAsStringExp . head . constructorFields $ ci, Nothing)
+     | isSingleConstructorType && not (getTagSingleConstructors options) -> (stringE interfaceName, singleConstructorEncoding)
      | allConstructorsAreNullary datatypeCons && allNullaryToStringTag options -> stringEncoding
      -- With UntaggedValue, nullary constructors are encoded as strings
      | (isUntaggedValue $ sumEncoding options) && isConstructorNullary ci -> stringEncoding
@@ -277,6 +277,9 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
         TaggedObject _ contentsFieldName -> if | isConstructorNullary ci -> []
                                                           | otherwise -> [(contentsFieldName, contentsTupleType)]
         _ -> [(constructorNameToUse, contentsTupleType)]
+
+    isUnaryRecord (constructorVariant -> RecordConstructor names) = length names == 1
+    isUnaryRecord _ = False
 
     tagField = case sumEncoding options of
       TaggedObject tagFieldName _ -> [(AppE (AppE (AppE (ConE 'TSField) (ConE 'False))
