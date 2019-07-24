@@ -6,6 +6,7 @@ import Test.Hspec
 import qualified HigherKind
 import qualified ObjectWithSingleFieldNoTagSingleConstructors
 import qualified ObjectWithSingleFieldTagSingleConstructors
+import qualified ObjectWithSingleFieldUnwrapUnaryRecords
 import qualified TaggedObjectNoTagSingleConstructors
 import qualified TaggedObjectTagSingleConstructors
 import qualified TwoElemArrayNoTagSingleConstructors
@@ -16,6 +17,7 @@ import qualified UntaggedTagSingleConstructors
 main = hspec $ do
   ObjectWithSingleFieldTagSingleConstructors.tests
   ObjectWithSingleFieldNoTagSingleConstructors.tests
+  ObjectWithSingleFieldUnwrapUnaryRecords.tests
   TaggedObjectTagSingleConstructors.tests
   TaggedObjectNoTagSingleConstructors.tests
   TwoElemArrayTagSingleConstructors.tests
