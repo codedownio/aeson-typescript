@@ -260,9 +260,9 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
     stringEncoding = (stringE [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|], Nothing)
 
     singleConstructorEncoding = if | constructorVariant ci == NormalConstructor -> tupleEncoding
-                                   | otherwise -> Just $ assembleInterfaceDeclaration options (constructorName ci) genericVariables (ListE (getTSFields namesAndTypes))
+                                   | otherwise -> Just $ assembleInterfaceDeclaration options (constructorName ci) genericVariables (ListE (getTSFields options namesAndTypes))
 
-    taggedConstructorEncoding = Just $ assembleInterfaceDeclaration options (constructorName ci) genericVariables (ListE (tagField ++ getTSFields namesAndTypes))
+    taggedConstructorEncoding = Just $ assembleInterfaceDeclaration options (constructorName ci) genericVariables (ListE (tagField ++ getTSFields options namesAndTypes))
 
     -- * Type declaration to use
     interfaceName = getInterfaceName (constructorName ci) <> getGenericBrackets genericVariables
@@ -290,11 +290,19 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
     contentsTupleType = getTupleType (constructorFields ci)
 
 -- | Helper for handleConstructor
-getTSFields :: [(String, Type)] -> [Exp]
-getTSFields namesAndTypes = [(AppE (AppE (AppE (ConE 'TSField) (getOptionalAsBoolExp typ))
-                                     (stringE nameString))
-                               (getTypeAsStringExp typ))
-                            | (nameString, typ) <- namesAndTypes]
+getTSFields :: Options -> [(String, Type)] -> [Exp]
+getTSFields options namesAndTypes =
+  [ (AppE (AppE (AppE (ConE 'TSField) optAsBool)
+             (stringE nameString))
+       fieldTyp)
+  | (nameString, typ) <- namesAndTypes
+  , let (fieldTyp, optAsBool) = getFieldType options typ]
+
+getFieldType :: Options -> Type -> (Exp, Exp)
+getFieldType options (AppT (ConT name) t)
+  | not (omitNothingFields options) && name == ''Maybe
+  = (AppE (AppE (VarE 'mappend) (getTypeAsStringExp t)) (stringE " | null"), getOptionalAsBoolExp t)
+getFieldType _ typ = (getTypeAsStringExp typ, getOptionalAsBoolExp typ)
 
 -- | Helper for handleConstructor
 assembleInterfaceDeclaration options constructorName genericVariables members = AppE (AppE (AppE (ConE 'TSInterfaceDeclaration) constructorNameExp) genericVariablesExp) members where
