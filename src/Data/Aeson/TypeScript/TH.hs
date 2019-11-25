@@ -239,9 +239,9 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
     stringEncoding = (stringE [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|], Nothing)
 
     singleConstructorEncoding = if | constructorVariant ci == NormalConstructor -> tupleEncoding
-                                   | otherwise -> Just $ assembleInterfaceDeclaration options (constructorName ci) genericVariables (ListE (getTSFields namesAndTypes))
+                                   | otherwise -> Just $ assembleInterfaceDeclaration (constructorName ci) genericVariables (ListE (getTSFields namesAndTypes))
 
-    taggedConstructorEncoding = Just $ assembleInterfaceDeclaration options (constructorName ci) genericVariables (ListE (tagField ++ getTSFields namesAndTypes))
+    taggedConstructorEncoding = Just $ assembleInterfaceDeclaration (constructorName ci) genericVariables (ListE (tagField ++ getTSFields namesAndTypes))
 
     -- * Type declaration to use
     interfaceName = getInterfaceName (constructorName ci) <> getGenericBrackets genericVariables
@@ -276,7 +276,7 @@ getTSFields namesAndTypes = [(AppE (AppE (AppE (ConE 'TSField) (getOptionalAsBoo
                             | (nameString, typ) <- namesAndTypes]
 
 -- | Helper for handleConstructor
-assembleInterfaceDeclaration options constructorName genericVariables members = AppE (AppE (AppE (ConE 'TSInterfaceDeclaration) constructorNameExp) genericVariablesExp) members where
+assembleInterfaceDeclaration constructorName genericVariables members = AppE (AppE (AppE (ConE 'TSInterfaceDeclaration) constructorNameExp) genericVariablesExp) members where
   constructorNameExp = stringE $ getInterfaceName constructorName
   genericVariablesExp = (ListE [stringE x | x <- genericVariables])
 
