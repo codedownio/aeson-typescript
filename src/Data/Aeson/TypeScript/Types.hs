@@ -1,11 +1,12 @@
-{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, PolyKinds #-}
+{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, PolyKinds, StandaloneDeriving #-}
 
 module Data.Aeson.TypeScript.Types where
 
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
-import Data.Data
+import Data.Proxy
 import Data.String
+import Data.Typeable
 
 -- | The typeclass that defines how a type is turned into TypeScript.
 --
@@ -49,6 +50,22 @@ class TypeScript a where
   getTypeScriptOptional :: Proxy a -> Bool
   -- ^ Get a flag representing whether this type is optional.
   getTypeScriptOptional _ = False
+
+  getParentTypes :: Proxy a -> [TSType]
+  getParentTypes _ = []
+  -- ^ Get the types that this type depends on. This is useful for generating transitive closures of necessary types.
+
+-- | An existential wrapper for any TypeScript instance.
+data TSType = forall a. (Typeable a, TypeScript a) => TSType { unTSType :: Proxy a }
+
+instance Eq TSType where
+  (TSType p1) == (TSType p2) = getTypeScriptType p1 == getTypeScriptType p2
+
+instance Ord TSType where
+  (TSType p1) `compare` (TSType p2) = getTypeScriptType p1 `compare` getTypeScriptType p2
+
+instance Show TSType where
+  show (TSType proxy) = getTypeScriptType proxy
 
 data TSDeclaration = TSInterfaceDeclaration { interfaceName :: String
                                             , interfaceGenericVariables :: [String]

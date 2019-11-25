@@ -102,6 +102,7 @@ module Data.Aeson.TypeScript.TH (
 
   -- * The main typeclass
   TypeScript(..),
+  TSType(..),
 
   TSDeclaration,
 
@@ -187,19 +188,25 @@ deriveTypeScript options name = do
 #endif
   getTypeFn <- getTypeExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
   getDeclarationFn <- getDeclarationFunctionBody options name fullyQualifiedDatatypeInfo
-  let fullyGenericInstance = mkInstance [] (AppT (ConT ''TypeScript) (ConT name)) [getTypeFn, getDeclarationFn]
+  getParentTypesFn <- getParentTypesExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getParentTypes [Clause [WildP] (NormalB expr) []]
+
+  let fullyGenericInstance = mkInstance [] (AppT (ConT ''TypeScript) (ConT name)) [getTypeFn, getDeclarationFn, getParentTypesFn]
 
   otherInstances <- case length datatypeVars > 0 of
     True -> do
       otherGetTypeFn <- getTypeExpression datatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
 #if MIN_VERSION_th_abstraction(0,3,0)
-      return [mkInstance (fmap getDatatypePredicate datatypeInstTypes) (AppT (ConT ''TypeScript) (foldl (\x y -> AppT x y) (ConT name) datatypeInstTypes)) [otherGetTypeFn]]
+      return [mkInstance (fmap getDatatypePredicate datatypeInstTypes) (AppT (ConT ''TypeScript) (foldl (\x y -> AppT x y) (ConT name) datatypeInstTypes)) [otherGetTypeFn, getParentTypesFn]]
 #else
-      return [mkInstance (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) (foldl (\x y -> AppT x y) (ConT name) datatypeVars)) [otherGetTypeFn]]
+      return [mkInstance (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) (foldl (\x y -> AppT x y) (ConT name) datatypeVars)) [otherGetTypeFn, getParentTypesFn]]
 #endif
     False -> return []
 
   return $ fullyGenericInstance : otherInstances
+
+getParentTypesExpression :: DatatypeInfo -> Q Exp
+getParentTypesExpression (DatatypeInfo {..}) = return $ ListE [AppE (ConE 'TSType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) typ)) | typ <- types]
+  where types = mconcat $ fmap constructorFields $ datatypeCons
 
 getDeclarationFunctionBody :: Options -> p -> DatatypeInfo -> Q Dec
 getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do

@@ -37,7 +37,6 @@ instance TypeScript Bool where
   getTypeScriptType _ = "boolean"
 
 instance TypeScript Int where
-  getTypeScriptDeclarations _ = []
   getTypeScriptType _ = "number"
 
 instance TypeScript Char where
