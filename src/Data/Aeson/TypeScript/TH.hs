@@ -145,38 +145,17 @@ data T8 = T8
 data T9 = T9
 data T10 = T10
 
-instance TypeScript T where
-  getTypeScriptType _ = "T"
-
-instance TypeScript T1 where
-  getTypeScriptType _ = "T1"
-
-instance TypeScript T2 where
-  getTypeScriptType _ = "T2"
-
-instance TypeScript T3 where
-  getTypeScriptType _ = "T3"
-
-instance TypeScript T4 where
-  getTypeScriptType _ = "T4"
-
-instance TypeScript T5 where
-  getTypeScriptType _ = "T5"
-
-instance TypeScript T6 where
-  getTypeScriptType _ = "T6"
-
-instance TypeScript T7 where
-  getTypeScriptType _ = "T7"
-
-instance TypeScript T8 where
-  getTypeScriptType _ = "T8"
-
-instance TypeScript T9 where
-  getTypeScriptType _ = "T9"
-
-instance TypeScript T10 where
-  getTypeScriptType _ = "T10"
+instance TypeScript T where getTypeScriptType _ = "T"
+instance TypeScript T1 where getTypeScriptType _ = "T1"
+instance TypeScript T2 where getTypeScriptType _ = "T2"
+instance TypeScript T3 where getTypeScriptType _ = "T3"
+instance TypeScript T4 where getTypeScriptType _ = "T4"
+instance TypeScript T5 where getTypeScriptType _ = "T5"
+instance TypeScript T6 where getTypeScriptType _ = "T6"
+instance TypeScript T7 where getTypeScriptType _ = "T7"
+instance TypeScript T8 where getTypeScriptType _ = "T8"
+instance TypeScript T9 where getTypeScriptType _ = "T9"
+instance TypeScript T10 where getTypeScriptType _ = "T10"
 
 
 -- | Generates a 'TypeScript' instance declaration for the given data type.
