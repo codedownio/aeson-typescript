@@ -70,7 +70,7 @@ testTypeCheckDeclarations tsDeclarations typesAndVals = withSystemTempDirectory 
   writeFile tsFile contents
 
   tsc <- getTSC
-  (code, output, err) <- readProcessWithExitCode tsc ["--noEmit", "--skipLibCheck", "--traceResolution", "--noResolve", tsFile] ""
+  (code, output, err) <- readProcessWithExitCode tsc ["--strict", "--noEmit", "--skipLibCheck", "--traceResolution", "--noResolve", tsFile] ""
 
   when (code /= ExitSuccess) $ do
     putStrLn [i|TSC check failed. File contents were\n\n#{contents}|]
