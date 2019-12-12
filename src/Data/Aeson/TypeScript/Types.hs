@@ -73,11 +73,11 @@ data TSDeclaration = TSInterfaceDeclaration { interfaceName :: String
                    | TSTypeAlternatives { typeName :: String
                                         , typeGenericVariables :: [String]
                                         , alternativeTypes :: [String]}
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 data TSField = TSField { fieldOptional :: Bool
                        , fieldName :: String
-                       , fieldType :: String } deriving (Show, Eq)
+                       , fieldType :: String } deriving (Show, Eq, Ord)
 
 newtype TSString a = TSString { unpackTSString :: String } deriving Show
 
