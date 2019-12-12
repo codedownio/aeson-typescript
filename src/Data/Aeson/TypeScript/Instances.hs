@@ -9,6 +9,7 @@ import qualified Data.Aeson as A
 import Data.Aeson.TypeScript.Types
 import Data.Data
 import Data.HashMap.Strict
+import qualified Data.List as L
 import Data.Monoid
 import Data.Set
 import Data.String.Interpolate.IsString
@@ -44,6 +45,7 @@ instance TypeScript Char where
 
 instance {-# OVERLAPPABLE #-} (TypeScript a) => TypeScript [a] where
   getTypeScriptType _ = (getTypeScriptType (Proxy :: Proxy a)) ++ "[]"
+  getParentTypes _ = (getParentTypes (Proxy :: Proxy a))
 
 instance {-# OVERLAPPING #-} TypeScript [Char] where
   getTypeScriptType _ = "string"
@@ -54,25 +56,40 @@ instance (TypeScript a, TypeScript b) => TypeScript (Either a b) where
                                , TSInterfaceDeclaration "Left" ["T"] [TSField False "Left" "T"]
                                , TSInterfaceDeclaration "Right" ["T"] [TSField False "Right" "T"]
                                ]
+  getParentTypes _ = L.nub ((getParentTypes (Proxy :: Proxy a))
+                            <> (getParentTypes (Proxy :: Proxy b)))
 
 instance (TypeScript a, TypeScript b) => TypeScript (a, b) where
   getTypeScriptType _ = [i|[#{getTypeScriptType (Proxy :: Proxy a)}, #{getTypeScriptType (Proxy :: Proxy b)}]|]
+  getParentTypes _ = L.nub ((getParentTypes (Proxy :: Proxy a))
+                            <> (getParentTypes (Proxy :: Proxy b)))
 
 instance (TypeScript a, TypeScript b, TypeScript c) => TypeScript (a, b, c) where
   getTypeScriptType _ = [i|[#{getTypeScriptType (Proxy :: Proxy a)}, #{getTypeScriptType (Proxy :: Proxy b)}, #{getTypeScriptType (Proxy :: Proxy c)}]|]
+  getParentTypes _ = L.nub ((getParentTypes (Proxy :: Proxy a))
+                            <> (getParentTypes (Proxy :: Proxy b))
+                            <> (getParentTypes (Proxy :: Proxy c)))
 
 instance (TypeScript a, TypeScript b, TypeScript c, TypeScript d) => TypeScript (a, b, c, d) where
   getTypeScriptType _ = [i|[#{getTypeScriptType (Proxy :: Proxy a)}, #{getTypeScriptType (Proxy :: Proxy b)}, #{getTypeScriptType (Proxy :: Proxy c)}, #{getTypeScriptType (Proxy :: Proxy d)}]|]
+  getParentTypes _ = L.nub ((getParentTypes (Proxy :: Proxy a))
+                            <> (getParentTypes (Proxy :: Proxy b))
+                            <> (getParentTypes (Proxy :: Proxy c))
+                            <> (getParentTypes (Proxy :: Proxy d)))
 
 instance (TypeScript a) => TypeScript (Maybe a) where
   getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
   getTypeScriptOptional _ = True
+  getParentTypes _ = (getParentTypes (Proxy :: Proxy a))
 
 instance TypeScript A.Value where
   getTypeScriptType _ = "any";
 
 instance (TypeScript a, TypeScript b) => TypeScript (HashMap a b) where
   getTypeScriptType _ = [i|{[k: #{getTypeScriptType (Proxy :: Proxy a)}]: #{getTypeScriptType (Proxy :: Proxy b)}}|]
+  getParentTypes _ = L.nub ((getParentTypes (Proxy :: Proxy a))
+                            <> (getParentTypes (Proxy :: Proxy b)))
 
 instance (TypeScript a) => TypeScript (Set a) where
   getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a) <> "[]";
+  getParentTypes _ = L.nub (getParentTypes (Proxy :: Proxy a))
