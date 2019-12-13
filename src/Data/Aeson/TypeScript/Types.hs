@@ -39,7 +39,7 @@ import Data.Typeable
 -- instance (TypeScript a) => TypeScript (Set a) where
 --   getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a) <> "[]";
 -- @
-class TypeScript a where
+class (Typeable a) => TypeScript a where
   getTypeScriptDeclarations :: Proxy a -> [TSDeclaration]
   -- ^ Get the declaration(s) needed for this type.
   getTypeScriptDeclarations _ = []
