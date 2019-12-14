@@ -230,30 +230,31 @@ getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
 handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> (Exp, Maybe Exp)
 handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) =
-  if | isSingleConstructorType && not (getTagSingleConstructors options) -> (stringE interfaceName, singleConstructorEncoding)
+  if | isSingleConstructorType && not (getTagSingleConstructors options) -> (stringE interfaceNameWithBrackets, singleConstructorEncoding)
 
      | allConstructorsAreNullary datatypeCons && allNullaryToStringTag options -> stringEncoding
      -- With UntaggedValue, nullary constructors are encoded as strings
      | (isUntaggedValue $ sumEncoding options) && isConstructorNullary ci -> stringEncoding
 
      -- Treat as a sum
-     | isObjectWithSingleField $ sumEncoding options -> (stringE [i|{#{show constructorNameToUse}: #{interfaceName}}|], singleConstructorEncoding)
-     | isTwoElemArray $ sumEncoding options -> (stringE [i|[#{show constructorNameToUse}, #{interfaceName}]|], singleConstructorEncoding)
-     | isUntaggedValue $ sumEncoding options -> (stringE interfaceName, singleConstructorEncoding)
-     | otherwise -> (stringE interfaceName, taggedConstructorEncoding)
+     | isObjectWithSingleField $ sumEncoding options -> (stringE [i|{#{show constructorNameToUse}: #{interfaceNameWithBrackets}}|], singleConstructorEncoding)
+     | isTwoElemArray $ sumEncoding options -> (stringE [i|[#{show constructorNameToUse}, #{interfaceNameWithBrackets}]|], singleConstructorEncoding)
+     | isUntaggedValue $ sumEncoding options -> (stringE interfaceNameWithBrackets, singleConstructorEncoding)
+     | otherwise -> (stringE interfaceNameWithBrackets, taggedConstructorEncoding)
 
   where
     stringEncoding = (stringE [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|], Nothing)
 
     singleConstructorEncoding = if | constructorVariant ci == NormalConstructor -> tupleEncoding
-                                   | otherwise -> Just $ assembleInterfaceDeclaration (constructorName ci) genericVariables (ListE (getTSFields namesAndTypes))
+                                   | otherwise -> Just $ assembleInterfaceDeclaration (ListE (getTSFields namesAndTypes))
 
-    taggedConstructorEncoding = Just $ assembleInterfaceDeclaration (constructorName ci) genericVariables (ListE (tagField ++ getTSFields namesAndTypes))
+    taggedConstructorEncoding = Just $ assembleInterfaceDeclaration (ListE (tagField ++ getTSFields namesAndTypes))
 
     -- * Type declaration to use
-    interfaceName = getInterfaceName (constructorName ci) <> getGenericBrackets genericVariables
+    interfaceName = getInterfaceName ci
+    interfaceNameWithBrackets = interfaceName <> getGenericBrackets genericVariables
 
-    tupleEncoding = Just $ applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ getInterfaceName (constructorName ci)
+    tupleEncoding = Just $ applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ interfaceName
                                                                    , ListE [stringE x | x <- genericVariables]
                                                                    , ListE [getTypeAsStringExp contentsTupleType]]
 
@@ -272,8 +273,14 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
 
     isSingleConstructorType = length datatypeCons == 1
 
+    getInterfaceName (constructorName -> x) = "I" <> (lastNameComponent' x)
+
     constructorNameToUse = (constructorTagModifier options) $ lastNameComponent' (constructorName ci)
     contentsTupleType = getTupleType (constructorFields ci)
+
+    assembleInterfaceDeclaration members = AppE (AppE (AppE (ConE 'TSInterfaceDeclaration) (stringE interfaceName)) genericVariablesExp) members where
+      genericVariablesExp = (ListE [stringE x | x <- genericVariables])
+
 
 -- | Helper for handleConstructor
 getTSFields :: [(String, Type)] -> [Exp]
@@ -281,11 +288,6 @@ getTSFields namesAndTypes = [(AppE (AppE (AppE (ConE 'TSField) (getOptionalAsBoo
                                      (stringE nameString))
                                (getTypeAsStringExp typ))
                             | (nameString, typ) <- namesAndTypes]
-
--- | Helper for handleConstructor
-assembleInterfaceDeclaration constructorName genericVariables members = AppE (AppE (AppE (ConE 'TSInterfaceDeclaration) constructorNameExp) genericVariablesExp) members where
-  constructorNameExp = stringE $ getInterfaceName constructorName
-  genericVariablesExp = (ListE [stringE x | x <- genericVariables])
 
 
 -- * Getting type expression
@@ -337,9 +339,6 @@ lastNameComponent x = T.unpack $ last $ T.splitOn "." (T.pack x)
 
 lastNameComponent' :: Name -> String
 lastNameComponent' = lastNameComponent . show
-
-getInterfaceName :: Name -> String
-getInterfaceName x = "I" <> (lastNameComponent' x)
 
 getTypeName :: Name -> String
 getTypeName x = lastNameComponent $ show x
