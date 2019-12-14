@@ -13,6 +13,7 @@ import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.TH
 import Data.Function
 import qualified Data.List as L
+import Data.Monoid
 import qualified Data.Set as S
 import Data.String.Interpolate.IsString
 import Language.Haskell.TH hiding (stringE)
