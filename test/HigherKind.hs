@@ -45,9 +45,8 @@ tests = describe "Higher kinds" $ do
 
     it [i|works when referenced in another type|] $ do
       (getTypeScriptDeclarations (Proxy :: Proxy Foo)) `shouldBe` ([
-        TSTypeAlternatives "Foo" [] ["IFoo"],
-        TSInterfaceDeclaration "IFoo" [] [TSField False "fooString" "string"
-                                         , TSField False "fooHigherKindReference" "HigherKind<string>"]
+        TSInterfaceDeclaration "Foo" [] [TSField False "fooString" "string"
+                                        , TSField False "fooHigherKindReference" "HigherKind<string>"]
         ])
 
     it [i|works with an interface inside|] $ do

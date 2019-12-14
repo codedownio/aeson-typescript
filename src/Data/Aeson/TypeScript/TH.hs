@@ -217,33 +217,44 @@ getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
 
   declarationFnBody <- do
     let interfaceNamesAndDeclarations = fmap (handleConstructor options datatypeInfo genericVariables) datatypeCons
-    let interfaceNames = fmap fst interfaceNamesAndDeclarations
-    let interfaceDeclarations = catMaybes $ fmap snd interfaceNamesAndDeclarations
+    let interfaceDeclarations = catMaybes $ fmap snd3 interfaceNamesAndDeclarations
 
-    let typeDeclaration = applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE interfaceNames]
+    case interfaceNamesAndDeclarations of
+      [(_, Just interfaceDecl, True)] | datatypeVars == [] -> do
+        -- The type declaration is just a reference to a single interface, so we can omit the type part and drop the "I" from the interface name
+        return $ NormalB $ ListE [AppE (VarE 'dropLeadingIFromInterfaceName) interfaceDecl]
 
-    return $ NormalB $ ListE (typeDeclaration : interfaceDeclarations)
+      _ -> do
+        let interfaceNames = fmap fst3 interfaceNamesAndDeclarations
+
+        let typeDeclaration = applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE interfaceNames]
+        return $ NormalB $ ListE (typeDeclaration : interfaceDeclarations)
 
   return $ FunD 'getTypeScriptDeclarations [Clause [WildP] declarationFnBody []]
 
+dropLeadingIFromInterfaceName :: TSDeclaration -> TSDeclaration
+dropLeadingIFromInterfaceName decl@(TSInterfaceDeclaration {interfaceName=('I':xs)}) = decl { interfaceName = xs }
+dropLeadingIFromInterfaceName decl@(TSTypeAlternatives {typeName=('I':xs)}) = decl { typeName = xs }
+dropLeadingIFromInterfaceName x = x
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
-handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> (Exp, Maybe Exp)
+handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> (Exp, Maybe Exp, Bool)
 handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) =
-  if | isSingleConstructorType && not (getTagSingleConstructors options) -> (stringE interfaceNameWithBrackets, singleConstructorEncoding)
+  if | isSingleConstructorType && not (getTagSingleConstructors options) -> (stringE interfaceNameWithBrackets, singleConstructorEncoding, True)
 
      | allConstructorsAreNullary datatypeCons && allNullaryToStringTag options -> stringEncoding
+
      -- With UntaggedValue, nullary constructors are encoded as strings
      | (isUntaggedValue $ sumEncoding options) && isConstructorNullary ci -> stringEncoding
 
      -- Treat as a sum
-     | isObjectWithSingleField $ sumEncoding options -> (stringE [i|{#{show constructorNameToUse}: #{interfaceNameWithBrackets}}|], singleConstructorEncoding)
-     | isTwoElemArray $ sumEncoding options -> (stringE [i|[#{show constructorNameToUse}, #{interfaceNameWithBrackets}]|], singleConstructorEncoding)
-     | isUntaggedValue $ sumEncoding options -> (stringE interfaceNameWithBrackets, singleConstructorEncoding)
-     | otherwise -> (stringE interfaceNameWithBrackets, taggedConstructorEncoding)
+     | isObjectWithSingleField $ sumEncoding options -> (stringE [i|{#{show constructorNameToUse}: #{interfaceNameWithBrackets}}|], singleConstructorEncoding, False)
+     | isTwoElemArray $ sumEncoding options -> (stringE [i|[#{show constructorNameToUse}, #{interfaceNameWithBrackets}]|], singleConstructorEncoding, False)
+     | isUntaggedValue $ sumEncoding options -> (stringE interfaceNameWithBrackets, singleConstructorEncoding, True)
+     | otherwise -> (stringE interfaceNameWithBrackets, taggedConstructorEncoding, True)
 
   where
-    stringEncoding = (stringE [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|], Nothing)
+    stringEncoding = (stringE [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|], Nothing, True)
 
     singleConstructorEncoding = if | constructorVariant ci == NormalConstructor -> tupleEncoding
                                    | otherwise -> Just $ assembleInterfaceDeclaration (ListE (getTSFields namesAndTypes))
@@ -427,3 +438,7 @@ isTwoElemArray _ = False
 isUntaggedValue UntaggedValue = True
 #endif
 isUntaggedValue _ = False
+
+fst3 (x, _, _) = x
+snd3 (_, y, _) = y
+thd3 (_, _, z) = z
