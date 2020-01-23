@@ -1,0 +1,100 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 4cd249b25ad05ebb75210b2d877c1c9db25c3e5ad7ea0e05ca414f3120c3d342
+
+name:           aeson-typescript
+version:        0.2.0.0
+synopsis:       Generate TypeScript definition files from your ADTs
+description:    Please see the README on Github at <https://github.com/codedownio/aeson-typescript#readme>
+category:       Text, Web, JSON
+homepage:       https://github.com/codedownio/aeson-typescript#readme
+bug-reports:    https://github.com/codedownio/aeson-typescript/issues
+author:         Tom McLaughlin
+maintainer:     tom@codedown.io
+copyright:      2018 CodeDown
+license:        BSD3
+license-file:   LICENSE
+tested-with:    GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.2
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+    test/assets/package.json
+    test/assets/npm_install.sh
+    test/assets/yarn_install.sh
+    test/assets/yarn.lock
+
+source-repository head
+  type: git
+  location: https://github.com/codedownio/aeson-typescript
+
+library
+  hs-source-dirs:
+      src
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , containers
+    , interpolate
+    , mtl
+    , template-haskell
+    , text
+    , th-abstraction <0.4
+    , unordered-containers
+  exposed-modules:
+      Data.Aeson.TypeScript.TH
+      Data.Aeson.TypeScript.Recursive
+  other-modules:
+      Data.Aeson.TypeScript.Formatting
+      Data.Aeson.TypeScript.Instances
+      Data.Aeson.TypeScript.Types
+      Paths_aeson_typescript
+  default-language: Haskell2010
+
+test-suite aeson-typescript-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  hs-source-dirs:
+      test
+      src
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , aeson-typescript
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , directory
+    , filepath
+    , hspec
+    , interpolate
+    , mtl
+    , process
+    , template-haskell
+    , temporary
+    , text
+    , th-abstraction <0.4
+    , unordered-containers
+  other-modules:
+      HigherKind
+      ObjectWithSingleFieldNoTagSingleConstructors
+      ObjectWithSingleFieldTagSingleConstructors
+      TaggedObjectNoTagSingleConstructors
+      TaggedObjectTagSingleConstructors
+      TestBoilerplate
+      TwoElemArrayNoTagSingleConstructors
+      TwoElemArrayTagSingleConstructors
+      UntaggedNoTagSingleConstructors
+      UntaggedTagSingleConstructors
+      Util
+      Data.Aeson.TypeScript.Formatting
+      Data.Aeson.TypeScript.Instances
+      Data.Aeson.TypeScript.Recursive
+      Data.Aeson.TypeScript.TH
+      Data.Aeson.TypeScript.Types
+      Paths_aeson_typescript
+  default-language: Haskell2010
