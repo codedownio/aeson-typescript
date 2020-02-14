@@ -1,4 +1,5 @@
-with import <nixpkgs> { config.allowUnfree = true; };
+let nixpkgs = import <nixpkgs> {};
+in
+with nixpkgs;
 
-callPackage (import ./package.nix) { mkDerivation = haskellPackages.mkDerivation;
-}
+callPackage (import ./package.nix) { nixpkgs = nixpkgs; }

@@ -1,20 +1,9 @@
-{ mkDerivation, haskellPackages, nodePackages, stdenv
+{ nixpkgs
 }:
-with haskellPackages;
-mkDerivation {
-  pname = "aeson-typescript";
-  version = "0.2.0.0";
-  src = ./.;
-  libraryHaskellDepends = [
-    aeson base containers interpolate mtl template-haskell text
-    th-abstraction unordered-containers
-  ];
-  testHaskellDepends = [
-    aeson base bytestring containers directory filepath hspec
-    interpolate mtl process template-haskell temporary text
-    th-abstraction unordered-containers nodePackages.typescript
-  ];
-  homepage = "https://github.com/codedownio/aeson-typescript#readme";
-  description = "Generate TypeScript definition files from your ADTs";
-  license = stdenv.lib.licenses.bsd3;
-}
+
+with nixpkgs;
+
+let pkg = haskellPackages.callCabal2nix "aeson-typescript" ./. {};
+in haskell.lib.overrideCabal pkg (old: {
+  testHaskellDepends = old.testHaskellDepends ++ [ nodePackages.typescript ];
+})
