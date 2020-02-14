@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns #-}
+{-# LANGUAGE CPP, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns, LambdaCase #-}
 
 module Util where
 
@@ -30,9 +30,12 @@ getTSC = do
   case isCI of
     True -> do
       return "tsc" -- Assume it's set up on the path
-    False -> do
-      ensureTSCExists
-      return localTSC
+    False ->
+      findExecutable "tsc" >>= \case
+        Just tsc -> pure tsc
+        Nothing -> do
+         ensureTSCExists
+         return localTSC
 
 testTypeCheck :: forall a. (TypeScript a, ToJSON a) => a -> IO ()
 testTypeCheck obj = withSystemTempDirectory "typescript_test" $ \folder -> do
