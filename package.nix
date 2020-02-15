@@ -1,9 +1,6 @@
-{ nixpkgs
-}:
+{ callCabal2nix, overrideCabal, typescript }:
 
-with nixpkgs;
-
-let pkg = haskellPackages.callCabal2nix "aeson-typescript" ./. {};
-in haskell.lib.overrideCabal pkg (old: {
-  testHaskellDepends = old.testHaskellDepends ++ [ nodePackages.typescript ];
+let pkg = callCabal2nix "aeson-typescript" ./. {};
+in overrideCabal pkg (old: {
+  testHaskellDepends = old.testHaskellDepends ++ [ typescript ];
 })
