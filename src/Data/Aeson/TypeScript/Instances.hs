@@ -91,7 +91,7 @@ instance (TypeScript a, TypeScript b, TypeScript c, TypeScript d) => TypeScript 
 instance (TypeScript a) => TypeScript (Maybe a) where
   getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
   getTypeScriptOptional _ = True
-  getParentTypes _ = (getParentTypes (Proxy :: Proxy a))
+  getParentTypes _ = [TSType (Proxy :: Proxy a)]
 
 instance TypeScript A.Value where
   getTypeScriptType _ = "any";

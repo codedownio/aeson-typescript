@@ -59,13 +59,13 @@ class (Typeable a) => TypeScript a where
 data TSType = forall a. (Typeable a, TypeScript a) => TSType { unTSType :: Proxy a }
 
 instance Eq TSType where
-  (TSType p1) == (TSType p2) = getTypeScriptType p1 == getTypeScriptType p2
+  (TSType p1) == (TSType p2) = typeRep p1 == typeRep p2
 
 instance Ord TSType where
-  (TSType p1) `compare` (TSType p2) = getTypeScriptType p1 `compare` getTypeScriptType p2
+  (TSType p1) `compare` (TSType p2) = typeRep p1 `compare` typeRep p2
 
 instance Show TSType where
-  show (TSType proxy) = getTypeScriptType proxy
+  show (TSType proxy) = show $ typeRep proxy
 
 data TSDeclaration = TSInterfaceDeclaration { interfaceName :: String
                                             , interfaceGenericVariables :: [String]
