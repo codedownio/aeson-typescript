@@ -170,19 +170,19 @@ deriveTypeScript options name = do
 
   assertExtensionsTurnedOn datatypeInfo
 
-  let getFreeVariableName (SigT (VarT name) kind) = Just name
-      getFreeVariableName typ = Nothing
+  let getFreeVariableName (SigT (VarT n) _kind) = Just n
+      getFreeVariableName _ = Nothing
 
   let templateVarsToUse = case length datatypeVars of
         1 -> [ConT ''T]
-        n -> take (length datatypeVars) [ConT ''T1, ConT ''T2, ConT ''T3, ConT ''T4, ConT ''T5, ConT ''T6, ConT ''T7, ConT ''T8, ConT ''T9, ConT ''T10]
+        _ -> take (length datatypeVars) [ConT ''T1, ConT ''T2, ConT ''T3, ConT ''T4, ConT ''T5, ConT ''T6, ConT ''T7, ConT ''T8, ConT ''T9, ConT ''T10]
 
 #if MIN_VERSION_th_abstraction(0,3,0)
-  let subMap = M.fromList $ zip (catMaybes $ fmap getFreeVariableName datatypeInstTypes) templateVarsToUse
+  let subMap = M.fromList $ zip (mapMaybe getFreeVariableName datatypeInstTypes) templateVarsToUse
   let fullyQualifiedDatatypeInfo = (datatypeInfo {datatypeInstTypes = templateVarsToUse
                                                  , datatypeCons = fmap (applySubstitution subMap) datatypeCons})
 #else
-  let subMap = M.fromList $ zip (catMaybes $ fmap getFreeVariableName datatypeVars) templateVarsToUse
+  let subMap = M.fromList $ zip (mapMaybe getFreeVariableName datatypeVars) templateVarsToUse
   let fullyQualifiedDatatypeInfo = (datatypeInfo {datatypeVars = templateVarsToUse
                                                  , datatypeCons = fmap (applySubstitution subMap) datatypeCons})
 #endif
@@ -192,15 +192,15 @@ deriveTypeScript options name = do
 
   let fullyGenericInstance = mkInstance [] (AppT (ConT ''TypeScript) (ConT name)) [getTypeFn, getDeclarationFn, getParentTypesFn]
 
-  otherInstances <- case length datatypeVars > 0 of
-    True -> do
+  otherInstances <- case null datatypeVars of
+    False -> do
       otherGetTypeFn <- getTypeExpression datatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
 #if MIN_VERSION_th_abstraction(0,3,0)
       return [mkInstance (fmap getDatatypePredicate datatypeInstTypes) (AppT (ConT ''TypeScript) (foldl (\x y -> AppT x y) (ConT name) datatypeInstTypes)) [otherGetTypeFn, getParentTypesFn]]
 #else
       return [mkInstance (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) (foldl (\x y -> AppT x y) (ConT name) datatypeVars)) [otherGetTypeFn, getParentTypesFn]]
 #endif
-    False -> return []
+    True -> return []
 
   return $ fullyGenericInstance : otherInstances
 
@@ -212,7 +212,7 @@ getDeclarationFunctionBody :: Options -> p -> DatatypeInfo -> Q Dec
 getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
   -- If name is higher-kinded, add generic variables to the type and interface declarations
   let genericVariables :: [String] = if | length datatypeVars == 1 -> ["T"]
-                                        | otherwise -> ["T" <> show i | i <- [1..(length datatypeVars)]]
+                                        | otherwise -> ["T" <> show j | j <- [1..(length datatypeVars)]]
   let genericVariablesExp = ListE [stringE x | x <- genericVariables]
 
   declarationFnBody <- do
