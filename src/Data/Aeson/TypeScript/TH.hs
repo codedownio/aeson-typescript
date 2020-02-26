@@ -188,25 +188,31 @@ deriveTypeScript options name = do
 #endif
   getTypeFn <- getTypeExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
   getDeclarationFn <- getDeclarationFunctionBody options name fullyQualifiedDatatypeInfo
-  getParentTypesFn <- getParentTypesExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getParentTypes [Clause [WildP] (NormalB expr) []]
+  getGenericParentTypesFn <- getGenericParentTypesExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getParentTypes [Clause [WildP] (NormalB expr) []]
+  getNonGenericParentTypesFn <- getNonGenericParentTypesExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getParentTypes [Clause [WildP] (NormalB expr) []]
 
-  let fullyGenericInstance = mkInstance [] (AppT (ConT ''TypeScript) (ConT name)) [getTypeFn, getDeclarationFn, getParentTypesFn]
+  let fullyGenericInstance = mkInstance [] (AppT (ConT ''TypeScript) (ConT name)) [getTypeFn, getDeclarationFn, getGenericParentTypesFn]
 
   otherInstances <- case null datatypeVars of
     False -> do
       otherGetTypeFn <- getTypeExpression datatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
 #if MIN_VERSION_th_abstraction(0,3,0)
-      return [mkInstance (fmap getDatatypePredicate datatypeInstTypes) (AppT (ConT ''TypeScript) (foldl (\x y -> AppT x y) (ConT name) datatypeInstTypes)) [otherGetTypeFn, getParentTypesFn]]
+      return [mkInstance (fmap getDatatypePredicate datatypeInstTypes) (AppT (ConT ''TypeScript) (foldl AppT (ConT name) datatypeInstTypes)) [otherGetTypeFn, getNonGenericParentTypesFn]]
 #else
-      return [mkInstance (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) (foldl (\x y -> AppT x y) (ConT name) datatypeVars)) [otherGetTypeFn, getParentTypesFn]]
+      return [mkInstance (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) (foldl AppT (ConT name) datatypeVars)) [otherGetTypeFn, getNonGenericParentTypesFn]]
 #endif
     True -> return []
 
   return $ fullyGenericInstance : otherInstances
 
-getParentTypesExpression :: DatatypeInfo -> Q Exp
-getParentTypesExpression (DatatypeInfo {..}) = return $ ListE [AppE (ConE 'TSType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) typ)) | typ <- types]
+-- | For the fully generic instance, the parent types are the types inside the constructors
+getGenericParentTypesExpression :: DatatypeInfo -> Q Exp
+getGenericParentTypesExpression (DatatypeInfo {..}) = return $ ListE [AppE (ConE 'TSType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) typ)) | typ <- types]
   where types = mconcat $ fmap constructorFields $ datatypeCons
+
+-- | For the non-generic instances, the parent type is the generic type
+getNonGenericParentTypesExpression :: DatatypeInfo -> Q Exp
+getNonGenericParentTypesExpression (DatatypeInfo {..}) = return $ ListE [AppE (ConE 'TSType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) (ConT datatypeName)))]
 
 getDeclarationFunctionBody :: Options -> p -> DatatypeInfo -> Q Dec
 getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
