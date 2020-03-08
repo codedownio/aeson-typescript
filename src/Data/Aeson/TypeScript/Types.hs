@@ -55,6 +55,19 @@ class (Typeable a) => TypeScript a where
   getParentTypes _ = []
   -- ^ Get the types that this type depends on. This is useful for generating transitive closures of necessary types.
 
+  getListTypeScriptType :: Proxy [a] -> String
+  getListTypeScriptType _ = (getTypeScriptType (Proxy :: Proxy a)) ++ "[]"
+  -- ^ Allow the programmer to assign a specialised type to lists. For example,
+  -- this is used by the predefined TypeScript instance of the Char type,
+  -- where the type String should have "string" assigned to them, rather than "char[]".
+
+  getListParentTypes :: Proxy [a] -> [TSType]
+  getListParentTypes _ = (TSType (Proxy :: Proxy a)) : (getParentTypes (Proxy :: Proxy a))
+  -- ^ Allow the programmer to specify parent types specialised to lists. For example,
+  -- this is used by the predefined TypeScript instance of the Char type,
+  -- where the type String should have no parent types
+  -- because TypeScript does not know any type for single characters.
+
 -- | An existential wrapper for any TypeScript instance.
 data TSType = forall a. (Typeable a, TypeScript a) => TSType { unTSType :: Proxy a }
 

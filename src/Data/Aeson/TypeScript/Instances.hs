@@ -1,7 +1,4 @@
-{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, FlexibleInstances, OverlappingInstances #-}
-
--- Note: the OverlappingInstances pragma is only here so the overlapping instances in this file
--- will work on older GHCs, like GHC 7.8.4
+{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, FlexibleInstances #-}
 
 module Data.Aeson.TypeScript.Instances where
 
@@ -42,13 +39,12 @@ instance TypeScript Int where
 
 instance TypeScript Char where
   getTypeScriptType _ = "string"
+  getListTypeScriptType _ = "string"
+  getListParentTypes _ = []
 
-instance {-# OVERLAPPABLE #-} (TypeScript a) => TypeScript [a] where
-  getTypeScriptType _ = (getTypeScriptType (Proxy :: Proxy a)) ++ "[]"
-  getParentTypes _ = (TSType (Proxy :: Proxy a)) : (getParentTypes (Proxy :: Proxy a))
-
-instance {-# OVERLAPPING #-} TypeScript [Char] where
-  getTypeScriptType _ = "string"
+instance (TypeScript a) => TypeScript [a] where
+  getTypeScriptType _ = getListTypeScriptType (Proxy :: Proxy [a])
+  getParentTypes _ = getListParentTypes (Proxy :: Proxy [a])
 
 instance (TypeScript a, TypeScript b) => TypeScript (Either a b) where
   getTypeScriptType _ = [i|Either<#{getTypeScriptType (Proxy :: Proxy a)}, #{getTypeScriptType (Proxy :: Proxy b)}>|]
