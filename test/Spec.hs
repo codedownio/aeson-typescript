@@ -12,6 +12,8 @@ import qualified TwoElemArrayNoTagSingleConstructors
 import qualified TwoElemArrayTagSingleConstructors
 import qualified UntaggedNoTagSingleConstructors
 import qualified UntaggedTagSingleConstructors
+import qualified OmitNothingFields
+import qualified NoOmitNothingFields
 
 main = hspec $ do
   ObjectWithSingleFieldTagSingleConstructors.tests
@@ -23,3 +25,5 @@ main = hspec $ do
   UntaggedTagSingleConstructors.tests
   UntaggedNoTagSingleConstructors.tests
   HigherKind.tests
+  OmitNothingFields.tests
+  NoOmitNothingFields.tests

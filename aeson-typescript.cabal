@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4cd249b25ad05ebb75210b2d877c1c9db25c3e5ad7ea0e05ca414f3120c3d342
+-- hash: b77cd606ddb441b9a4bc9592c1257172003cb38a9b39c2cc9b693a90110c1b52
 
 name:           aeson-typescript
 version:        0.2.0.0
@@ -81,8 +81,10 @@ test-suite aeson-typescript-test
     , unordered-containers
   other-modules:
       HigherKind
+      NoOmitNothingFields
       ObjectWithSingleFieldNoTagSingleConstructors
       ObjectWithSingleFieldTagSingleConstructors
+      OmitNothingFields
       TaggedObjectNoTagSingleConstructors
       TaggedObjectTagSingleConstructors
       TestBoilerplate
