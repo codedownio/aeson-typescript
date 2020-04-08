@@ -197,7 +197,8 @@ deriveTypeScript options name = do
       return [mkInstance (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) (foldl AppT (ConT name) datatypeVars)) [getTypeFn, getParentTypesFn]]
 #endif
     _ -> do
-      getTypeFn <- getTypeExpression datatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
+      typeExpr <- getTypeExpression fullyQualifiedDatatypeInfo
+      let getTypeFn = FunD 'getTypeScriptType [Clause [WildP] (NormalB typeExpr) []]
       getDeclarationFn <- getDeclarationFunctionBody options name fullyQualifiedDatatypeInfo typeExpr
       getGenericParentTypesFn <- getGenericParentTypesExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getParentTypes [Clause [WildP] (NormalB expr) []]
       getNonGenericParentTypesFn <- getNonGenericParentTypesExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getParentTypes [Clause [WildP] (NormalB expr) []]
@@ -225,8 +226,8 @@ getGenericParentTypesExpression (DatatypeInfo {..}) = return $ ListE [AppE (ConE
 getNonGenericParentTypesExpression :: DatatypeInfo -> Q Exp
 getNonGenericParentTypesExpression (DatatypeInfo {..}) = return $ ListE [AppE (ConE 'TSType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) (ConT datatypeName)))]
 
-getDeclarationFunctionBody :: Options -> p -> DatatypeInfo -> Q Dec
-getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
+getDeclarationFunctionBody :: Options -> p -> DatatypeInfo -> Exp -> Q Dec
+getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) nameExpr = do
   -- If name is higher-kinded, add generic variables to the type and interface declarations
   let genericVariables :: [String] = if | length datatypeVars == 1 -> ["T"]
                                         | otherwise -> ["T" <> show j | j <- [1..(length datatypeVars)]]
@@ -238,8 +239,9 @@ getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
 
     case interfaceNamesAndDeclarations of
       [(_, Just interfaceDecl, True)] | datatypeVars == [] -> do
-        -- The type declaration is just a reference to a single interface, so we can omit the type part and drop the "I" from the interface name
-        return $ NormalB $ ListE [AppE (VarE 'dropLeadingIFromInterfaceName) interfaceDecl]
+        -- The type declaration is just a reference to a single interface, so we can omit the type part and replace the interface
+        -- name with the type name
+        return $ NormalB $ ListE [AppE (AppE (VarE 'replaceInterfaceName) nameExpr) interfaceDecl]
 
       _ -> do
         let interfaceNames = fmap fst3 interfaceNamesAndDeclarations
@@ -249,10 +251,9 @@ getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
 
   return $ FunD 'getTypeScriptDeclarations [Clause [WildP] declarationFnBody []]
 
-dropLeadingIFromInterfaceName :: TSDeclaration -> TSDeclaration
-dropLeadingIFromInterfaceName decl@(TSInterfaceDeclaration {interfaceName=('I':xs)}) = decl { interfaceName = xs }
-dropLeadingIFromInterfaceName decl@(TSTypeAlternatives {typeName=('I':xs)}) = decl { typeName = xs }
-dropLeadingIFromInterfaceName x = x
+replaceInterfaceName :: String -> TSDeclaration -> TSDeclaration
+replaceInterfaceName name decl@(TSInterfaceDeclaration {}) = decl { interfaceName = name }
+replaceInterfaceName name decl@(TSTypeAlternatives {}) = decl { typeName = name }
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
 handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> (Exp, Maybe Exp, Bool)
