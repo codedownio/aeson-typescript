@@ -186,24 +186,35 @@ deriveTypeScript options name = do
   let fullyQualifiedDatatypeInfo = (datatypeInfo {datatypeVars = templateVarsToUse
                                                  , datatypeCons = fmap (applySubstitution subMap) datatypeCons})
 #endif
-  getTypeFn <- getTypeExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
-  getDeclarationFn <- getDeclarationFunctionBody options name fullyQualifiedDatatypeInfo
-  getGenericParentTypesFn <- getGenericParentTypesExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getParentTypes [Clause [WildP] (NormalB expr) []]
-  getNonGenericParentTypesFn <- getNonGenericParentTypesExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getParentTypes [Clause [WildP] (NormalB expr) []]
-
-  let fullyGenericInstance = mkInstance [] (AppT (ConT ''TypeScript) (ConT name)) [getTypeFn, getDeclarationFn, getGenericParentTypesFn]
-
-  otherInstances <- case null datatypeVars of
-    False -> do
-      otherGetTypeFn <- getTypeExpression datatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
+  case (unwrapUnaryRecords options, datatypeCons) of
+    (True, [con]) | RecordConstructor [_name] <- constructorVariant con -> do
+      let [fld] = constructorFields con
+      let getTypeFn = FunD 'getTypeScriptType [Clause [WildP] (NormalB (AppE (VarE 'getTypeScriptType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) fld)))) []]
+      let getParentTypesFn = FunD 'getParentTypes [Clause [WildP] (NormalB (ListE [AppE (ConE 'TSType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) fld))])) []]
 #if MIN_VERSION_th_abstraction(0,3,0)
-      return [mkInstance (fmap getDatatypePredicate datatypeInstTypes) (AppT (ConT ''TypeScript) (foldl AppT (ConT name) datatypeInstTypes)) [otherGetTypeFn, getNonGenericParentTypesFn]]
+      return [mkInstance (fmap getDatatypePredicate datatypeInstTypes) (AppT (ConT ''TypeScript) (foldl AppT (ConT name) datatypeInstTypes)) [getTypeFn, getParentTypesFn]]
 #else
-      return [mkInstance (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) (foldl AppT (ConT name) datatypeVars)) [otherGetTypeFn, getNonGenericParentTypesFn]]
+      return [mkInstance (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) (foldl AppT (ConT name) datatypeVars)) [getTypeFn, getParentTypesFn]]
 #endif
-    True -> return []
+    _ -> do
+      getTypeFn <- getTypeExpression datatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
+      getDeclarationFn <- getDeclarationFunctionBody options name fullyQualifiedDatatypeInfo typeExpr
+      getGenericParentTypesFn <- getGenericParentTypesExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getParentTypes [Clause [WildP] (NormalB expr) []]
+      getNonGenericParentTypesFn <- getNonGenericParentTypesExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getParentTypes [Clause [WildP] (NormalB expr) []]
 
-  return $ fullyGenericInstance : otherInstances
+      let fullyGenericInstance = mkInstance [] (AppT (ConT ''TypeScript) (ConT name)) [getTypeFn, getDeclarationFn, getGenericParentTypesFn]
+
+      otherInstances <- case null datatypeVars of
+        False -> do
+          otherGetTypeFn <- getTypeExpression datatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
+#if MIN_VERSION_th_abstraction(0,3,0)
+          return [mkInstance (fmap getDatatypePredicate datatypeInstTypes) (AppT (ConT ''TypeScript) (foldl AppT (ConT name) datatypeInstTypes)) [otherGetTypeFn, getNonGenericParentTypesFn]]
+#else
+          return [mkInstance (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) (foldl AppT (ConT name) datatypeVars)) [otherGetTypeFn, getNonGenericParentTypesFn]]
+#endif
+        True -> return []
+
+      return $ fullyGenericInstance : otherInstances
 
 -- | For the fully generic instance, the parent types are the types inside the constructors
 getGenericParentTypesExpression :: DatatypeInfo -> Q Exp
