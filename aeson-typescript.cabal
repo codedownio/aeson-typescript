@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b77cd606ddb441b9a4bc9592c1257172003cb38a9b39c2cc9b693a90110c1b52
+-- hash: f5d0e38a0ca949155c54c2bc1936146703c13dbff1d8c7ef1991195bb2394418
 
 name:           aeson-typescript
 version:        0.2.0.0
@@ -84,6 +84,7 @@ test-suite aeson-typescript-test
       NoOmitNothingFields
       ObjectWithSingleFieldNoTagSingleConstructors
       ObjectWithSingleFieldTagSingleConstructors
+      ObjectWithSingleFieldUnwrapUnaryRecords
       OmitNothingFields
       TaggedObjectNoTagSingleConstructors
       TaggedObjectTagSingleConstructors
