@@ -111,6 +111,7 @@ module Data.Aeson.TypeScript.TH (
   formatTSDeclarations',
   formatTSDeclaration,
   FormattingOptions(..),
+  defaultFormattingOptions,
 
   -- * Convenience tools
   HasJSONOptions(..),
