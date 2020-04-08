@@ -9,9 +9,11 @@ import qualified Data.Aeson as A
 import Data.Aeson.TypeScript.Types
 import Data.Data
 import Data.HashMap.Strict
+import Data.HashSet
 import qualified Data.List as L
 import Data.Monoid
 import Data.Set
+import Data.Map.Strict
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
@@ -96,3 +98,13 @@ instance (TypeScript a, TypeScript b) => TypeScript (HashMap a b) where
 instance (TypeScript a) => TypeScript (Set a) where
   getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a) <> "[]";
   getParentTypes _ = L.nub [TSType (Proxy :: Proxy a)]
+
+instance (TypeScript a) => TypeScript (HashSet a) where
+  getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a) ++ "[]"
+  getParentTypes _ = [TSType (Proxy :: Proxy a)]
+
+instance (TypeScript a, TypeScript b) => TypeScript (Map a b) where
+  getTypeScriptType _ =
+    "{[k: " ++ getTypeScriptType (Proxy :: Proxy a) ++ "]: " ++ getTypeScriptType (Proxy :: Proxy b) ++ "}"
+  getParentTypes _ = [TSType (Proxy :: Proxy a), TSType (Proxy :: Proxy b)]
+
