@@ -41,6 +41,7 @@ library:
   exposed-modules:
     - Data.Aeson.TypeScript.TH
     - Data.Aeson.TypeScript.Recursive
+    - Data.Aeson.TypeScript.Internal
 
 tests:
   aeson-typescript-test:
