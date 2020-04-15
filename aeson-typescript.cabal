@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b77cd606ddb441b9a4bc9592c1257172003cb38a9b39c2cc9b693a90110c1b52
+-- hash: 00a617afcabcfd8fbaeb7c22dce7296da68ca0ebf3d0d15df2fac2879faa9f46
 
 name:           aeson-typescript
 version:        0.2.0.0
@@ -33,6 +33,15 @@ source-repository head
   location: https://github.com/codedownio/aeson-typescript
 
 library
+  exposed-modules:
+      Data.Aeson.TypeScript.TH
+      Data.Aeson.TypeScript.Recursive
+      Data.Aeson.TypeScript.Internal
+  other-modules:
+      Data.Aeson.TypeScript.Formatting
+      Data.Aeson.TypeScript.Instances
+      Data.Aeson.TypeScript.Types
+      Paths_aeson_typescript
   hs-source-dirs:
       src
   build-depends:
@@ -45,19 +54,32 @@ library
     , text
     , th-abstraction <0.4
     , unordered-containers
-  exposed-modules:
-      Data.Aeson.TypeScript.TH
-      Data.Aeson.TypeScript.Recursive
-  other-modules:
-      Data.Aeson.TypeScript.Formatting
-      Data.Aeson.TypeScript.Instances
-      Data.Aeson.TypeScript.Types
-      Paths_aeson_typescript
   default-language: Haskell2010
 
 test-suite aeson-typescript-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
+  other-modules:
+      HigherKind
+      NoOmitNothingFields
+      ObjectWithSingleFieldNoTagSingleConstructors
+      ObjectWithSingleFieldTagSingleConstructors
+      OmitNothingFields
+      TaggedObjectNoTagSingleConstructors
+      TaggedObjectTagSingleConstructors
+      TestBoilerplate
+      TwoElemArrayNoTagSingleConstructors
+      TwoElemArrayTagSingleConstructors
+      UntaggedNoTagSingleConstructors
+      UntaggedTagSingleConstructors
+      Util
+      Data.Aeson.TypeScript.Formatting
+      Data.Aeson.TypeScript.Instances
+      Data.Aeson.TypeScript.Internal
+      Data.Aeson.TypeScript.Recursive
+      Data.Aeson.TypeScript.TH
+      Data.Aeson.TypeScript.Types
+      Paths_aeson_typescript
   hs-source-dirs:
       test
       src
@@ -79,24 +101,4 @@ test-suite aeson-typescript-test
     , text
     , th-abstraction <0.4
     , unordered-containers
-  other-modules:
-      HigherKind
-      NoOmitNothingFields
-      ObjectWithSingleFieldNoTagSingleConstructors
-      ObjectWithSingleFieldTagSingleConstructors
-      OmitNothingFields
-      TaggedObjectNoTagSingleConstructors
-      TaggedObjectTagSingleConstructors
-      TestBoilerplate
-      TwoElemArrayNoTagSingleConstructors
-      TwoElemArrayTagSingleConstructors
-      UntaggedNoTagSingleConstructors
-      UntaggedTagSingleConstructors
-      Util
-      Data.Aeson.TypeScript.Formatting
-      Data.Aeson.TypeScript.Instances
-      Data.Aeson.TypeScript.Recursive
-      Data.Aeson.TypeScript.TH
-      Data.Aeson.TypeScript.Types
-      Paths_aeson_typescript
   default-language: Haskell2010
