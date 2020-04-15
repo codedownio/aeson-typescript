@@ -19,7 +19,8 @@ data TwoField = TwoField { doubleInt :: Int, doubleString :: String }
 data Hybrid = HybridSimple Int | HybridRecord { hybridString :: String }
 data TwoConstructor = Con1 { con1String :: String } | Con2 { con2String :: String, con2Int :: Int }
 data Complex a = Nullary | Unary Int | Product String Char a | Record { testOne :: Int, testTwo :: Bool, testThree :: Complex a} deriving Eq
-data Optional = Optional {optionalInt :: Maybe Int}
+data Optional = Optional (Maybe Int)
+data OptionalUnaryRecord = OptionalUnaryRecord { optionalInt :: Maybe Int }
 
 
 testDeclarations :: String -> A.Options -> Q [Dec]
@@ -34,6 +35,7 @@ testDeclarations testName aesonOptions = do
     deriveInstances ''TwoConstructor
     deriveInstances ''Complex
     deriveInstances ''Optional
+    deriveInstances ''OptionalUnaryRecord
 
   typesAndValues :: Exp <- [e|[(getTypeScriptType (Proxy :: Proxy Unit), A.encode Unit)
 
@@ -55,8 +57,12 @@ testDeclarations testName aesonOptions = do
                               , (getTypeScriptType (Proxy :: Proxy (Complex Int)), A.encode (Unary 42 :: Complex Int))
                               , (getTypeScriptType (Proxy :: Proxy (Complex Int)), A.encode (Product "asdf" 'g' 42 :: Complex Int))
                               , (getTypeScriptType (Proxy :: Proxy (Complex Int)), A.encode ((Record { testOne = 3, testTwo = True, testThree = Product "test" 'A' 123}) :: Complex Int))
-                              , (getTypeScriptType (Proxy :: Proxy Optional), A.encode (Optional { optionalInt = Nothing }))
-                              , (getTypeScriptType (Proxy :: Proxy Optional), A.encode (Optional { optionalInt = Just 1 }))]
+
+                              , (getTypeScriptType (Proxy :: Proxy Optional), A.encode (Optional Nothing))
+                              , (getTypeScriptType (Proxy :: Proxy Optional), A.encode (Optional (Just 1)))
+
+                              , (getTypeScriptType (Proxy :: Proxy OptionalUnaryRecord), A.encode (OptionalUnaryRecord { optionalInt = Nothing }))
+                              , (getTypeScriptType (Proxy :: Proxy OptionalUnaryRecord), A.encode (OptionalUnaryRecord { optionalInt = Just 1 }))]
                            |]
 
   declarations :: Exp <- [e|getTypeScriptDeclarations (Proxy :: Proxy Unit)
@@ -68,6 +74,7 @@ testDeclarations testName aesonOptions = do
                          <> getTypeScriptDeclarations (Proxy :: Proxy TwoConstructor)
                          <> getTypeScriptDeclarations (Proxy :: Proxy Complex)
                          <> getTypeScriptDeclarations (Proxy :: Proxy Optional)
+                         <> getTypeScriptDeclarations (Proxy :: Proxy OptionalUnaryRecord)
                          |]
 
   tests <- [d|tests = describe $(return $ LitE $ StringL testName) $ it "type checks everything with tsc" $ testTypeCheckDeclarations $(return declarations) $(return typesAndValues)|]
