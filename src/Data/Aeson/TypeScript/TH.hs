@@ -190,13 +190,22 @@ deriveTypeScript options name = do
   case (unwrapUnaryRecords options, datatypeCons) of
     (True, [con]) | RecordConstructor [_name] <- constructorVariant con -> do
       let [fld] = constructorFields con
-      let getTypeFn = FunD 'getTypeScriptType [Clause [WildP] (NormalB (AppE (VarE 'getTypeScriptType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) fld)))) []]
-      let getParentTypesFn = FunD 'getParentTypes [Clause [WildP] (NormalB (ListE [AppE (ConE 'TSType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) fld))])) []]
+      let getNonGenericTypeFn = FunD 'getTypeScriptType [Clause [WildP] (NormalB (getTypeAsStringExp fld)) []]
+      let getGenericTypeFn = if null datatypeVars
+            then getNonGenericTypeFn
+            else FunD 'getTypeScriptType [Clause [WildP] (NormalB (getTypeAsStringExp (foldl AppT (ConT name) templateVarsToUse))) []]
+      getGenericParentTypesFn <- getGenericParentTypesExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getParentTypes [Clause [WildP] (NormalB expr) []]
+      getNonGenericParentTypesFn <- getNonGenericParentTypesExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getParentTypes [Clause [WildP] (NormalB expr) []]
+      let fullyGenericInstance = mkInstance [] (AppT (ConT ''TypeScript) (ConT name)) [getGenericTypeFn, getGenericParentTypesFn]
+      otherInstances <- if null datatypeVars
+        then return []
+        else
 #if MIN_VERSION_th_abstraction(0,3,0)
-      return [mkInstance (fmap getDatatypePredicate datatypeInstTypes) (AppT (ConT ''TypeScript) (foldl AppT (ConT name) datatypeInstTypes)) [getTypeFn, getParentTypesFn]]
+          return [mkInstance (fmap getDatatypePredicate datatypeInstTypes) (AppT (ConT ''TypeScript) (foldl AppT (ConT name) datatypeInstTypes)) [getNonGenericTypeFn, getNonGenericParentTypesFn]]
 #else
-      return [mkInstance (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) (foldl AppT (ConT name) datatypeVars)) [getTypeFn, getParentTypesFn]]
+          return [mkInstance (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) (foldl AppT (ConT name) datatypeVars)) [getNonGenericTypeFn, getNonGenericParentTypesFn]]
 #endif
+      return (fullyGenericInstance : otherInstances)
     _ -> do
       typeExpr <- getTypeExpression fullyQualifiedDatatypeInfo
       let getTypeFn = FunD 'getTypeScriptType [Clause [WildP] (NormalB typeExpr) []]
