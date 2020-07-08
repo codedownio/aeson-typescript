@@ -14,11 +14,11 @@ formatTSDeclarations = formatTSDeclarations' defaultFormattingOptions
 -- | Format a single TypeScript declaration. This version accepts a FormattingOptions object in case you want more control over the output.
 formatTSDeclaration :: FormattingOptions -> TSDeclaration -> String
 formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVariables names) =
-  [i|type #{typeNameModifier name}#{getGenericBrackets genericVariables} = #{alternatives};|]
+  [i|#{if exportTypes then "export " else ""}type #{typeNameModifier name}#{getGenericBrackets genericVariables} = #{alternatives};|]
   where alternatives = T.intercalate " | " (fmap T.pack names)
 
 formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceName genericVariables members) =
-  [i|interface #{modifiedInterfaceName}#{getGenericBrackets genericVariables} {
+  [i|#{if exportTypes then "export " else ""}interface #{modifiedInterfaceName}#{getGenericBrackets genericVariables} {
 #{lines}
 }|] where lines = T.intercalate "\n" $ fmap T.pack [(replicate numIndentSpaces ' ') <> formatTSField member <> ";"| member <- members]
           modifiedInterfaceName = (\(i, name) -> i <> interfaceNameModifier name) . splitAt 1 $ interfaceName
