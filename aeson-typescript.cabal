@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.2.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b77cd606ddb441b9a4bc9592c1257172003cb38a9b39c2cc9b693a90110c1b52
+-- hash: 0fbb9eabd9c78b14595c5535320917121e872bf0f99e13884254f0496d888660
 
 name:           aeson-typescript
 version:        0.2.0.0
@@ -80,6 +80,7 @@ test-suite aeson-typescript-test
     , th-abstraction <0.4
     , unordered-containers
   other-modules:
+      Formatting
       HigherKind
       NoOmitNothingFields
       ObjectWithSingleFieldNoTagSingleConstructors

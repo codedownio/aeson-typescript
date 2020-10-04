@@ -84,6 +84,11 @@ newtype TSString a = TSString { unpackTSString :: String } deriving Show
 instance IsString (TSString a) where
   fromString = TSString
 
+data SumTypeFormat = StringLiteralType
+                   | Enum
+                   | EnumWithType
+                   deriving (Eq, Show)
+
 -- * Formatting options
 
 data FormattingOptions = FormattingOptions
@@ -93,12 +98,15 @@ data FormattingOptions = FormattingOptions
   -- ^ Function applied to generated interface names
   , typeNameModifier :: String -> String
   -- ^ Function applied to generated type names
+  , sumTypeFormat :: SumTypeFormat
+  -- ^ How to format sum types
   }
 
 defaultFormattingOptions = FormattingOptions
   { numIndentSpaces = 2
   , interfaceNameModifier = id
   , typeNameModifier = id
+  , sumTypeFormat = StringLiteralType
   }
 
 -- | Convenience typeclass class you can use to "attach" a set of Aeson encoding options to a type.

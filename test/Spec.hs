@@ -4,6 +4,7 @@ module Main where
 import Test.Hspec
 
 import qualified HigherKind
+import qualified Formatting
 import qualified ObjectWithSingleFieldNoTagSingleConstructors
 import qualified ObjectWithSingleFieldTagSingleConstructors
 import qualified TaggedObjectNoTagSingleConstructors
@@ -25,5 +26,6 @@ main = hspec $ do
   UntaggedTagSingleConstructors.tests
   UntaggedNoTagSingleConstructors.tests
   HigherKind.tests
+  Formatting.tests
   OmitNothingFields.tests
   NoOmitNothingFields.tests

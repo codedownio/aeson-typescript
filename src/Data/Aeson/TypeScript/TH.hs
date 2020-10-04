@@ -111,6 +111,7 @@ module Data.Aeson.TypeScript.TH (
   formatTSDeclarations',
   formatTSDeclaration,
   FormattingOptions(..),
+  SumTypeFormat(..),
 
   -- * Convenience tools
   HasJSONOptions(..),
