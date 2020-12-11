@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.2.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 00a617afcabcfd8fbaeb7c22dce7296da68ca0ebf3d0d15df2fac2879faa9f46
+-- hash: e7f29ef9f96076f7bb8f22ef8f14cc844315252a0a705ae3cfc9372be1da8519
 
 name:           aeson-typescript
 version:        0.2.0.0
@@ -64,6 +64,7 @@ test-suite aeson-typescript-test
       NoOmitNothingFields
       ObjectWithSingleFieldNoTagSingleConstructors
       ObjectWithSingleFieldTagSingleConstructors
+      ObjectWithSingleFieldUnwrapUnaryRecords
       OmitNothingFields
       TaggedObjectNoTagSingleConstructors
       TaggedObjectTagSingleConstructors
