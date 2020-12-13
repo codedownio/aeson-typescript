@@ -15,8 +15,13 @@ import Data.Set
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
+import Data.Void
+
 
 instance TypeScript () where
+  getTypeScriptType _ = "void"
+
+instance TypeScript Void where
   getTypeScriptType _ = "void"
 
 instance TypeScript T.Text where
