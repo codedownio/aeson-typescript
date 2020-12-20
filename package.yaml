@@ -40,7 +40,6 @@ library:
   source-dirs: src
   exposed-modules:
     - Data.Aeson.TypeScript.TH
-    - Data.Aeson.TypeScript.LookupTypes
     - Data.Aeson.TypeScript.Recursive
 
 tests:
