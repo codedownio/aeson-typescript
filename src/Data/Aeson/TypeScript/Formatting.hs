@@ -23,6 +23,8 @@ formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceNa
 }|] where lines = T.intercalate "\n" $ fmap T.pack [(replicate numIndentSpaces ' ') <> formatTSField member <> ";"| member <- members]
           modifiedInterfaceName = (\(i, name) -> i <> interfaceNameModifier name) . splitAt 1 $ interfaceName
 
+formatTSDeclaration (FormattingOptions {..}) (TSRawDeclaration text) = text
+
 -- | Format a list of TypeScript declarations into a string, suitable for putting directly into a @.d.ts@ file.
 formatTSDeclarations' :: FormattingOptions -> [TSDeclaration] -> String
 formatTSDeclarations' options declarations = T.unpack $ T.intercalate "\n\n" (fmap (T.pack . formatTSDeclaration options) declarations)

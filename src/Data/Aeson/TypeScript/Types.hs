@@ -73,6 +73,7 @@ data TSDeclaration = TSInterfaceDeclaration { interfaceName :: String
                    | TSTypeAlternatives { typeName :: String
                                         , typeGenericVariables :: [String]
                                         , alternativeTypes :: [String]}
+                   | TSRawDeclaration { text :: String }
   deriving (Show, Eq, Ord)
 
 data TSField = TSField { fieldOptional :: Bool

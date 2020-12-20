@@ -104,7 +104,7 @@ module Data.Aeson.TypeScript.TH (
   TypeScript(..),
   TSType(..),
 
-  TSDeclaration,
+  TSDeclaration(TSRawDeclaration),
 
   -- * Formatting declarations
   formatTSDeclarations,
