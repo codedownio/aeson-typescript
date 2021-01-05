@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.7.0.0
+
+Represents optional fields (according to the Haskell model) as required fields
+with type `A | null` rather than optional fields.
+
 ## 0.6.2.0
 
 * Expose generic type constructors `T4` through `T10`. (We only exposed `T`, `T1`, `T2`, and `T3` before.)
