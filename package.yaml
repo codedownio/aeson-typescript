@@ -35,6 +35,9 @@ dependencies:
 - text
 - th-abstraction < 0.4
 - unordered-containers
+- beam-core
+- time
+
 
 library:
   source-dirs: src

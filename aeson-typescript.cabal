@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 40c4e69d4430c0e44e17b3fad921383e3b44cd50412fa222fea682b295570800
+-- hash: 96e15cc4fd8d1fc36ede72e6e1bfec4d8b9d9afb57339271b7d7f50461ebdfde
 
 name:           aeson-typescript
 version:        0.2.0.0
@@ -47,12 +47,14 @@ library
   build-depends:
       aeson
     , base >=4.7 && <5
+    , beam-core
     , containers
     , interpolate
     , mtl
     , template-haskell
     , text
     , th-abstraction <0.4
+    , time
     , unordered-containers
   default-language: Haskell2010
 
@@ -61,6 +63,9 @@ test-suite aeson-typescript-test
   main-is: Spec.hs
   other-modules:
       HigherKind
+      HigherKindBeam
+      Live
+      LiveLogging
       NoOmitNothingFields
       ObjectWithSingleFieldNoTagSingleConstructors
       ObjectWithSingleFieldTagSingleConstructors
@@ -88,6 +93,7 @@ test-suite aeson-typescript-test
       aeson
     , aeson-typescript
     , base >=4.7 && <5
+    , beam-core
     , bytestring
     , containers
     , directory
@@ -100,5 +106,6 @@ test-suite aeson-typescript-test
     , temporary
     , text
     , th-abstraction <0.4
+    , time
     , unordered-containers
   default-language: Haskell2010
