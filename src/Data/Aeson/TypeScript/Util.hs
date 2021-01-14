@@ -18,6 +18,18 @@ import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
 
 
+#if MIN_VERSION_th_abstraction(0,3,0)
+getDataTypeVars (DatatypeInfo {datatypeInstTypes}) = datatypeInstTypes
+#else
+getDataTypeVars (DatatypeInfo {datatypeVars}) = datatypeVars
+#endif
+
+#if MIN_VERSION_th_abstraction(0,3,0)
+setDataTypeVars dti@(DatatypeInfo {}) vars = dti { datatypeInstTypes = vars }
+#else
+setDataTypeVars dti@(DatatypeInfo {}) vars = dti { datatypeVars = vars }
+#endif
+
 dropLeadingIFromInterfaceName :: TSDeclaration -> TSDeclaration
 dropLeadingIFromInterfaceName decl@(TSInterfaceDeclaration {interfaceName=('I':xs)}) = decl { interfaceName = xs }
 dropLeadingIFromInterfaceName decl@(TSTypeAlternatives {typeName=('I':xs)}) = decl { typeName = xs }
@@ -52,9 +64,6 @@ getTypeAsStringExp typ = AppE (VarE 'getTypeScriptType) (SigE (ConE 'Proxy) (App
 
 getOptionalAsBoolExp :: Type -> Exp
 getOptionalAsBoolExp typ = AppE (VarE 'getTypeScriptOptional) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) typ))
-
-isTaggedObject (sumEncoding -> TaggedObject _ _) = True
-isTaggedObject _ = False
 
 -- | Get the type of a tuple of constructor fields, as when we're packing a record-less constructor into a list
 getTupleType constructorFields = case length constructorFields of
@@ -119,4 +128,3 @@ isUntaggedValue _ = False
 
 fst3 (x, _, _) = x
 snd3 (_, y, _) = y
-thd3 (_, _, z) = z

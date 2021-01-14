@@ -127,6 +127,7 @@ import Data.Aeson.TypeScript.Formatting
 import Data.Aeson.TypeScript.Types
 import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Util
+import qualified Data.List as L
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Monoid
@@ -156,15 +157,9 @@ deriveTypeScript options name = do
         1 -> [ConT ''T]
         _ -> take (length datatypeVars) [ConT ''T1, ConT ''T2, ConT ''T3, ConT ''T4, ConT ''T5, ConT ''T6, ConT ''T7, ConT ''T8, ConT ''T9, ConT ''T10]
 
-#if MIN_VERSION_th_abstraction(0,3,0)
-  let subMap = M.fromList $ zip (mapMaybe getFreeVariableName datatypeInstTypes) templateVarsToUse
-  let fullyQualifiedDatatypeInfo = (datatypeInfo {datatypeInstTypes = templateVarsToUse
-                                                 , datatypeCons = fmap (applySubstitution subMap) datatypeCons})
-#else
-  let subMap = M.fromList $ zip (mapMaybe getFreeVariableName datatypeVars) templateVarsToUse
-  let fullyQualifiedDatatypeInfo = (datatypeInfo {datatypeVars = templateVarsToUse
-                                                 , datatypeCons = fmap (applySubstitution subMap) datatypeCons})
-#endif
+  let subMap = M.fromList $ zip (mapMaybe getFreeVariableName (getDataTypeVars datatypeInfo)) templateVarsToUse
+  let fullyQualifiedDatatypeInfo = setDataTypeVars (datatypeInfo { datatypeCons = fmap (applySubstitution subMap) datatypeCons}) templateVarsToUse
+
   getTypeFn <- getTypeExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
   getDeclarationFn <- getDeclarationFunctionBody options name fullyQualifiedDatatypeInfo
   getGenericParentTypesFn <- getGenericParentTypesExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getParentTypes [Clause [WildP] (NormalB expr) []]
@@ -175,11 +170,7 @@ deriveTypeScript options name = do
   otherInstances <- case null datatypeVars of
     False -> do
       otherGetTypeFn <- getTypeExpression datatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
-#if MIN_VERSION_th_abstraction(0,3,0)
-      return [mkInstance (fmap getDatatypePredicate datatypeInstTypes) (AppT (ConT ''TypeScript) (foldl AppT (ConT name) datatypeInstTypes)) [otherGetTypeFn, getNonGenericParentTypesFn]]
-#else
-      return [mkInstance (fmap getDatatypePredicate datatypeVars) (AppT (ConT ''TypeScript) (foldl AppT (ConT name) datatypeVars)) [otherGetTypeFn, getNonGenericParentTypesFn]]
-#endif
+      return [mkInstance (fmap getDatatypePredicate (getDataTypeVars datatypeInfo)) (AppT (ConT ''TypeScript) (foldl AppT (ConT name) (getDataTypeVars datatypeInfo))) [otherGetTypeFn, getNonGenericParentTypesFn]]
     True -> return []
 
   return $ fullyGenericInstance : otherInstances
@@ -286,25 +277,12 @@ getFieldType _ typ = (getTypeAsStringExp typ, getOptionalAsBoolExp typ)
 -- | Get an expression to be used for getTypeScriptType.
 -- For datatypes of kind * this is easy, since we can just evaluate the string literal in TH.
 -- For higher-kinded types, we need to make an expression which evaluates the template types and fills it in.
-#if MIN_VERSION_th_abstraction(0,3,0)
 getTypeExpression :: DatatypeInfo -> Q Exp
-getTypeExpression (DatatypeInfo {datatypeInstTypes=[], ..}) = return $ stringE $ getTypeName datatypeName
-getTypeExpression (DatatypeInfo {datatypeInstTypes=vars, ..}) = do
-#else
-getTypeExpression :: DatatypeInfo -> Q Exp
-getTypeExpression (DatatypeInfo {datatypeVars=[], ..}) = return $ stringE $ getTypeName datatypeName
-getTypeExpression (DatatypeInfo {datatypeVars=vars, ..}) = do
-#endif
-  let baseName = stringE $ getTypeName datatypeName
+getTypeExpression di@(getDataTypeVars -> []) = return $ stringE $ getTypeName (datatypeName di)
+getTypeExpression di@(getDataTypeVars -> vars) = do
+  let baseName = getTypeName (datatypeName di)
   let typeNames = ListE [getTypeAsStringExp typ | typ <- vars]
-  let headType = AppE (VarE 'head) typeNames
-  let tailType = AppE (VarE 'tail) typeNames
-  let comma = stringE ", "
-  x <- newName "x"
-  let tailsWithCommas = AppE (VarE 'mconcat) (CompE [BindS (VarP x) tailType, NoBindS (AppE (AppE (VarE 'mappend) comma) (VarE x))])
-  let brackets = AppE (VarE 'mconcat) (ListE [stringE "<", headType, tailsWithCommas, stringE ">"])
-
-  return $ (AppE (AppE (VarE 'mappend) baseName) brackets)
+  [|baseName <> "<" <> (L.intercalate ", " $(return typeNames)) <> ">"|]
 
 -- * Convenience functions
 
@@ -318,17 +296,13 @@ deriveJSONAndTypeScript :: Options
                         -> Name
                         -- ^ Name of the type for which to generate 'A.ToJSON', 'A.FromJSON', and 'TypeScript' instance declarations.
                         -> Q [Dec]
-deriveJSONAndTypeScript options name = do
-  ts <- deriveTypeScript options name
-  json <- A.deriveJSON options name
-  return $ ts <> json
+deriveJSONAndTypeScript options name = (<>) <$> (deriveTypeScript options name) <*> (A.deriveJSON options name)
 
 -- | For the fully generic instance, the parent types are the types inside the constructors
 getGenericParentTypesExpression :: DatatypeInfo -> Q Exp
 getGenericParentTypesExpression (DatatypeInfo {..}) = return $ ListE [AppE (ConE 'TSType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) typ)) | typ <- types]
-  where types = mconcat $ fmap constructorFields $ datatypeCons
+  where types = mconcat $ fmap constructorFields datatypeCons
 
 -- | For the non-generic instances, the parent type is the generic type
 getNonGenericParentTypesExpression :: DatatypeInfo -> Q Exp
 getNonGenericParentTypesExpression (DatatypeInfo {..}) = return $ ListE [AppE (ConE 'TSType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) (ConT datatypeName)))]
-    
