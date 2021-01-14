@@ -6,6 +6,7 @@ import qualified Data.Aeson as A
 import Data.Proxy
 import Data.String
 import Data.Typeable
+import Language.Haskell.TH
 
 -- | The typeclass that defines how a type is turned into TypeScript.
 --
@@ -129,4 +130,31 @@ instance TypeScript T7 where getTypeScriptType _ = "T7"
 instance TypeScript T8 where getTypeScriptType _ = "T8"
 instance TypeScript T9 where getTypeScriptType _ = "T9"
 instance TypeScript T10 where getTypeScriptType _ = "T10"
-    
+
+allStarConstructors = [ConT ''T1, ConT ''T2, ConT ''T3, ConT ''T4, ConT ''T5, ConT ''T6, ConT ''T7, ConT ''T8, ConT ''T9, ConT ''T10]                 
+
+data F (a :: k) = F
+data F1 a = F1
+data F2 a = F2
+data F3 a = F3
+data F4 a = F4
+data F5 a = F5
+data F6 a = F6
+data F7 a = F7
+data F8 a = F8
+data F9 a = F9
+data F10 a = F10
+
+instance (Typeable a, Typeable k, TypeScript a) => TypeScript (F (a :: k)) where getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
+instance (Typeable a, Typeable k, TypeScript a) => TypeScript (F1 (a :: k)) where getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
+instance (Typeable a, Typeable k, TypeScript a) => TypeScript (F2 (a :: k)) where getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
+instance (Typeable a, Typeable k, TypeScript a) => TypeScript (F3 (a :: k)) where getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
+instance (Typeable a, Typeable k, TypeScript a) => TypeScript (F4 (a :: k)) where getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
+instance (Typeable a, Typeable k, TypeScript a) => TypeScript (F5 (a :: k)) where getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
+instance (Typeable a, Typeable k, TypeScript a) => TypeScript (F6 (a :: k)) where getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
+instance (Typeable a, Typeable k, TypeScript a) => TypeScript (F7 (a :: k)) where getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
+instance (Typeable a, Typeable k, TypeScript a) => TypeScript (F8 (a :: k)) where getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
+instance (Typeable a, Typeable k, TypeScript a) => TypeScript (F9 (a :: k)) where getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
+instance (Typeable a, Typeable k, TypeScript a) => TypeScript (F10 (a :: k)) where getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
+
+allPolyStarConstructors = [ConT ''F1, ConT ''F2, ConT ''F3, ConT ''F4, ConT ''F5, ConT ''F6, ConT ''F7, ConT ''F8, ConT ''F9, ConT ''F10]                 

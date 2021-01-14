@@ -1,4 +1,13 @@
-{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns, KindSignatures #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module HigherKind (tests) where
 
@@ -6,6 +15,7 @@ import Data.Aeson as A
 import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.TH
 import Data.Aeson.TypeScript.Types
+import Data.Kind
 import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString

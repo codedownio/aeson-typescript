@@ -146,18 +146,21 @@ deriveTypeScript :: Options
 deriveTypeScript options name = do
   datatypeInfo@(DatatypeInfo {..}) <- reifyDatatype name
 
-  -- reportError [i|Reified: #{datatypeInfo}|]
+  -- reportWarning [i|Reified: #{datatypeInfo}|]
 
   assertExtensionsTurnedOn datatypeInfo
 
   let getFreeVariableName (SigT (VarT n) _kind) = Just n
       getFreeVariableName _ = Nothing
 
-  let templateVarsToUse = case length datatypeVars of
-        1 -> [ConT ''T]
-        _ -> take (length datatypeVars) [ConT ''T1, ConT ''T2, ConT ''T3, ConT ''T4, ConT ''T5, ConT ''T6, ConT ''T7, ConT ''T8, ConT ''T9, ConT ''T10]
+  let templateVarsToUse = case datatypeVars of
+        [KindedTV _ StarT] -> [ConT ''T]
+        vars -> chooseDataTypeVars allStarConstructors allPolyStarConstructors vars
 
   let subMap = M.fromList $ zip (mapMaybe getFreeVariableName (getDataTypeVars datatypeInfo)) templateVarsToUse
+
+  -- reportWarning [i|subMap: #{subMap}|]
+
   let fullyQualifiedDatatypeInfo = setDataTypeVars (datatypeInfo { datatypeCons = fmap (applySubstitution subMap) datatypeCons}) templateVarsToUse
 
   getTypeFn <- getTypeExpression fullyQualifiedDatatypeInfo >>= \expr -> return $ FunD 'getTypeScriptType [Clause [WildP] (NormalB expr) []]
@@ -282,7 +285,7 @@ getTypeExpression di@(getDataTypeVars -> []) = return $ stringE $ getTypeName (d
 getTypeExpression di@(getDataTypeVars -> vars) = do
   let baseName = getTypeName (datatypeName di)
   let typeNames = ListE [getTypeAsStringExp typ | typ <- vars]
-  [|baseName <> "<" <> (L.intercalate ", " $(return typeNames)) <> ">"|]
+  [|$(return (stringE baseName)) <> "<" <> (L.intercalate ", " $(return typeNames)) <> ">"|]
 
 -- * Convenience functions
 
@@ -306,3 +309,11 @@ getGenericParentTypesExpression (DatatypeInfo {..}) = return $ ListE [AppE (ConE
 -- | For the non-generic instances, the parent type is the generic type
 getNonGenericParentTypesExpression :: DatatypeInfo -> Q Exp
 getNonGenericParentTypesExpression (DatatypeInfo {..}) = return $ ListE [AppE (ConE 'TSType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) (ConT datatypeName)))]
+
+
+chooseDataTypeVars _ _ [] = []
+chooseDataTypeVars starConstructors polyStarConstructors (x:xs) = case x of
+  PlainTV _ -> (head starConstructors) : chooseDataTypeVars (tail starConstructors) polyStarConstructors xs
+  KindedTV _ StarT -> (head starConstructors) : chooseDataTypeVars (tail starConstructors) polyStarConstructors xs
+  -- higher -> (higher) : chooseDataTypeVars starConstructors (tail polyStarConstructors) xs
+  _ -> (head allPolyStarConstructors) : chooseDataTypeVars starConstructors (tail polyStarConstructors) xs
