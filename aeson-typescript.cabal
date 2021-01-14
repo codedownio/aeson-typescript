@@ -40,6 +40,7 @@ library
       Data.Aeson.TypeScript.Formatting
       Data.Aeson.TypeScript.Instances
       Data.Aeson.TypeScript.Types
+      Data.Aeson.TypeScript.Util
       Paths_aeson_typescript
   hs-source-dirs:
       src
@@ -77,6 +78,7 @@ test-suite aeson-typescript-test
       Data.Aeson.TypeScript.Recursive
       Data.Aeson.TypeScript.TH
       Data.Aeson.TypeScript.Types
+      Data.Aeson.TypeScript.Util
       Paths_aeson_typescript
   hs-source-dirs:
       test

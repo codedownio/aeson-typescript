@@ -3,7 +3,6 @@
 module Data.Aeson.TypeScript.Types where
 
 import qualified Data.Aeson as A
-import qualified Data.Aeson.TH as A
 import Data.Proxy
 import Data.String
 import Data.Typeable
@@ -96,6 +95,7 @@ data FormattingOptions = FormattingOptions
   -- ^ Function applied to generated type names
   }
 
+defaultFormattingOptions :: FormattingOptions
 defaultFormattingOptions = FormattingOptions
   { numIndentSpaces = 2
   , interfaceNameModifier = id
@@ -105,3 +105,28 @@ defaultFormattingOptions = FormattingOptions
 -- | Convenience typeclass class you can use to "attach" a set of Aeson encoding options to a type.
 class HasJSONOptions a where
   getJSONOptions :: (Proxy a) -> A.Options
+
+data T = T
+data T1 = T1
+data T2 = T2
+data T3 = T3
+data T4 = T4
+data T5 = T5
+data T6 = T6
+data T7 = T7
+data T8 = T8
+data T9 = T9
+data T10 = T10
+
+instance TypeScript T where getTypeScriptType _ = "T"
+instance TypeScript T1 where getTypeScriptType _ = "T1"
+instance TypeScript T2 where getTypeScriptType _ = "T2"
+instance TypeScript T3 where getTypeScriptType _ = "T3"
+instance TypeScript T4 where getTypeScriptType _ = "T4"
+instance TypeScript T5 where getTypeScriptType _ = "T5"
+instance TypeScript T6 where getTypeScriptType _ = "T6"
+instance TypeScript T7 where getTypeScriptType _ = "T7"
+instance TypeScript T8 where getTypeScriptType _ = "T8"
+instance TypeScript T9 where getTypeScriptType _ = "T9"
+instance TypeScript T10 where getTypeScriptType _ = "T10"
+    

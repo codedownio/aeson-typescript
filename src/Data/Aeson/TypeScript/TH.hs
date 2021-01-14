@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, FlexibleInstances, NamedFieldPuns, MultiWayIf, ViewPatterns #-}
+{-# LANGUAGE CPP, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, FlexibleInstances, NamedFieldPuns, MultiWayIf, ViewPatterns, PolyKinds #-}
 
 {-|
 Module:      Data.Aeson.TypeScript.TH
@@ -116,47 +116,24 @@ module Data.Aeson.TypeScript.TH (
   HasJSONOptions(..),
   deriveJSONAndTypeScript,
 
+  T(..),
+    
   module Data.Aeson.TypeScript.Instances
   ) where
 
-import Control.Monad
 import Data.Aeson as A
 import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.Formatting
-import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Types
+import Data.Aeson.TypeScript.Instances ()
+import Data.Aeson.TypeScript.Util
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString
-import qualified Data.Text as T
 import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
-
-data T = T
-data T1 = T1
-data T2 = T2
-data T3 = T3
-data T4 = T4
-data T5 = T5
-data T6 = T6
-data T7 = T7
-data T8 = T8
-data T9 = T9
-data T10 = T10
-
-instance TypeScript T where getTypeScriptType _ = "T"
-instance TypeScript T1 where getTypeScriptType _ = "T1"
-instance TypeScript T2 where getTypeScriptType _ = "T2"
-instance TypeScript T3 where getTypeScriptType _ = "T3"
-instance TypeScript T4 where getTypeScriptType _ = "T4"
-instance TypeScript T5 where getTypeScriptType _ = "T5"
-instance TypeScript T6 where getTypeScriptType _ = "T6"
-instance TypeScript T7 where getTypeScriptType _ = "T7"
-instance TypeScript T8 where getTypeScriptType _ = "T8"
-instance TypeScript T9 where getTypeScriptType _ = "T9"
-instance TypeScript T10 where getTypeScriptType _ = "T10"
 
 
 -- | Generates a 'TypeScript' instance declaration for the given data type.
@@ -167,6 +144,8 @@ deriveTypeScript :: Options
                  -> Q [Dec]
 deriveTypeScript options name = do
   datatypeInfo@(DatatypeInfo {..}) <- reifyDatatype name
+
+  -- reportError [i|Reified: #{datatypeInfo}|]
 
   assertExtensionsTurnedOn datatypeInfo
 
@@ -205,15 +184,6 @@ deriveTypeScript options name = do
 
   return $ fullyGenericInstance : otherInstances
 
--- | For the fully generic instance, the parent types are the types inside the constructors
-getGenericParentTypesExpression :: DatatypeInfo -> Q Exp
-getGenericParentTypesExpression (DatatypeInfo {..}) = return $ ListE [AppE (ConE 'TSType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) typ)) | typ <- types]
-  where types = mconcat $ fmap constructorFields $ datatypeCons
-
--- | For the non-generic instances, the parent type is the generic type
-getNonGenericParentTypesExpression :: DatatypeInfo -> Q Exp
-getNonGenericParentTypesExpression (DatatypeInfo {..}) = return $ ListE [AppE (ConE 'TSType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) (ConT datatypeName)))]
-
 getDeclarationFunctionBody :: Options -> p -> DatatypeInfo -> Q Dec
 getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
   -- If name is higher-kinded, add generic variables to the type and interface declarations
@@ -238,10 +208,6 @@ getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
 
   return $ FunD 'getTypeScriptDeclarations [Clause [WildP] declarationFnBody []]
 
-dropLeadingIFromInterfaceName :: TSDeclaration -> TSDeclaration
-dropLeadingIFromInterfaceName decl@(TSInterfaceDeclaration {interfaceName=('I':xs)}) = decl { interfaceName = xs }
-dropLeadingIFromInterfaceName decl@(TSTypeAlternatives {typeName=('I':xs)}) = decl { typeName = xs }
-dropLeadingIFromInterfaceName x = x
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
 handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> (Exp, Maybe Exp, Bool)
@@ -357,102 +323,12 @@ deriveJSONAndTypeScript options name = do
   json <- A.deriveJSON options name
   return $ ts <> json
 
--- * Util stuff
+-- | For the fully generic instance, the parent types are the types inside the constructors
+getGenericParentTypesExpression :: DatatypeInfo -> Q Exp
+getGenericParentTypesExpression (DatatypeInfo {..}) = return $ ListE [AppE (ConE 'TSType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) typ)) | typ <- types]
+  where types = mconcat $ fmap constructorFields $ datatypeCons
 
-lastNameComponent :: String -> String
-lastNameComponent x = T.unpack $ last $ T.splitOn "." (T.pack x)
-
-lastNameComponent' :: Name -> String
-lastNameComponent' = lastNameComponent . show
-
-getTypeName :: Name -> String
-getTypeName x = lastNameComponent $ show x
-
-allConstructorsAreNullary :: [ConstructorInfo] -> Bool
-allConstructorsAreNullary constructors = and $ fmap isConstructorNullary constructors
-
-isConstructorNullary :: ConstructorInfo -> Bool
-isConstructorNullary (ConstructorInfo {constructorVariant, constructorFields}) = (constructorVariant == NormalConstructor) && (constructorFields == [])
-
--- In Template Haskell 2.10.0.0 and later, Pred is just a synonm for Type
--- In earlier versions, it has constructors
-getDatatypePredicate :: Type -> Pred
-#if MIN_VERSION_template_haskell(2,10,0)
-getDatatypePredicate typ = AppT (ConT ''TypeScript) typ
-#else
-getDatatypePredicate typ = ClassP ''TypeScript [typ]
-#endif
-
-getTypeAsStringExp :: Type -> Exp
-getTypeAsStringExp typ = AppE (VarE 'getTypeScriptType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) typ))
-
-getOptionalAsBoolExp :: Type -> Exp
-getOptionalAsBoolExp typ = AppE (VarE 'getTypeScriptOptional) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) typ))
-
-isTaggedObject (sumEncoding -> TaggedObject _ _) = True
-isTaggedObject _ = False
-
--- | Get the type of a tuple of constructor fields, as when we're packing a record-less constructor into a list
-getTupleType constructorFields = case length constructorFields of
-  0 -> AppT ListT (ConT ''())
-  1 -> head constructorFields
-  x -> applyToArgsT (ConT $ tupleTypeName x) constructorFields
-
--- | Helper to apply a type constructor to a list of type args
-applyToArgsT :: Type -> [Type] -> Type
-applyToArgsT constructor [] = constructor
-applyToArgsT constructor (x:xs) = applyToArgsT (AppT constructor x) xs
-
--- | Helper to apply a function a list of args
-applyToArgsE :: Exp -> [Exp] -> Exp
-applyToArgsE f [] = f
-applyToArgsE f (x:xs) = applyToArgsE (AppE f x) xs
-
-stringE = LitE . StringL
-
--- Between Template Haskell 2.10 and 2.11, InstanceD got an additional argument
-#if MIN_VERSION_template_haskell(2,11,0)
-mkInstance context typ decs = InstanceD Nothing context typ decs
-#else
-mkInstance context typ decs = InstanceD context typ decs
-#endif
-
--- Between Aeson 1.1.2.0 and 1.2.0.0, tagSingleConstructors was added
-getTagSingleConstructors :: Options -> Bool
-#if MIN_VERSION_aeson(1,2,0)
-getTagSingleConstructors options = tagSingleConstructors options
-#else
-getTagSingleConstructors _ = False
-#endif
-
--- Between Template Haskell 2.10 and 2.11, the ability to look up which extensions are turned on was added
-assertExtensionsTurnedOn :: DatatypeInfo -> Q ()
-#if MIN_VERSION_template_haskell(2,11,0)
-assertExtensionsTurnedOn (DatatypeInfo {..}) = do
-  -- Check that necessary language extensions are turned on
-  scopedTypeVariablesEnabled <- isExtEnabled ScopedTypeVariables
-  kindSignaturesEnabled <- isExtEnabled KindSignatures
-  when (not scopedTypeVariablesEnabled) $ error [i|The ScopedTypeVariables extension is required; please enable it before calling deriveTypeScript. (For example: put {-# LANGUAGE ScopedTypeVariables #-} at the top of the file.)|]
-  when ((not kindSignaturesEnabled) && (length datatypeVars > 0)) $ error [i|The KindSignatures extension is required since type #{datatypeName} is a higher order type; please enable it before calling deriveTypeScript. (For example: put {-# LANGUAGE KindSignatures #-} at the top of the file.)|]
-#else
-assertExtensionsTurnedOn _ = return ()
-#endif
-
--- Older versions of Aeson don't have an Eq instance for SumEncoding so we do this
-isObjectWithSingleField ObjectWithSingleField = True
-isObjectWithSingleField _ = False
-
--- Older versions of Aeson don't have an Eq instance for SumEncoding so we do this
-isTwoElemArray TwoElemArray = True
-isTwoElemArray _ = False
-
--- Older versions of Aeson don't have an Eq instance for SumEncoding so we do this
--- UntaggedValue was added between Aeson 0.11.3.0 and 1.0.0.0
-#if MIN_VERSION_aeson(1,0,0)
-isUntaggedValue UntaggedValue = True
-#endif
-isUntaggedValue _ = False
-
-fst3 (x, _, _) = x
-snd3 (_, y, _) = y
-thd3 (_, _, z) = z
+-- | For the non-generic instances, the parent type is the generic type
+getNonGenericParentTypesExpression :: DatatypeInfo -> Q Exp
+getNonGenericParentTypesExpression (DatatypeInfo {..}) = return $ ListE [AppE (ConE 'TSType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) (ConT datatypeName)))]
+    
