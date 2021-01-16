@@ -117,6 +117,9 @@ module Data.Aeson.TypeScript.TH (
   deriveJSONAndTypeScript,
 
   T(..),
+  T1(..),
+  T2(..),
+  T3(..),
   F1(..),
   F2(..),
   F3(..), -- TODO: expose the rest of these if necessary
