@@ -170,7 +170,7 @@ deriveTypeScript options name = do
   [d|instance $(return constraints) => TypeScript $(return $ foldl AppT (ConT name) (getDataTypeVars datatypeInfo)) where
        getTypeScriptType _ = $(TH.stringE $ getTypeName datatypeName) <> $genericBrackets;
        getTypeScriptDeclarations _ = $(getDeclarationFunctionBody options name datatypeInfo)
-       getParentTypes _ = $(getGenericParentTypesExpression datatypeInfo)
+       getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return t))|] | t <- mconcat $ fmap constructorFields datatypeCons])
        |]
 
 getDeclarationFunctionBody :: Options -> p -> DatatypeInfo -> Q Exp
@@ -180,18 +180,14 @@ getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
                                         | otherwise -> ["T" <> show j | j <- [1..(length datatypeVars)]]
   let genericVariablesExp = ListE [stringE x | x <- genericVariables]
 
-  let interfaceNamesAndDeclarations = fmap (handleConstructor options datatypeInfo genericVariables) datatypeCons
-
-  case interfaceNamesAndDeclarations of
+  case fmap (handleConstructor options datatypeInfo genericVariables) datatypeCons of
     [(_, Just interfaceDecl, True)] | L.null datatypeVars -> do
       -- The type declaration is just a reference to a single interface, so we can omit the type part and drop the "I" from the interface name
-      return $ ListE [AppE (VarE 'dropLeadingIFromInterfaceName) interfaceDecl]
+      [|dropLeadingIFromInterfaceName $(return interfaceDecl)|]
 
-    _ -> do
-      let interfaceNames = fmap fst3 interfaceNamesAndDeclarations
-
-      let typeDeclaration = applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE interfaceNames]
-      return $ ListE (typeDeclaration : (mapMaybe snd3 interfaceNamesAndDeclarations))
+    xs -> do
+      typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName datatypeName) $(return genericVariablesExp) $(listE $ fmap (return . fst3) xs)|]
+      return $ ListE (typeDeclaration : (mapMaybe snd3 xs))
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
 handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> (Exp, Maybe Exp, Bool)
@@ -221,7 +217,7 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
     interfaceName = getInterfaceName ci
     interfaceNameWithBrackets = interfaceName <> getGenericBrackets genericVariables
 
-    tupleEncoding = Just $ applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ interfaceName
+    tupleEncoding = Just $ applyToArgsE (ConE 'TSTypeAlternatives) [stringE interfaceName
                                                                    , ListE [stringE x | x <- genericVariables]
                                                                    , ListE [getTypeAsStringExp contentsTupleType]]
 
@@ -257,12 +253,12 @@ getTSFields options namesAndTypes =
        fieldTyp)
   | (nameString, typ) <- namesAndTypes
   , let (fieldTyp, optAsBool) = getFieldType options typ]
-
-getFieldType :: Options -> Type -> (Exp, Exp)
-getFieldType options (AppT (ConT name) t)
-  | not (omitNothingFields options) && name == ''Maybe
-  = (AppE (AppE (VarE 'mappend) (getTypeAsStringExp t)) (stringE " | null"), getOptionalAsBoolExp t)
-getFieldType _ typ = (getTypeAsStringExp typ, getOptionalAsBoolExp typ)
+  where
+    getFieldType :: Options -> Type -> (Exp, Exp)
+    getFieldType options (AppT (ConT name) t)
+      | not (omitNothingFields options) && name == ''Maybe
+      = (AppE (AppE (VarE 'mappend) (getTypeAsStringExp t)) (stringE " | null"), getOptionalAsBoolExp t)
+    getFieldType _ typ = (getTypeAsStringExp typ, getOptionalAsBoolExp typ)
 
 
 -- * Convenience functions
@@ -279,7 +275,3 @@ deriveJSONAndTypeScript :: Options
                         -> Q [Dec]
 deriveJSONAndTypeScript options name = (<>) <$> (deriveTypeScript options name) <*> (A.deriveJSON options name)
 
--- | For the fully generic instance, the parent types are the types inside the constructors
-getGenericParentTypesExpression :: DatatypeInfo -> Q Exp
-getGenericParentTypesExpression (DatatypeInfo {..}) = return $ ListE [AppE (ConE 'TSType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) typ)) | typ <- types]
-  where types = mconcat $ fmap constructorFields datatypeCons
