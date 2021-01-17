@@ -120,9 +120,6 @@ module Data.Aeson.TypeScript.TH (
   T1(..),
   T2(..),
   T3(..),
-  F1(..),
-  F2(..),
-  F3(..), -- TODO: expose the rest of these if necessary
     
   module Data.Aeson.TypeScript.Instances
   ) where
@@ -130,8 +127,8 @@ module Data.Aeson.TypeScript.TH (
 import Data.Aeson as A
 import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.Formatting
-import Data.Aeson.TypeScript.Types
 import Data.Aeson.TypeScript.Instances ()
+import Data.Aeson.TypeScript.Types
 import Data.Aeson.TypeScript.Util
 import qualified Data.List as L
 import qualified Data.Map as M
@@ -141,6 +138,7 @@ import Data.Proxy
 import Data.String.Interpolate.IsString
 import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
+import qualified Language.Haskell.TH.Lib as TH
 
 
 -- | Generates a 'TypeScript' instance declaration for the given data type.
@@ -154,13 +152,23 @@ deriveTypeScript options name = do
 
   assertExtensionsTurnedOn datatypeInfo
 
+  -- Build constraints: a TypeScript constraint for every constructor type and one for every type variable.
+  -- Probably overkill/not exactly right, but it's a start.
   let constructorPreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- mconcat $ fmap constructorFields datatypeCons]
   let typeVariablePreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- getDataTypeVars datatypeInfo]
   let predicates = constructorPreds <> typeVariablePreds
-
   let constraints = foldl AppT (TupleT (length predicates)) predicates
+
+  -- Build generic args: one for every T, T1, T2, etc. passed in
+  let isGenericVariable t = t `L.elem` allStarConstructors
+  let typeNames = [getTypeAsStringExp typ | typ <- getDataTypeVars datatypeInfo
+                                          , isGenericVariable typ]
+  let genericBrackets = case typeNames of
+        [] -> [|""|]
+        _ -> [|"<" <> (L.intercalate ", " $(listE $ fmap return typeNames)) <> ">"|]
+
   [d|instance $(return constraints) => TypeScript $(return $ foldl AppT (ConT name) (getDataTypeVars datatypeInfo)) where
-       getTypeScriptType _ = $(getTypeExpression datatypeInfo);
+       getTypeScriptType _ = $(TH.stringE $ getTypeName datatypeName) <> $genericBrackets;
        getTypeScriptDeclarations _ = $(getDeclarationFunctionBody options name datatypeInfo)
        getParentTypes _ = $(getGenericParentTypesExpression datatypeInfo)
        |]
@@ -173,10 +181,9 @@ getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
   let genericVariablesExp = ListE [stringE x | x <- genericVariables]
 
   let interfaceNamesAndDeclarations = fmap (handleConstructor options datatypeInfo genericVariables) datatypeCons
-  let interfaceDeclarations = catMaybes $ fmap snd3 interfaceNamesAndDeclarations
 
   case interfaceNamesAndDeclarations of
-    [(_, Just interfaceDecl, True)] | datatypeVars == [] -> do
+    [(_, Just interfaceDecl, True)] | L.null datatypeVars -> do
       -- The type declaration is just a reference to a single interface, so we can omit the type part and drop the "I" from the interface name
       return $ ListE [AppE (VarE 'dropLeadingIFromInterfaceName) interfaceDecl]
 
@@ -184,7 +191,7 @@ getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
       let interfaceNames = fmap fst3 interfaceNamesAndDeclarations
 
       let typeDeclaration = applyToArgsE (ConE 'TSTypeAlternatives) [stringE $ getTypeName datatypeName, genericVariablesExp, ListE interfaceNames]
-      return $ ListE (typeDeclaration : interfaceDeclarations)
+      return $ ListE (typeDeclaration : (mapMaybe snd3 interfaceNamesAndDeclarations))
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
 handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> (Exp, Maybe Exp, Bool)
@@ -258,18 +265,6 @@ getFieldType options (AppT (ConT name) t)
 getFieldType _ typ = (getTypeAsStringExp typ, getOptionalAsBoolExp typ)
 
 
--- * Getting type expression
-
--- | Get an expression to be used for getTypeScriptType.
--- For datatypes of kind * this is easy, since we can just evaluate the string literal in TH.
--- For higher-kinded types, we need to make an expression which evaluates the template types and fills it in.
-getTypeExpression :: DatatypeInfo -> Q Exp
-getTypeExpression di@(getDataTypeVars -> []) = return $ stringE $ getTypeName (datatypeName di)
-getTypeExpression di@(getDataTypeVars -> vars) = do
-  let baseName = getTypeName (datatypeName di)
-  let typeNames = ListE [getTypeAsStringExp typ | typ <- vars]
-  [|$(return (stringE baseName)) <> "<" <> (L.intercalate ", " $(return typeNames)) <> ">"|]
-
 -- * Convenience functions
 
 -- | Convenience function to generate 'A.ToJSON', 'A.FromJSON', and 'TypeScript' instances simultaneously, so the instances are guaranteed to be in sync.
@@ -288,10 +283,3 @@ deriveJSONAndTypeScript options name = (<>) <$> (deriveTypeScript options name) 
 getGenericParentTypesExpression :: DatatypeInfo -> Q Exp
 getGenericParentTypesExpression (DatatypeInfo {..}) = return $ ListE [AppE (ConE 'TSType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) typ)) | typ <- types]
   where types = mconcat $ fmap constructorFields datatypeCons
-
-chooseDataTypeVars _ _ [] = []
-chooseDataTypeVars starConstructors polyStarConstructors (x:xs) = case x of
-  PlainTV _ -> (head starConstructors) : chooseDataTypeVars (tail starConstructors) polyStarConstructors xs
-  KindedTV _ StarT -> (head starConstructors) : chooseDataTypeVars (tail starConstructors) polyStarConstructors xs
-  -- higher -> (higher) : chooseDataTypeVars starConstructors (tail polyStarConstructors) xs
-  _ -> (head allPolyStarConstructors) : chooseDataTypeVars starConstructors (tail polyStarConstructors) xs

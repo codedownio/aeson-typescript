@@ -4,12 +4,8 @@ module Data.Aeson.TypeScript.Util where
 
 import Control.Monad
 import Data.Aeson as A
-import Data.Aeson.TH as A
-import Data.Aeson.TypeScript.Formatting
 import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Types
-import qualified Data.Map as M
-import Data.Maybe
 import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString
