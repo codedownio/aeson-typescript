@@ -76,5 +76,7 @@ data UserT env f = User {
 
 $(deriveTypeScript A.defaultOptions ''UserT)
              
--- main = do
---   putStrLn $(stringE . pprint =<< (deriveTypeScript A.defaultOptions ''TestT))
+
+data HigherKind a = HigherKind { higherKindList :: [a] }
+$(deriveTypeScript A.defaultOptions ''HigherKind)
+

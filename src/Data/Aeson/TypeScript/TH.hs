@@ -144,7 +144,6 @@ import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Types
 import Data.Aeson.TypeScript.Util
 import qualified Data.List as L
-import qualified Data.Map as M
 import Data.Maybe
 import Data.Monoid
 import Data.Proxy
@@ -174,33 +173,32 @@ deriveTypeScript options name = do
 
   -- Build generic args: one for every T, T1, T2, etc. passed in
   let isGenericVariable t = t `L.elem` allStarConstructors
-  let typeNames = [getTypeAsStringExp typ | typ <- getDataTypeVars datatypeInfo
-                                          , isGenericVariable typ]
+  let typeNames = [typ | typ <- getDataTypeVars datatypeInfo, isGenericVariable typ]      
   let genericBrackets = case typeNames of
         [] -> [|""|]
-        _ -> [|"<" <> (L.intercalate ", " $(listE $ fmap return typeNames)) <> ">"|]
+        _ -> [|"<" <> (L.intercalate ", " $(listE $ fmap (return . getTypeAsStringExp) typeNames)) <> ">"|]
+
+  let typeNameToString (ConT n) = nameBase n
+      typeNameToString _ = "?"
+  let stringTypeNames = fmap typeNameToString typeNames
 
   [d|instance $(return constraints) => TypeScript $(return $ foldl AppT (ConT name) (getDataTypeVars datatypeInfo)) where
        getTypeScriptType _ = $(TH.stringE $ getTypeName datatypeName) <> $genericBrackets;
-       getTypeScriptDeclarations _ = $(getDeclarationFunctionBody options name datatypeInfo)
+       getTypeScriptDeclarations _ = $(getDeclarationFunctionBody options datatypeInfo stringTypeNames)
        getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return t))|] | t <- mconcat $ fmap constructorFields datatypeCons])
        |]
 
-getDeclarationFunctionBody :: Options -> p -> DatatypeInfo -> Q Exp
-getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
-  -- If name is higher-kinded, add generic variables to the type and interface declarations
-  let genericVariables :: [String] = if | length datatypeVars == 1 -> ["T"]
-                                        | otherwise -> ["T" <> show j | j <- [1..(length datatypeVars)]]
-  let genericVariablesExp = ListE [stringE x | x <- genericVariables]
-
+getDeclarationFunctionBody :: Options -> DatatypeInfo -> [String] -> Q Exp
+getDeclarationFunctionBody options datatypeInfo@(DatatypeInfo {..}) genericVariables = do
   mapM (handleConstructor options datatypeInfo genericVariables) datatypeCons >>= \case
     [(_, Just interfaceDecl, True)] | L.null datatypeVars -> do
       -- The type declaration is just a reference to a single interface, so we can omit the type part and drop the "I" from the interface name
-      [|dropLeadingIFromInterfaceName $(return interfaceDecl)|]
-
+      [| [dropLeadingIFromInterfaceName $(return interfaceDecl)] |]
     xs -> do
-      typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName datatypeName) $(return genericVariablesExp) $(listE $ fmap (return . fst3) xs)|]
-      return $ ListE (typeDeclaration : (mapMaybe snd3 xs))
+      typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName datatypeName)
+                                              $(listE [TH.stringE x | x <- genericVariables])
+                                              $(listE $ fmap (return . fst3) xs)|]
+      [| $(return typeDeclaration) : $(listE (fmap return $ mapMaybe snd3 xs)) |]
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
 handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> Q (Exp, Maybe Exp, Bool)
@@ -235,7 +233,7 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
     interfaceName = "I" <> (lastNameComponent' $ constructorName ci)
     interfaceNameWithBrackets = interfaceName <> getGenericBrackets genericVariables
 
-    tupleEncoding = [|TSTypeAlternatives $(TH.stringE interfaceName) $(listE [TH.stringE x | x <- genericVariables]) (getTypeScriptType (Proxy :: Proxy $(return contentsTupleType)))|]
+    tupleEncoding = [|TSTypeAlternatives $(TH.stringE interfaceName) $(listE [TH.stringE x | x <- genericVariables]) [getTypeScriptType (Proxy :: Proxy $(return contentsTupleType))]|]
 
     namesAndTypes :: [(String, Type)] = case constructorVariant ci of
       RecordConstructor names -> zip (fmap ((fieldLabelModifier options) . lastNameComponent') names) (constructorFields ci)
