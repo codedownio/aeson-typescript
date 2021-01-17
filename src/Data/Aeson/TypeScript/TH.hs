@@ -218,10 +218,10 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
      | isUntaggedValue $ sumEncoding options -> ((stringE interfaceNameWithBrackets, , True) . Just) <$> singleConstructorEncoding
      | otherwise -> do
          tagField :: [Exp] <- case sumEncoding options of
-           TaggedObject tagFieldName _ -> (\x -> [x]) <$> [|TSField False $(TH.stringE tagFieldName) $(TH.stringE [i|"#{constructorNameToUse}"|])|]
+           TaggedObject tagFieldName _ -> (: []) <$> [|TSField False $(TH.stringE tagFieldName) $(TH.stringE [i|"#{constructorNameToUse}"|])|]
            _ -> return []
 
-         let decl = assembleInterfaceDeclaration (ListE (tagField ++ getTSFields options namesAndTypes))
+         decl <- assembleInterfaceDeclaration (ListE (tagField ++ getTSFields options namesAndTypes))
 
          return (stringE interfaceNameWithBrackets, Just decl, True)
 
@@ -229,7 +229,7 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
     stringEncoding = (stringE [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|], Nothing, True)
 
     singleConstructorEncoding = if | constructorVariant ci == NormalConstructor -> tupleEncoding
-                                   | otherwise -> return $ assembleInterfaceDeclaration (ListE (getTSFields options namesAndTypes))
+                                   | otherwise -> assembleInterfaceDeclaration (ListE (getTSFields options namesAndTypes))
 
     -- * Type declaration to use
     interfaceName = "I" <> (lastNameComponent' $ constructorName ci)
@@ -247,8 +247,7 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
     constructorNameToUse = (constructorTagModifier options) $ lastNameComponent' (constructorName ci)
     contentsTupleType = getTupleType (constructorFields ci)
 
-    assembleInterfaceDeclaration members = AppE (AppE (AppE (ConE 'TSInterfaceDeclaration) (stringE interfaceName)) genericVariablesExp) members where
-      genericVariablesExp = (ListE [stringE x | x <- genericVariables])
+    assembleInterfaceDeclaration members = [|TSInterfaceDeclaration $(TH.stringE interfaceName) $(listE [TH.stringE x | x <- genericVariables]) $(return members)|]
 
 
 -- | Helper for handleConstructor
