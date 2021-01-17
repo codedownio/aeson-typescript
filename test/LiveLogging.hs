@@ -11,7 +11,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Live where
+module LiveLogging where
 
 import Data.Aeson as A
 import Data.Aeson.TH as A

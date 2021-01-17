@@ -3,6 +3,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE KindSignatures #-}
@@ -24,15 +25,28 @@ import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 import Data.Time
 import Database.Beam
+import Language.Haskell.TH hiding (Type)
 import Prelude hiding (Double)
--- import Test.Hspec
 
 
+data SingleDE = SingleDE
+data K8SDE = K8SDE
+
+data K8SEnvironment = K8SEnvironment
+  deriving (Eq, Show)
+
+data SingleNodeEnvironment = SingleNodeEnvironment
+  deriving (Eq, Show)
+
+type family DeployEnvironment env = result | result -> env where
+  DeployEnvironment SingleNodeEnvironment = SingleDE
+  DeployEnvironment K8SEnvironment = K8SDE
 
 
-data UserT f = User {
+data UserT env f = User {
   _userUsername :: Columnar f T.Text
-  , _userCreatedAt  :: Columnar f UTCTime
+  , _userCreatedAt :: Columnar f UTCTime
+  , _userDeployEnvironment :: Columnar f (DeployEnvironment env)
   }
 
 instance TypeScript Identity where
@@ -41,17 +55,8 @@ instance TypeScript UTCTime where
   getTypeScriptType _ = "any"
              
 
+
 -- $(deriveTypeScript A.defaultOptions ''UserT)
-instance (TypeScript (f_1 :: * -> *), TypeScript (Columnar f_1 T.Text), TypeScript (Columnar f_1 UTCTime)) => TypeScript (HigherKindBeam.UserT (f_1 :: * -> *)) where
-  getTypeScriptType _ = mappend "UserT" (mconcat ["<", head [getTypeScriptType (Proxy :: Proxy f_1)]
-                                                 , mconcat [mappend ", " x_0 | x_0 <- tail [getTypeScriptType (Proxy :: Proxy f_1)]]
-                                                 ,">"])
-  getTypeScriptDeclarations _ = [TSTypeAlternatives "UserT" ["T"] ["IUser<T>"]
-                                , TSInterfaceDeclaration "IUser" ["T"] [
-                                    TSField (getTypeScriptOptional (Proxy :: Proxy (Columnar f_1 T.Text))) "_userUsername" (getTypeScriptType (Proxy :: Proxy (Columnar f_1 T.Text)))
-                                    , TSField (getTypeScriptOptional (Proxy :: Proxy (Columnar f_1 UTCTime))) "_userCreatedAt" (getTypeScriptType (Proxy :: Proxy (Columnar f_1 UTCTime)))
-                                    ]]
-  getParentTypes _ = [TSType (Proxy :: Proxy (Columnar f_1 T.Text)), TSType (Proxy :: Proxy (Columnar f_1 UTCTime))]
 
 
 -- instance TypeScript (f_1 :: * -> *) => TypeScript (HigherKindBeam.UserT (f_1 :: * -> *)) where
