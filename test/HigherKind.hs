@@ -9,6 +9,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module HigherKind (tests) where
 
@@ -46,7 +48,7 @@ $(deriveJSON A.defaultOptions ''HigherKindWithUnary)
 tests = describe "Higher kinds" $ do
   describe "Kind * -> *" $ do
     it [i|makes the declaration and types correctly|] $ do
-      (getTypeScriptDeclarations (Proxy :: Proxy HigherKind)) `shouldBe` ([
+      (getTypeScriptDeclarations (Proxy :: Proxy (HigherKind T))) `shouldBe` ([
         TSTypeAlternatives "HigherKind" ["T"] ["IHigherKind<T>"],
         TSInterfaceDeclaration "IHigherKind" ["T"] [TSField False "higherKindList" "T[]"]
         ])
@@ -61,14 +63,14 @@ tests = describe "Higher kinds" $ do
         ])
 
     it [i|works with an interface inside|] $ do
-      (getTypeScriptDeclarations (Proxy :: Proxy HigherKindWithUnary)) `shouldBe` ([
+      (getTypeScriptDeclarations (Proxy :: Proxy (HigherKindWithUnary T))) `shouldBe` ([
         TSTypeAlternatives "HigherKindWithUnary" ["T"] ["IUnary<T>"],
         TSTypeAlternatives "IUnary" ["T"] ["number"]
         ])
 
   describe "Kind * -> * -> *" $ do
     it [i|makes the declaration and type correctly|] $ do
-      (getTypeScriptDeclarations (Proxy :: Proxy DoubleHigherKind)) `shouldBe` ([
+      (getTypeScriptDeclarations (Proxy :: Proxy (DoubleHigherKind T1 T2))) `shouldBe` ([
         TSTypeAlternatives "DoubleHigherKind" ["T1","T2"] ["IDoubleHigherKind<T1, T2>"],
         TSInterfaceDeclaration "IDoubleHigherKind" ["T1","T2"] [TSField False "someList" "T2[]"
                                                                , TSField False "higherKindThing" "HigherKind<T1>"]
@@ -79,9 +81,9 @@ tests = describe "Higher kinds" $ do
 
   describe "TSC compiler checks" $ do
     it "type checks everything with tsc" $ do
-      let declarations = ((getTypeScriptDeclarations (Proxy :: Proxy HigherKind)) <>
-                          (getTypeScriptDeclarations (Proxy :: Proxy DoubleHigherKind)) <>
-                          (getTypeScriptDeclarations (Proxy :: Proxy HigherKindWithUnary))
+      let declarations = ((getTypeScriptDeclarations (Proxy :: Proxy (HigherKind T))) <>
+                          (getTypeScriptDeclarations (Proxy :: Proxy (DoubleHigherKind T1 T2))) <>
+                          (getTypeScriptDeclarations (Proxy :: Proxy (HigherKindWithUnary T)))
                          )
 
       let typesAndValues = [(getTypeScriptType (Proxy :: Proxy (HigherKind Int)) , A.encode (HigherKind [42 :: Int]))
@@ -100,7 +102,7 @@ main = hspec tests
 
 
 main' = putStrLn $ formatTSDeclarations (
-   (getTypeScriptDeclarations (Proxy :: Proxy HigherKind)) <>
-   (getTypeScriptDeclarations (Proxy :: Proxy DoubleHigherKind)) <>
-   (getTypeScriptDeclarations (Proxy :: Proxy HigherKindWithUnary))
+   (getTypeScriptDeclarations (Proxy :: Proxy (HigherKind T))) <>
+   (getTypeScriptDeclarations (Proxy :: Proxy (DoubleHigherKind T1 T2))) <>
+   (getTypeScriptDeclarations (Proxy :: Proxy (HigherKindWithUnary T)))
   )

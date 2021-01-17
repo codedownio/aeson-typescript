@@ -1,4 +1,13 @@
-{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns, KindSignatures #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 module TestBoilerplate where
 
@@ -66,7 +75,7 @@ testDeclarations testName aesonOptions = do
                          <> getTypeScriptDeclarations (Proxy :: Proxy TwoField)
                          <> getTypeScriptDeclarations (Proxy :: Proxy Hybrid)
                          <> getTypeScriptDeclarations (Proxy :: Proxy TwoConstructor)
-                         <> getTypeScriptDeclarations (Proxy :: Proxy Complex)
+                         <> getTypeScriptDeclarations (Proxy :: Proxy (Complex Int))
                          <> getTypeScriptDeclarations (Proxy :: Proxy Optional)
                          |]
 

@@ -152,40 +152,18 @@ deriveTypeScript :: Options
 deriveTypeScript options name = do
   datatypeInfo@(DatatypeInfo {..}) <- reifyDatatype name
 
-  -- reportWarning [i|Reified: #{datatypeInfo}|]
-
   assertExtensionsTurnedOn datatypeInfo
 
-  let getFreeVariableName (SigT (VarT n) _kind) = Just n
-      getFreeVariableName _ = Nothing
+  let constructorPreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- mconcat $ fmap constructorFields datatypeCons]
+  let typeVariablePreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- getDataTypeVars datatypeInfo]
+  let predicates = constructorPreds <> typeVariablePreds
 
-  let templateVarsToUse = case datatypeVars of
-        [KindedTV _ StarT] -> [ConT ''T]
-        vars -> chooseDataTypeVars allStarConstructors allPolyStarConstructors vars
-
-  let subMap = M.fromList $ zip (mapMaybe getFreeVariableName (getDataTypeVars datatypeInfo)) templateVarsToUse
-
-  -- reportWarning [i|subMap: #{subMap}|]
-
-  let fullyQualifiedDatatypeInfo = setDataTypeVars (datatypeInfo { datatypeCons = fmap (applySubstitution subMap) datatypeCons}) templateVarsToUse
-
-  fullyGenericInstance <- [d|instance TypeScript $(conT name) where
-                               getTypeScriptType _ = $(getTypeExpression fullyQualifiedDatatypeInfo)
-                               getTypeScriptDeclarations _ = $(getDeclarationFunctionBody options name fullyQualifiedDatatypeInfo)
-                               getParentTypes _ = $(getGenericParentTypesExpression fullyQualifiedDatatypeInfo)
-                          |]
-
-  otherInstances <- case null datatypeVars of
-    False -> do
-      let predicates :: [Pred] = fmap (getDatatypePredicate) (getDataTypeVars datatypeInfo)
-      let constraints = foldl AppT (TupleT (length predicates)) predicates
-      [d|instance $(return constraints) => TypeScript $(return $ foldl AppT (ConT name) (getDataTypeVars datatypeInfo)) where
-           getTypeScriptType _ = $(getTypeExpression datatypeInfo);
-           getParentTypes _ = [TSType (Proxy :: Proxy $(conT name))]
-           |]
-    True -> return []
-
-  return $ fullyGenericInstance <> otherInstances
+  let constraints = foldl AppT (TupleT (length predicates)) predicates
+  [d|instance $(return constraints) => TypeScript $(return $ foldl AppT (ConT name) (getDataTypeVars datatypeInfo)) where
+       getTypeScriptType _ = $(getTypeExpression datatypeInfo);
+       getTypeScriptDeclarations _ = $(getDeclarationFunctionBody options name datatypeInfo)
+       getParentTypes _ = $(getGenericParentTypesExpression datatypeInfo)
+       |]
 
 getDeclarationFunctionBody :: Options -> p -> DatatypeInfo -> Q Exp
 getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do

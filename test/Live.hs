@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -10,6 +11,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilyDependencies #-}
 
 module Live where
 
@@ -38,19 +40,37 @@ data TestT a = TestT {
 $(deriveTypeScript A.defaultOptions ''TestT)
 
 
+instance TypeScript UTCTime where
+  getTypeScriptType _ = "DateTime"
 
-instance TypeScript F1 where
-  getTypeScriptType _ = "any"
+instance (Typeable a) => TypeScript (Identity a) where
+  getTypeScriptType x = getTypeScriptType x
 
 instance TypeScript Identity where
   getTypeScriptType _ = "any"
 
-instance TypeScript UTCTime where
-  getTypeScriptType _ = "DateTime"
+data SingleDE = SingleDE
+instance TypeScript SingleDE where getTypeScriptType _ = "single"
+
+data K8SDE = K8SDE
+instance TypeScript K8SDE where getTypeScriptType _ = "k8s"
+
+data SingleNodeEnvironment = SingleNodeEnvironment
+  deriving (Eq, Show)
+instance TypeScript SingleNodeEnvironment where getTypeScriptType _ = "single_node_env"
+                                  
+data K8SEnvironment = K8SEnvironment
+  deriving (Eq, Show)
+instance TypeScript K8SEnvironment where getTypeScriptType _ = "k8s_env"
+
+type family DeployEnvironment env = result | result -> env where
+  DeployEnvironment SingleNodeEnvironment = SingleDE
+  DeployEnvironment K8SEnvironment = K8SDE
                         
-data UserT f = User {
+data UserT env f = User {
   _userUsername :: Columnar f T.Text
   , _userCreatedAt  :: Columnar f UTCTime
+  , _userDeployEnvironment  :: Columnar f (DeployEnvironment env)
   }
 
 
