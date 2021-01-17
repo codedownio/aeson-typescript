@@ -1,4 +1,16 @@
-{-# LANGUAGE CPP, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, FlexibleInstances, NamedFieldPuns, MultiWayIf, ViewPatterns, PolyKinds #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE LambdaCase #-}
 
 {-|
 Module:      Data.Aeson.TypeScript.TH
@@ -180,7 +192,7 @@ getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
                                         | otherwise -> ["T" <> show j | j <- [1..(length datatypeVars)]]
   let genericVariablesExp = ListE [stringE x | x <- genericVariables]
 
-  case fmap (handleConstructor options datatypeInfo genericVariables) datatypeCons of
+  mapM (handleConstructor options datatypeInfo genericVariables) datatypeCons >>= \case
     [(_, Just interfaceDecl, True)] | L.null datatypeVars -> do
       -- The type declaration is just a reference to a single interface, so we can omit the type part and drop the "I" from the interface name
       [|dropLeadingIFromInterfaceName $(return interfaceDecl)|]
@@ -190,20 +202,20 @@ getDeclarationFunctionBody options _name datatypeInfo@(DatatypeInfo {..}) = do
       return $ ListE (typeDeclaration : (mapMaybe snd3 xs))
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
-handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> (Exp, Maybe Exp, Bool)
+handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> Q (Exp, Maybe Exp, Bool)
 handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) =
-  if | isSingleConstructorType && not (getTagSingleConstructors options) -> (stringE interfaceNameWithBrackets, singleConstructorEncoding, True)
+  if | (length datatypeCons == 1) && not (getTagSingleConstructors options) -> return (stringE interfaceNameWithBrackets, singleConstructorEncoding, True)
 
-     | allConstructorsAreNullary datatypeCons && allNullaryToStringTag options -> stringEncoding
+     | allConstructorsAreNullary datatypeCons && allNullaryToStringTag options -> return stringEncoding
 
      -- With UntaggedValue, nullary constructors are encoded as strings
-     | (isUntaggedValue $ sumEncoding options) && isConstructorNullary ci -> stringEncoding
+     | (isUntaggedValue $ sumEncoding options) && isConstructorNullary ci -> return stringEncoding
 
      -- Treat as a sum
-     | isObjectWithSingleField $ sumEncoding options -> (stringE [i|{#{show constructorNameToUse}: #{interfaceNameWithBrackets}}|], singleConstructorEncoding, False)
-     | isTwoElemArray $ sumEncoding options -> (stringE [i|[#{show constructorNameToUse}, #{interfaceNameWithBrackets}]|], singleConstructorEncoding, False)
-     | isUntaggedValue $ sumEncoding options -> (stringE interfaceNameWithBrackets, singleConstructorEncoding, True)
-     | otherwise -> (stringE interfaceNameWithBrackets, taggedConstructorEncoding, True)
+     | isObjectWithSingleField $ sumEncoding options -> return (stringE [i|{#{show constructorNameToUse}: #{interfaceNameWithBrackets}}|], singleConstructorEncoding, False)
+     | isTwoElemArray $ sumEncoding options -> return (stringE [i|[#{show constructorNameToUse}, #{interfaceNameWithBrackets}]|], singleConstructorEncoding, False)
+     | isUntaggedValue $ sumEncoding options -> return (stringE interfaceNameWithBrackets, singleConstructorEncoding, True)
+     | otherwise -> return (stringE interfaceNameWithBrackets, taggedConstructorEncoding, True)
 
   where
     stringEncoding = (stringE [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|], Nothing, True)
@@ -214,7 +226,7 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
     taggedConstructorEncoding = Just $ assembleInterfaceDeclaration (ListE (tagField ++ getTSFields options namesAndTypes))
 
     -- * Type declaration to use
-    interfaceName = getInterfaceName ci
+    interfaceName = "I" <> (lastNameComponent' $ constructorName ci)
     interfaceNameWithBrackets = interfaceName <> getGenericBrackets genericVariables
 
     tupleEncoding = Just $ applyToArgsE (ConE 'TSTypeAlternatives) [stringE interfaceName
@@ -233,10 +245,6 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
                                               (stringE tagFieldName))
                                         (stringE [i|"#{constructorNameToUse}"|]))]
       _ -> []
-
-    isSingleConstructorType = length datatypeCons == 1
-
-    getInterfaceName (constructorName -> x) = "I" <> (lastNameComponent' x)
 
     constructorNameToUse = (constructorTagModifier options) $ lastNameComponent' (constructorName ci)
     contentsTupleType = getTupleType (constructorFields ci)
