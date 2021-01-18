@@ -131,5 +131,21 @@ instance TypeScript T8 where getTypeScriptType _ = "T8"
 instance TypeScript T9 where getTypeScriptType _ = "T9"
 instance TypeScript T10 where getTypeScriptType _ = "T10"
 
+allStarConstructors :: [Type]
 allStarConstructors = [ConT ''T1, ConT ''T2, ConT ''T3, ConT ''T4, ConT ''T5, ConT ''T6, ConT ''T7, ConT ''T8, ConT ''T9, ConT ''T10]                 
 
+-- | Type variable gathering
+
+data ExtraTypeScriptOptions = ExtraTypeScriptOptions {
+  typeFamiliesToMapToTypeScript :: [Name]
+  }
+
+defaultExtraTypeScriptOptions :: ExtraTypeScriptOptions
+defaultExtraTypeScriptOptions = ExtraTypeScriptOptions []
+
+data ExtraDeclOrGenericInfo = ExtraDecl Exp
+                            | GenericInfo Name GenericInfoExtra
+
+data GenericInfoExtra = NormalStar
+                      | TypeFamilyKey Name
+  deriving Show

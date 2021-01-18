@@ -147,8 +147,6 @@ import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Lookup
 import Data.Aeson.TypeScript.Types
 import Data.Aeson.TypeScript.Util
-import qualified Data.List as L
-import Data.Maybe
 import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString
@@ -158,12 +156,14 @@ import qualified Language.Haskell.TH.Lib as TH
 
 
 -- | Generates a 'TypeScript' instance declaration for the given data type.
-deriveTypeScript :: Options
-                 -- ^ Encoding options.
-                 -> Name
-                 -- ^ Name of the type for which to generate a 'TypeScript' instance declaration.
-                 -> Q [Dec]
-deriveTypeScript options name = do
+deriveTypeScript' :: Options
+                  -- ^ Encoding options.
+                  -> Name
+                  -- ^ Name of the type for which to generate a 'TypeScript' instance declaration.
+                  -> ExtraTypeScriptOptions
+                  -- ^ Extra options to control advanced features.
+                  -> Q [Dec]
+deriveTypeScript' options name extraOptions = do
   datatypeInfo@(DatatypeInfo {..}) <- reifyDatatype name
 
   assertExtensionsTurnedOn datatypeInfo
@@ -175,33 +175,24 @@ deriveTypeScript options name = do
   let predicates = constructorPreds <> typeVariablePreds
   let constraints = foldl AppT (TupleT (length predicates)) predicates
 
+  -- Build the declarations
+  let genericVariables = []
+  (types, extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor options datatypeInfo genericVariables) datatypeCons
+  typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName datatypeName)
+                                          $(listE [TH.stringE x | x <- genericVariables])
+                                          $(listE $ fmap return types)|]
+  let extraDecls = [x | ExtraDecl x <- extraDeclsOrGenericInfos]
+  let genericInfos = [(x, y) | GenericInfo x y <- extraDeclsOrGenericInfos]
+  reportWarning [i|Got genericInfos: #{genericInfos}|]
+  declarationsFunctionBody <- [| $(return typeDeclaration) : $(listE (fmap return $ extraDecls)) |]
+
   [d|instance $(return constraints) => TypeScript $(return $ foldl AppT (ConT name) (getDataTypeVars datatypeInfo)) where
        getTypeScriptType _ = $(TH.stringE $ getTypeName datatypeName)
-       getTypeScriptDeclarations _ = $(getDeclarationFunctionBody options datatypeInfo [])
+       getTypeScriptDeclarations _ = $(return declarationsFunctionBody)
        getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return t))|]
                                   | t <- mconcat $ fmap constructorFields datatypeCons])
        |]
 
-getDeclarationFunctionBody :: Options -> DatatypeInfo -> [String] -> Q Exp
-getDeclarationFunctionBody options datatypeInfo@(DatatypeInfo {..}) genericVariables = do
-  (types, extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor options datatypeInfo genericVariables) datatypeCons
-
-  typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName datatypeName)
-                                          $(listE [TH.stringE x | x <- genericVariables])
-                                          $(listE $ fmap return types)|]
-
-  let extraDecls = [x | ExtraDecl x <- extraDeclsOrGenericInfos]
-  let genericInfos = [(x, y) | GenericInfo x y <- extraDeclsOrGenericInfos]
-  reportWarning [i|Got genericInfos: #{genericInfos}|]
-
-  [| $(return typeDeclaration) : $(listE (fmap return $ extraDecls)) |]
-
-data ExtraDeclOrGenericInfo = ExtraDecl Exp
-                            | GenericInfo Name GenericInfoExtra
-
-data GenericInfoExtra = NormalStar
-                      | TypeFamilyKey Name
-  deriving Show
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
 handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> WriterT [ExtraDeclOrGenericInfo] Q Exp
@@ -232,9 +223,7 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
 
          tsFields <- getTSFields
          decl <- lift $ assembleInterfaceDeclaration (ListE (tagField ++ tsFields))
-
          tell [ExtraDecl decl]
-
          lift $ TH.stringE interfaceNameWithBrackets
 
   where
@@ -260,8 +249,9 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
     namesAndTypes :: [(String, Type)] = case constructorVariant ci of
       RecordConstructor names -> zip (fmap ((fieldLabelModifier options) . lastNameComponent') names) (constructorFields ci)
       NormalConstructor -> case sumEncoding options of
-        TaggedObject _ contentsFieldName -> if | isConstructorNullary ci -> []
-                                                          | otherwise -> [(contentsFieldName, contentsTupleType)]
+        TaggedObject _ contentsFieldName
+          | isConstructorNullary ci -> []
+          | otherwise -> [(contentsFieldName, contentsTupleType)]
         _ -> [(constructorNameToUse, contentsTupleType)]
 
     constructorNameToUse = (constructorTagModifier options) $ lastNameComponent' (constructorName ci)
@@ -308,3 +298,11 @@ deriveJSONAndTypeScript :: Options
                         -> Q [Dec]
 deriveJSONAndTypeScript options name = (<>) <$> (deriveTypeScript options name) <*> (A.deriveJSON options name)
 
+
+-- | Generates a 'TypeScript' instance declaration for the given data type.
+deriveTypeScript :: Options
+                 -- ^ Encoding options.
+                 -> Name
+                 -- ^ Name of the type for which to generate a 'TypeScript' instance declaration.
+                 -> Q [Dec]
+deriveTypeScript options name = deriveTypeScript' options name defaultExtraTypeScriptOptions
