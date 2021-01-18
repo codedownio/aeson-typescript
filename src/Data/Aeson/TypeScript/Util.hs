@@ -141,16 +141,18 @@ constructorNameToUse options ci = (constructorTagModifier options) $ lastNameCom
 
 contentsTupleType ci = getTupleType (constructorFields ci)
 
-getBracketsExpression :: [Name] -> Q Exp
-getBracketsExpression [] = [|""|]
-getBracketsExpression names = [|case $(genericVariablesListExpr names) of [] -> ""; vars -> "<" <> L.intercalate ", " vars <> ">"|]
+getBracketsExpression :: Bool -> [(Name, String)] -> Q Exp
+getBracketsExpression _ [] = [|""|]
+getBracketsExpression includeSuffix names = [|case $(genericVariablesListExpr includeSuffix names) of [] -> ""; vars -> "<" <> L.intercalate ", " vars <> ">"|]
 
-getBracketsExpressionAllTypes :: [Name] -> Q Exp
-getBracketsExpressionAllTypes [] = [|""|]
-getBracketsExpressionAllTypes names = [|"<" <> L.intercalate ", " $(listE [ [|getTypeScriptType (Proxy :: Proxy $(varT x))|] | x <- names]) <> ">"|]
+getBracketsExpressionAllTypesNoSuffix :: [(Name, String)] -> Q Exp
+getBracketsExpressionAllTypesNoSuffix [] = [|""|]
+getBracketsExpressionAllTypesNoSuffix names = [|"<" <> L.intercalate ", " $(listE [ [|(getTypeScriptType (Proxy :: Proxy $(varT x)))|] | (x, _suffix) <- names]) <> ">"|]
 
-genericVariablesListExpr :: [Name] -> Q Exp
-genericVariablesListExpr genericVariables = [|catMaybes $(listE (fmap (\x ->
+genericVariablesListExpr :: Bool -> [(Name, String)] -> Q Exp
+genericVariablesListExpr True genericVariables = [|catMaybes $(listE (fmap (\(x, suffix) ->
+  [|if isGenericVariable (Proxy :: Proxy $(varT x)) then Just ((getTypeScriptType (Proxy :: Proxy $(varT x))) <> suffix) else Nothing|])
+  genericVariables))|]
+genericVariablesListExpr False genericVariables = [|catMaybes $(listE (fmap (\(x, suffix) ->
   [|if isGenericVariable (Proxy :: Proxy $(varT x)) then Just (getTypeScriptType (Proxy :: Proxy $(varT x))) else Nothing|])
   genericVariables))|]
-
