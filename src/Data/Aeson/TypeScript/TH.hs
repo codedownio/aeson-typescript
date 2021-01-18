@@ -137,6 +137,7 @@ module Data.Aeson.TypeScript.TH (
   module Data.Aeson.TypeScript.Instances
   ) where
 
+import Control.Monad
 import Data.Aeson as A
 import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.Formatting
@@ -185,7 +186,8 @@ deriveTypeScript options name = do
   [d|instance $(return constraints) => TypeScript $(return $ foldl AppT (ConT name) (getDataTypeVars datatypeInfo)) where
        getTypeScriptType _ = $(TH.stringE $ getTypeName datatypeName) <> $genericBrackets;
        getTypeScriptDeclarations _ = $(getDeclarationFunctionBody options datatypeInfo stringTypeNames)
-       getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return t))|] | t <- mconcat $ fmap constructorFields datatypeCons])
+       getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return t))|]
+                                  | t <- mconcat $ fmap constructorFields datatypeCons])
        |]
 
 getDeclarationFunctionBody :: Options -> DatatypeInfo -> [String] -> Q Exp
@@ -219,7 +221,8 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
            TaggedObject tagFieldName _ -> (: []) <$> [|TSField False $(TH.stringE tagFieldName) $(TH.stringE [i|"#{constructorNameToUse}"|])|]
            _ -> return []
 
-         decl <- assembleInterfaceDeclaration (ListE (tagField ++ getTSFields options namesAndTypes))
+         tsFields <- getTSFields options namesAndTypes
+         decl <- assembleInterfaceDeclaration (ListE (tagField ++ tsFields))
 
          return (stringE interfaceNameWithBrackets, Just decl, True)
 
@@ -227,7 +230,9 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
     stringEncoding = (stringE [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|], Nothing, True)
 
     singleConstructorEncoding = if | constructorVariant ci == NormalConstructor -> tupleEncoding
-                                   | otherwise -> assembleInterfaceDeclaration (ListE (getTSFields options namesAndTypes))
+                                   | otherwise -> do
+                                       tsFields <- getTSFields options namesAndTypes 
+                                       assembleInterfaceDeclaration (ListE tsFields)
 
     -- * Type declaration to use
     interfaceName = "I" <> (lastNameComponent' $ constructorName ci)
@@ -249,19 +254,15 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
 
 
 -- | Helper for handleConstructor
-getTSFields :: Options -> [(String, Type)] -> [Exp]
-getTSFields options namesAndTypes =
-  [ (AppE (AppE (AppE (ConE 'TSField) optAsBool)
-             (stringE nameString))
-       fieldTyp)
-  | (nameString, typ) <- namesAndTypes
-  , let (fieldTyp, optAsBool) = getFieldType options typ]
-  where
-    getFieldType :: Options -> Type -> (Exp, Exp)
-    getFieldType options (AppT (ConT name) t)
-      | not (omitNothingFields options) && name == ''Maybe
-      = (AppE (AppE (VarE 'mappend) (getTypeAsStringExp t)) (stringE " | null"), getOptionalAsBoolExp t)
-    getFieldType _ typ = (getTypeAsStringExp typ, getOptionalAsBoolExp typ)
+getTSFields :: Options -> [(String, Type)] -> Q [Exp]
+getTSFields options namesAndTypes = do
+  forM namesAndTypes $ \(nameString, typ) -> do
+    (fieldTyp, optAsBool) <- case typ of
+      (AppT (ConT name) t) | not (omitNothingFields options) && name == ''Maybe -> do
+                               fieldTyp <- [|$(return $ getTypeAsStringExp t) <> " | null"|]
+                               return (fieldTyp, getOptionalAsBoolExp t)
+      _ -> return (getTypeAsStringExp typ, getOptionalAsBoolExp typ)
+    [| TSField $(return optAsBool) nameString $(return fieldTyp) |]
 
 
 -- * Convenience functions
