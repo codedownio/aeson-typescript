@@ -50,18 +50,18 @@ instance TypeScript Identity where
   getTypeScriptType _ = "any"
 
 data SingleDE = SingleDE
-instance TypeScript SingleDE where getTypeScriptType _ = "single"
+instance TypeScript SingleDE where getTypeScriptType _ = [i|"single"|]
 
 data K8SDE = K8SDE
-instance TypeScript K8SDE where getTypeScriptType _ = "k8s"
+instance TypeScript K8SDE where getTypeScriptType _ = [i|"k8s"|]
 
 data SingleNodeEnvironment = SingleNodeEnvironment
   deriving (Eq, Show)
-instance TypeScript SingleNodeEnvironment where getTypeScriptType _ = "single_node_env"
+instance TypeScript SingleNodeEnvironment where getTypeScriptType _ = [i|"single_node_env"|]
                                   
 data K8SEnvironment = K8SEnvironment
   deriving (Eq, Show)
-instance TypeScript K8SEnvironment where getTypeScriptType _ = "k8s_env"
+instance TypeScript K8SEnvironment where getTypeScriptType _ = [i|"k8s_env"|]
 
 type family DeployEnvironment env = result | result -> env where
   DeployEnvironment SingleNodeEnvironment = SingleDE
@@ -73,6 +73,7 @@ data UserT env f = User {
   , _userDeployEnvironment  :: Columnar f (DeployEnvironment env)
   }
 
+$(deriveTypeScriptLookupType ''DeployEnvironment "deployEnvDecl")
 
 $(deriveTypeScript A.defaultOptions ''UserT)
              
