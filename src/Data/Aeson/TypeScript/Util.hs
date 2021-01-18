@@ -124,3 +124,16 @@ isUntaggedValue _ = False
 
 fst3 (x, _, _) = x
 snd3 (_, y, _) = y
+
+namesAndTypes :: Options -> ConstructorInfo -> [(String, Type)]
+namesAndTypes options ci = case constructorVariant ci of
+  RecordConstructor names -> zip (fmap ((fieldLabelModifier options) . lastNameComponent') names) (constructorFields ci)
+  NormalConstructor -> case sumEncoding options of
+    TaggedObject _ contentsFieldName
+      | isConstructorNullary ci -> []
+      | otherwise -> [(contentsFieldName, contentsTupleType ci)]
+    _ -> [(constructorNameToUse options ci, contentsTupleType ci)]
+
+constructorNameToUse options ci = (constructorTagModifier options) $ lastNameComponent' (constructorName ci)
+
+contentsTupleType ci = getTupleType (constructorFields ci)

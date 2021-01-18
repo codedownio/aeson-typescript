@@ -209,16 +209,16 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
      -- Treat as a sum
      | isObjectWithSingleField $ sumEncoding options -> do
          writeSingleConstructorEncoding
-         lift $ TH.stringE [i|{#{show constructorNameToUse}: #{interfaceNameWithBrackets}}|]
+         lift $ TH.stringE [i|{#{show $ constructorNameToUse options ci}: #{interfaceNameWithBrackets}}|]
      | isTwoElemArray $ sumEncoding options -> do
          writeSingleConstructorEncoding
-         lift $ TH.stringE [i|[#{show constructorNameToUse}, #{interfaceNameWithBrackets}]|]
+         lift $ TH.stringE [i|[#{show $ constructorNameToUse options ci}, #{interfaceNameWithBrackets}]|]
      | isUntaggedValue $ sumEncoding options -> do
          writeSingleConstructorEncoding
          lift $ TH.stringE interfaceNameWithBrackets
      | otherwise -> do
          tagField :: [Exp] <- lift $ case sumEncoding options of
-           TaggedObject tagFieldName _ -> (: []) <$> [|TSField False $(TH.stringE tagFieldName) $(TH.stringE [i|"#{constructorNameToUse}"|])|]
+           TaggedObject tagFieldName _ -> (: []) <$> [|TSField False $(TH.stringE tagFieldName) $(TH.stringE [i|"#{constructorNameToUse options ci}"|])|]
            _ -> return []
 
          tsFields <- getTSFields
@@ -244,24 +244,15 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
 
     tupleEncoding = [|TSTypeAlternatives $(TH.stringE interfaceName)
                                          $(listE [TH.stringE x | x <- genericVariables])
-                                         [getTypeScriptType (Proxy :: Proxy $(return contentsTupleType))]|]
+                                         [getTypeScriptType (Proxy :: Proxy $(return $ contentsTupleType ci))]|]
 
-    namesAndTypes :: [(String, Type)] = case constructorVariant ci of
-      RecordConstructor names -> zip (fmap ((fieldLabelModifier options) . lastNameComponent') names) (constructorFields ci)
-      NormalConstructor -> case sumEncoding options of
-        TaggedObject _ contentsFieldName
-          | isConstructorNullary ci -> []
-          | otherwise -> [(contentsFieldName, contentsTupleType)]
-        _ -> [(constructorNameToUse, contentsTupleType)]
-
-    constructorNameToUse = (constructorTagModifier options) $ lastNameComponent' (constructorName ci)
-    contentsTupleType = getTupleType (constructorFields ci)
-
-    assembleInterfaceDeclaration members = [|TSInterfaceDeclaration $(TH.stringE interfaceName) $(listE [TH.stringE x | x <- genericVariables]) $(return members)|]
+    assembleInterfaceDeclaration members = [|TSInterfaceDeclaration $(TH.stringE interfaceName)
+                                                                    $(listE [TH.stringE x | x <- genericVariables])
+                                                                    $(return members)|]
 
     getTSFields :: WriterT [ExtraDeclOrGenericInfo] Q [Exp]
     getTSFields = do
-      forM namesAndTypes $ \(nameString, typ) -> do
+      forM (namesAndTypes options ci) $ \(nameString, typ) -> do
         searchGenericInfos typ
 
         (fieldTyp, optAsBool) <- case typ of
@@ -288,7 +279,8 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
 
 -- | Convenience function to generate 'A.ToJSON', 'A.FromJSON', and 'TypeScript' instances simultaneously, so the instances are guaranteed to be in sync.
 --
--- This function is given mainly as an illustration. If you want some other permutation of instances, such as 'A.ToJSON' and 'A.TypeScript' only, just take a look at the source and write your own version.
+-- This function is given mainly as an illustration.
+-- If you want some other permutation of instances, such as 'A.ToJSON' and 'A.TypeScript' only, just take a look at the source and write your own version.
 --
 -- @since 0.1.0.4
 deriveJSONAndTypeScript :: Options
