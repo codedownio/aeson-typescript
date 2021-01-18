@@ -228,7 +228,7 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
            TaggedObject tagFieldName _ -> (: []) <$> [|TSField False $(TH.stringE tagFieldName) $(TH.stringE [i|"#{constructorNameToUse}"|])|]
            _ -> return []
 
-         tsFields <- lift $ getTSFields options namesAndTypes
+         tsFields <- getTSFields options namesAndTypes
          decl <- lift $ assembleInterfaceDeclaration (ListE (tagField ++ tsFields))
 
          tell [decl]
@@ -243,7 +243,7 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
           encoding <- lift tupleEncoding
           tell [encoding]
       | otherwise -> do
-          tsFields <- lift $ getTSFields options namesAndTypes 
+          tsFields <- getTSFields options namesAndTypes 
           decl <- lift $ assembleInterfaceDeclaration (ListE tsFields)
           tell [decl]
 
@@ -267,15 +267,15 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
 
     assembleInterfaceDeclaration members = [|TSInterfaceDeclaration $(TH.stringE interfaceName) $(listE [TH.stringE x | x <- genericVariables]) $(return members)|]
 
-    getTSFields :: Options -> [(String, Type)] -> Q [Exp]
+    getTSFields :: Options -> [(String, Type)] -> WriterT [Exp] Q [Exp]
     getTSFields options namesAndTypes = do
       forM namesAndTypes $ \(nameString, typ) -> do
         (fieldTyp, optAsBool) <- case typ of
           (AppT (ConT name) t) | not (omitNothingFields options) && name == ''Maybe -> do
-                                   fieldTyp <- [|$(return $ getTypeAsStringExp t) <> " | null"|]
+                                   fieldTyp <- lift $ [|$(return $ getTypeAsStringExp t) <> " | null"|]
                                    return (fieldTyp, getOptionalAsBoolExp t)
           _ -> return (getTypeAsStringExp typ, getOptionalAsBoolExp typ)
-        [| TSField $(return optAsBool) nameString $(return fieldTyp) |]
+        lift $ [| TSField $(return optAsBool) nameString $(return fieldTyp) |]
 
 
 -- * Convenience functions
