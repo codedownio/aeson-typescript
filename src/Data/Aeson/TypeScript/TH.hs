@@ -194,20 +194,16 @@ deriveTypeScript options name = do
 
 getDeclarationFunctionBody :: Options -> DatatypeInfo -> [String] -> Q Exp
 getDeclarationFunctionBody options datatypeInfo@(DatatypeInfo {..}) genericVariables = do
-  mapM (handleConstructor options datatypeInfo genericVariables) datatypeCons >>= \case
-    [(_, Just interfaceDecl, True)] | L.null datatypeVars -> do
-      -- The type declaration is just a reference to a single interface, so we can omit the type part and drop the "I" from the interface name
-      [| [dropLeadingIFromInterfaceName $(return interfaceDecl)] |]
-    xs -> do
-      typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName datatypeName)
-                                              $(listE [TH.stringE x | x <- genericVariables])
-                                              $(listE $ fmap (return . fst3) xs)|]
-      [| $(return typeDeclaration) : $(listE (fmap return $ mapMaybe snd3 xs)) |]
+  xs <- mapM (handleConstructor options datatypeInfo genericVariables) datatypeCons
+  typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName datatypeName)
+                                          $(listE [TH.stringE x | x <- genericVariables])
+                                          $(listE $ fmap (return . fst) xs)|]
+  [| $(return typeDeclaration) : $(listE (fmap return $ mapMaybe snd xs)) |]
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
-handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> Q (Exp, Maybe Exp, Bool)
+handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> Q (Exp, Maybe Exp)
 handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) =
-  if | (length datatypeCons == 1) && not (getTagSingleConstructors options) -> ((stringE interfaceNameWithBrackets, , True) . Just) <$> singleConstructorEncoding
+  if | (length datatypeCons == 1) && not (getTagSingleConstructors options) -> ((stringE interfaceNameWithBrackets, ) . Just) <$> singleConstructorEncoding
 
      | allConstructorsAreNullary datatypeCons && allNullaryToStringTag options -> return stringEncoding
 
@@ -215,9 +211,9 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
      | (isUntaggedValue $ sumEncoding options) && isConstructorNullary ci -> return stringEncoding
 
      -- Treat as a sum
-     | isObjectWithSingleField $ sumEncoding options -> ((stringE [i|{#{show constructorNameToUse}: #{interfaceNameWithBrackets}}|], , False) . Just) <$> singleConstructorEncoding
-     | isTwoElemArray $ sumEncoding options -> ((stringE [i|[#{show constructorNameToUse}, #{interfaceNameWithBrackets}]|], , False) . Just) <$> singleConstructorEncoding
-     | isUntaggedValue $ sumEncoding options -> ((stringE interfaceNameWithBrackets, , True) . Just) <$> singleConstructorEncoding
+     | isObjectWithSingleField $ sumEncoding options -> ((stringE [i|{#{show constructorNameToUse}: #{interfaceNameWithBrackets}}|], ) . Just) <$> singleConstructorEncoding
+     | isTwoElemArray $ sumEncoding options -> ((stringE [i|[#{show constructorNameToUse}, #{interfaceNameWithBrackets}]|], ) . Just) <$> singleConstructorEncoding
+     | isUntaggedValue $ sumEncoding options -> ((stringE interfaceNameWithBrackets, ) . Just) <$> singleConstructorEncoding
      | otherwise -> do
          tagField :: [Exp] <- case sumEncoding options of
            TaggedObject tagFieldName _ -> (: []) <$> [|TSField False $(TH.stringE tagFieldName) $(TH.stringE [i|"#{constructorNameToUse}"|])|]
@@ -226,10 +222,10 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
          tsFields <- getTSFields options namesAndTypes
          decl <- assembleInterfaceDeclaration (ListE (tagField ++ tsFields))
 
-         return (stringE interfaceNameWithBrackets, Just decl, True)
+         return (stringE interfaceNameWithBrackets, Just decl)
 
   where
-    stringEncoding = (stringE [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|], Nothing, True)
+    stringEncoding = (stringE [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|], Nothing)
 
     singleConstructorEncoding = if | constructorVariant ci == NormalConstructor -> tupleEncoding
                                    | otherwise -> do
