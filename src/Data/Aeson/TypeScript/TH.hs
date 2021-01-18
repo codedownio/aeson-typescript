@@ -143,6 +143,7 @@ import Data.Aeson as A
 import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.Formatting
 import Data.Aeson.TypeScript.Instances ()
+import Data.Aeson.TypeScript.Lookup
 import Data.Aeson.TypeScript.Types
 import Data.Aeson.TypeScript.Util
 import qualified Data.List as L
@@ -263,28 +264,6 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
           _ -> return (getTypeAsStringExp typ, getOptionalAsBoolExp typ)
         [| TSField $(return optAsBool) nameString $(return fieldTyp) |]
 
-
--- | Generates a 'TypeScript' declaration for a closed type family as a lookup type.
-deriveTypeScriptLookupType :: Name
-                           -- ^ Name of a type family.
-                           -> String
-                           -- ^ Name of the declaration to derive.
-                           -> Q [Dec]
-deriveTypeScriptLookupType name declNameStr = do
-  info <- reify name
-  reportWarning [i|Got datatypeInfo: #{info}|]
-  case info of
-    FamilyI (ClosedTypeFamilyD (TypeFamilyHead name vars sig maybeInject) eqns) decs -> do
-      fields <- forM eqns $ \case
-        TySynEqn Nothing (AppT (ConT _) (ConT arg)) (ConT result) ->
-          [| TSField False (getTypeScriptType (Proxy :: Proxy $(conT arg))) (getTypeScriptType (Proxy :: Proxy $(conT result))) |]
-        x -> fail [i|Don't know how to handle type family equation: '#{x}'|]
-
-      expr <- [| TSInterfaceDeclaration $(TH.stringE $ nameBase name) [] $(listE $ fmap return fields) |]
-
-      return [FunD (mkName declNameStr) [Clause [] (NormalB (ListE [expr])) []]]
-
-    _ -> fail [i|Expected a close type family; got #{info}|]
 
 -- * Convenience functions
 

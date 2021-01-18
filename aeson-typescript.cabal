@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ea1ac4278bda71f49e401fefc154441d5396b793b6de3612d989007c4de95cd3
+-- hash: a8a23c594d80e27e34cb591cabb2a8ed3849b7bb2e7fe79c05fe526992ad6898
 
 name:           aeson-typescript
 version:        0.2.0.0
@@ -39,6 +39,7 @@ library
   other-modules:
       Data.Aeson.TypeScript.Formatting
       Data.Aeson.TypeScript.Instances
+      Data.Aeson.TypeScript.Lookup
       Data.Aeson.TypeScript.Types
       Data.Aeson.TypeScript.Util
       Paths_aeson_typescript
@@ -79,6 +80,7 @@ test-suite aeson-typescript-test
       Util
       Data.Aeson.TypeScript.Formatting
       Data.Aeson.TypeScript.Instances
+      Data.Aeson.TypeScript.Lookup
       Data.Aeson.TypeScript.Recursive
       Data.Aeson.TypeScript.TH
       Data.Aeson.TypeScript.Types
