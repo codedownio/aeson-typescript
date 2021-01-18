@@ -175,34 +175,36 @@ deriveTypeScript options name = do
   let predicates = constructorPreds <> typeVariablePreds
   let constraints = foldl AppT (TupleT (length predicates)) predicates
 
-  -- Build generic args: one for every T, T1, T2, etc. passed in
-  let isGenericVariable t = t `L.elem` allStarConstructors
-  let typeNames = [typ | typ <- getDataTypeVars datatypeInfo, isGenericVariable typ]      
-  let genericBrackets = case typeNames of
-        [] -> [|""|]
-        _ -> [|"<" <> (L.intercalate ", " $(listE $ fmap (return . getTypeAsStringExp) typeNames)) <> ">"|]
-
-  let typeNameToString (ConT n) = nameBase n
-      typeNameToString _ = "?"
-  let stringTypeNames = fmap typeNameToString typeNames
-
   [d|instance $(return constraints) => TypeScript $(return $ foldl AppT (ConT name) (getDataTypeVars datatypeInfo)) where
-       getTypeScriptType _ = $(TH.stringE $ getTypeName datatypeName) <> $genericBrackets;
-       getTypeScriptDeclarations _ = $(getDeclarationFunctionBody options datatypeInfo stringTypeNames)
+       getTypeScriptType _ = $(TH.stringE $ getTypeName datatypeName)
+       getTypeScriptDeclarations _ = $(getDeclarationFunctionBody options datatypeInfo [])
        getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return t))|]
                                   | t <- mconcat $ fmap constructorFields datatypeCons])
        |]
 
 getDeclarationFunctionBody :: Options -> DatatypeInfo -> [String] -> Q Exp
 getDeclarationFunctionBody options datatypeInfo@(DatatypeInfo {..}) genericVariables = do
-  (types, extraDecls) <- runWriterT $ mapM (handleConstructor options datatypeInfo genericVariables) datatypeCons
+  (types, extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor options datatypeInfo genericVariables) datatypeCons
+
   typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName datatypeName)
                                           $(listE [TH.stringE x | x <- genericVariables])
                                           $(listE $ fmap return types)|]
+
+  let extraDecls = [x | ExtraDecl x <- extraDeclsOrGenericInfos]
+  let genericInfos = [(x, y) | GenericInfo x y <- extraDeclsOrGenericInfos]
+  reportWarning [i|Got genericInfos: #{genericInfos}|]
+
   [| $(return typeDeclaration) : $(listE (fmap return $ extraDecls)) |]
 
+data ExtraDeclOrGenericInfo = ExtraDecl Exp
+                            | GenericInfo Name GenericInfoExtra
+
+data GenericInfoExtra = NormalStar
+                      | TypeFamilyKey Name
+  deriving Show
+
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
-handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> WriterT [Exp] Q Exp
+handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> WriterT [ExtraDeclOrGenericInfo] Q Exp
 handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) = 
   if | (length datatypeCons == 1) && not (getTagSingleConstructors options) -> do
          writeSingleConstructorEncoding
@@ -228,10 +230,10 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
            TaggedObject tagFieldName _ -> (: []) <$> [|TSField False $(TH.stringE tagFieldName) $(TH.stringE [i|"#{constructorNameToUse}"|])|]
            _ -> return []
 
-         tsFields <- getTSFields options namesAndTypes
+         tsFields <- getTSFields
          decl <- lift $ assembleInterfaceDeclaration (ListE (tagField ++ tsFields))
 
-         tell [decl]
+         tell [ExtraDecl decl]
 
          lift $ TH.stringE interfaceNameWithBrackets
 
@@ -241,11 +243,11 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
     writeSingleConstructorEncoding = if
       | constructorVariant ci == NormalConstructor -> do
           encoding <- lift tupleEncoding
-          tell [encoding]
+          tell [ExtraDecl encoding]
       | otherwise -> do
-          tsFields <- getTSFields options namesAndTypes 
+          tsFields <- getTSFields
           decl <- lift $ assembleInterfaceDeclaration (ListE tsFields)
-          tell [decl]
+          tell [ExtraDecl decl]
 
     -- * Type declaration to use
     interfaceName = "I" <> (lastNameComponent' $ constructorName ci)
@@ -267,16 +269,30 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
 
     assembleInterfaceDeclaration members = [|TSInterfaceDeclaration $(TH.stringE interfaceName) $(listE [TH.stringE x | x <- genericVariables]) $(return members)|]
 
-    getTSFields :: Options -> [(String, Type)] -> WriterT [Exp] Q [Exp]
-    getTSFields options namesAndTypes = do
+    getTSFields :: WriterT [ExtraDeclOrGenericInfo] Q [Exp]
+    getTSFields = do
       forM namesAndTypes $ \(nameString, typ) -> do
+        searchGenericInfos typ
+
         (fieldTyp, optAsBool) <- case typ of
-          (AppT (ConT name) t) | not (omitNothingFields options) && name == ''Maybe -> do
-                                   fieldTyp <- lift $ [|$(return $ getTypeAsStringExp t) <> " | null"|]
-                                   return (fieldTyp, getOptionalAsBoolExp t)
-          _ -> return (getTypeAsStringExp typ, getOptionalAsBoolExp typ)
+          (AppT (ConT name) t)
+            | name == ''Maybe && not (omitNothingFields options) -> do
+                fieldTyp <- lift $ [|$(return $ getTypeAsStringExp t) <> " | null"|]
+                return (fieldTyp, getOptionalAsBoolExp t)
+          x -> return (getTypeAsStringExp typ, getOptionalAsBoolExp typ)
         lift $ [| TSField $(return optAsBool) nameString $(return fieldTyp) |]
 
+    searchGenericInfos :: Type -> WriterT [ExtraDeclOrGenericInfo] Q ()
+    searchGenericInfos (AppT (ConT name) typ) = lift (reify name) >>= \case
+      FamilyI (ClosedTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _) _) _ -> do
+        lift $ reportWarning [i|Found a type family application! #{name}|]
+        tell [GenericInfo (mkName "unknown") (TypeFamilyKey typeFamilyName)]
+      _ -> searchGenericInfos typ
+    searchGenericInfos (AppT t1 t2) = do
+      searchGenericInfos t1
+      searchGenericInfos t2
+    searchGenericInfos (VarT name) = tell [GenericInfo name NormalStar]
+    searchGenericInfos _ = return ()
 
 -- * Convenience functions
 
