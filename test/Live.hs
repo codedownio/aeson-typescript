@@ -73,8 +73,8 @@ data UserT env f = User {
 
 -- $(deriveTypeScriptLookupType ''DeployEnvironment "deployEnvDecl")
 
-$(deriveTypeScript' A.defaultOptions ''UserT (ExtraTypeScriptOptions [''DeployEnvironment]))
-             
+-- $(deriveTypeScript' A.defaultOptions ''UserT (ExtraTypeScriptOptions [''DeployEnvironment]))
+
 
 -- data HigherKind a = HigherKind { higherKindList :: [a] }
 -- $(deriveTypeScript A.defaultOptions ''HigherKind)

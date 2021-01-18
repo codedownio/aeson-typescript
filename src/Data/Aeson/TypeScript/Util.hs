@@ -6,12 +6,14 @@ import Control.Monad
 import Data.Aeson as A
 import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Types
+import qualified Data.List as L
 import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
+import qualified Language.Haskell.TH.Lib as TH
 
 
 #if MIN_VERSION_th_abstraction(0,3,0)
@@ -137,3 +139,7 @@ namesAndTypes options ci = case constructorVariant ci of
 constructorNameToUse options ci = (constructorTagModifier options) $ lastNameComponent' (constructorName ci)
 
 contentsTupleType ci = getTupleType (constructorFields ci)
+
+getBracketsExpression :: [Name] -> Q Exp
+getBracketsExpression [] = [|""|]
+getBracketsExpression names = [|"<" <> L.intercalate ", " $(listE [ [|getTypeScriptType (Proxy :: Proxy $(varT x))|] | x <- names]) <> ">"|]
