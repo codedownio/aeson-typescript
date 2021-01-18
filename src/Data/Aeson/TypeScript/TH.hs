@@ -153,6 +153,7 @@ import Data.Maybe
 import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString
+import Data.Typeable
 import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
 import qualified Language.Haskell.TH.Lib as TH
@@ -188,24 +189,28 @@ deriveTypeScript' options name extraOptions = do
     return (var, unifyGenericVariable genericInfos)
 
   -- Build the declarations
-  (types, extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor options datatypeInfo genericVariablesAndSuffixes) datatypeCons
+  (types, extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor options extraOptions datatypeInfo genericVariablesAndSuffixes) datatypeCons
   typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName datatypeName)
                                           $(genericVariablesListExpr True genericVariablesAndSuffixes)
                                           $(listE $ fmap return types)|]
   let extraDecls = [x | ExtraDecl x <- extraDeclsOrGenericInfos]
+  let extraTopLevelDecls = mconcat [x | ExtraTopLevelDecs x <- extraDeclsOrGenericInfos]
   declarationsFunctionBody <- [| $(return typeDeclaration) : $(listE (fmap return $ extraDecls)) |]
 
-  [d|instance $(return constraints) => TypeScript $(return $ foldl AppT (ConT name) (getDataTypeVars datatypeInfo)) where
-       getTypeScriptType _ = $(TH.stringE $ getTypeName datatypeName) <> $(getBracketsExpressionAllTypesNoSuffix genericVariablesAndSuffixes)
-       getTypeScriptDeclarations _ = $(return declarationsFunctionBody)
-       getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return t))|]
-                                  | t <- mconcat $ fmap constructorFields datatypeCons])
-       |]
+  inst <- [d|instance $(return constraints) => TypeScript $(return $ foldl AppT (ConT name) (getDataTypeVars datatypeInfo)) where
+               getTypeScriptType _ = $(TH.stringE $ getTypeName datatypeName) <> $(getBracketsExpressionAllTypesNoSuffix genericVariablesAndSuffixes)
+               getTypeScriptDeclarations _ = $(return declarationsFunctionBody)
+               getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return t))|]
+                                          | t <- mconcat $ fmap constructorFields datatypeCons])
+               |]
 
+  reportWarning [i|extraTopLevelDecls: #{extraTopLevelDecls}|]
+
+  return (extraTopLevelDecls <> inst)
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
-handleConstructor :: Options -> DatatypeInfo -> [(Name, String)] -> ConstructorInfo -> WriterT [ExtraDeclOrGenericInfo] Q Exp
-handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) = 
+handleConstructor :: Options -> ExtraTypeScriptOptions -> DatatypeInfo -> [(Name, String)] -> ConstructorInfo -> WriterT [ExtraDeclOrGenericInfo] Q Exp
+handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) = 
   if | (length datatypeCons == 1) && not (getTagSingleConstructors options) -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
@@ -263,12 +268,48 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
                                                                     $(return members)|]
 
     getTSFields :: WriterT [ExtraDeclOrGenericInfo] Q [Exp]
-    getTSFields = forM (namesAndTypes options ci) $ \(nameString, typ) -> do
+    getTSFields = forM (namesAndTypes options ci) $ \(nameString, typ') -> do
+      typ <- transformTypeFamilies extraOptions typ'
+
       (fieldTyp, optAsBool) <- lift $ case typ of
         (AppT (ConT name) t) | name == ''Maybe && not (omitNothingFields options) -> 
           ( , ) <$> [|$(getTypeAsStringExp t) <> " | null"|] <*> getOptionalAsBoolExp t
         x -> ( , ) <$> getTypeAsStringExp typ <*> getOptionalAsBoolExp typ
       lift $ [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) |]
+
+transformTypeFamilies :: ExtraTypeScriptOptions -> Type -> WriterT [ExtraDeclOrGenericInfo] Q Type
+transformTypeFamilies eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ)
+  | name `L.elem` typeFamiliesToMapToTypeScript = lift (reify name) >>= \case
+      FamilyI (ClosedTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _) _) _ -> do
+        name' <- lift $ newName (nameBase typeFamilyName <> "'")
+        -- name' <- lift $ newName "Foo"
+        lift $ reportWarning [i|Made new name based on #{nameBase typeFamilyName}, need to export an instance for it: #{name'}|]
+
+        f <- lift $ newName "f"
+        let inst1 = DataD [] name' [PlainTV f] Nothing [] []
+        tell [ExtraTopLevelDecs [inst1]]
+
+        g <- lift $ newName "g"
+        inst2 <- lift $ [d|instance (Typeable g) => TypeScript ($(conT name') g) where
+                             getTypeScriptType _ = "hi"
+        --               getTypeScriptDeclarations _ = $(return declarationsFunctionBody)
+        --               getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return t))|]
+        --                                          | t <- mconcat $ fmap constructorFields datatypeCons])
+                        |]
+        tell [ExtraTopLevelDecs inst2]
+
+        transformTypeFamilies eo (AppT (ConT name') typ) 
+      _ -> AppT (ConT name) <$> transformTypeFamilies eo typ
+  | otherwise = AppT (ConT name) <$> transformTypeFamilies eo typ
+transformTypeFamilies eo (AppT typ1 typ2) = AppT <$> transformTypeFamilies eo typ1 <*> transformTypeFamilies eo typ2
+transformTypeFamilies eo (AppKindT typ kind) = flip AppKindT kind <$> transformTypeFamilies eo typ
+transformTypeFamilies eo (SigT typ kind) = flip SigT kind <$> transformTypeFamilies eo typ
+transformTypeFamilies eo (InfixT typ1 n typ2) = InfixT <$> transformTypeFamilies eo typ1 <*> pure n <*> transformTypeFamilies eo typ2
+transformTypeFamilies eo (UInfixT typ1 n typ2) = UInfixT <$> transformTypeFamilies eo typ1 <*> pure n <*> transformTypeFamilies eo typ2
+transformTypeFamilies eo (ParensT typ) = ParensT <$> transformTypeFamilies eo typ
+transformTypeFamilies eo (ImplicitParamT s typ) = ImplicitParamT s <$> transformTypeFamilies eo typ
+transformTypeFamilies eo typ = return typ
+
 
 searchForConstraints :: ExtraTypeScriptOptions -> Type -> (Name, Name) -> WriterT [GenericInfo] Q ()
 searchForConstraints eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ) tup@(varName, genericName) 

@@ -151,8 +151,8 @@ getBracketsExpressionAllTypesNoSuffix names = [|"<" <> L.intercalate ", " $(list
 
 genericVariablesListExpr :: Bool -> [(Name, String)] -> Q Exp
 genericVariablesListExpr True genericVariables = [|catMaybes $(listE (fmap (\(x, suffix) ->
-  [|if isGenericVariable (Proxy :: Proxy $(varT x)) then Just ((getTypeScriptType (Proxy :: Proxy $(varT x))) <> suffix) else Nothing|])
+  [|if isGenericVariable (Proxy :: Proxy $(varT x)) then Just ((getTypeScriptType (Proxy :: Proxy $(varT x))) <> $(TH.stringE suffix)) else Nothing|])
   genericVariables))|]
-genericVariablesListExpr False genericVariables = [|catMaybes $(listE (fmap (\(x, suffix) ->
+genericVariablesListExpr False genericVariables = [|catMaybes $(listE (fmap (\(x, _suffix) ->
   [|if isGenericVariable (Proxy :: Proxy $(varT x)) then Just (getTypeScriptType (Proxy :: Proxy $(varT x))) else Nothing|])
   genericVariables))|]

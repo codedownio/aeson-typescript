@@ -31,11 +31,11 @@ import Prelude hiding (Double)
 import Database.Beam
 
 
-data TestT a = TestT {
-  listOfA :: [a]
-  , maybeA :: Maybe a
-  }
-$(deriveTypeScript A.defaultOptions ''TestT)
+-- data TestT a = TestT {
+--   listOfA :: [a]
+--   , maybeA :: Maybe a
+--   }
+-- $(deriveTypeScript A.defaultOptions ''TestT)
 
 instance TypeScript UTCTime where
   getTypeScriptType _ = "DateTime"
