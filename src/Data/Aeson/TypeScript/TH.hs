@@ -182,10 +182,10 @@ deriveTypeScript' options name extraOptions = do
   let eligibleGenericVars = catMaybes $ flip fmap (getDataTypeVars datatypeInfo) $ \case
         SigT (VarT n) StarT -> Just n
         _ -> Nothing
-  genericVariablesAndSuffixes <- forM (zip eligibleGenericVars allStarConstructors') $ \tuple@(var, genericVar) -> do
+  genericVariablesAndSuffixes <- forM eligibleGenericVars $ \var -> do
     (_, genericInfos) <- runWriterT $ forM_ datatypeCons $ \ci ->
       forM_ (namesAndTypes options ci) $ \(_, typ) -> do
-        searchForConstraints extraOptions typ tuple
+        searchForConstraints extraOptions typ var
     return (var, unifyGenericVariable genericInfos)
 
   -- Build the declarations
@@ -311,25 +311,25 @@ transformTypeFamilies eo (ImplicitParamT s typ) = ImplicitParamT s <$> transform
 transformTypeFamilies eo typ = return typ
 
 
-searchForConstraints :: ExtraTypeScriptOptions -> Type -> (Name, Name) -> WriterT [GenericInfo] Q ()
-searchForConstraints eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ) tup@(varName, genericName) 
-  | typ == VarT varName && (name `L.elem` typeFamiliesToMapToTypeScript) = lift (reify name) >>= \case
+searchForConstraints :: ExtraTypeScriptOptions -> Type -> Name -> WriterT [GenericInfo] Q ()
+searchForConstraints eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ) var
+  | typ == VarT var && (name `L.elem` typeFamiliesToMapToTypeScript) = lift (reify name) >>= \case
       FamilyI (ClosedTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _) _) _ -> do
-        tell [GenericInfo varName genericName (TypeFamilyKey typeFamilyName)]
-        searchForConstraints eo typ tup
-      _ -> searchForConstraints eo typ tup
-  | otherwise = searchForConstraints eo typ tup
-searchForConstraints eo (AppT typ1 typ2) tup = searchForConstraints eo typ1 tup >> searchForConstraints eo typ2 tup
-searchForConstraints eo (AppKindT typ _) tup = searchForConstraints eo typ tup
-searchForConstraints eo (SigT typ _) tup = searchForConstraints eo typ tup
-searchForConstraints eo (InfixT typ1 _ typ2) tup = searchForConstraints eo typ1 tup >> searchForConstraints eo typ2 tup
-searchForConstraints eo (UInfixT typ1 _ typ2) tup = searchForConstraints eo typ1 tup >> searchForConstraints eo typ2 tup
-searchForConstraints eo (ParensT typ) tup = searchForConstraints eo typ tup
-searchForConstraints eo (ImplicitParamT _ typ) tup = searchForConstraints eo typ tup
+        tell [GenericInfo var (TypeFamilyKey typeFamilyName)]
+        searchForConstraints eo typ var
+      _ -> searchForConstraints eo typ var
+  | otherwise = searchForConstraints eo typ var
+searchForConstraints eo (AppT typ1 typ2) var = searchForConstraints eo typ1 var >> searchForConstraints eo typ2 var
+searchForConstraints eo (AppKindT typ _) var = searchForConstraints eo typ var
+searchForConstraints eo (SigT typ _) var = searchForConstraints eo typ var
+searchForConstraints eo (InfixT typ1 _ typ2) var = searchForConstraints eo typ1 var >> searchForConstraints eo typ2 var
+searchForConstraints eo (UInfixT typ1 _ typ2) var = searchForConstraints eo typ1 var >> searchForConstraints eo typ2 var
+searchForConstraints eo (ParensT typ) var = searchForConstraints eo typ var
+searchForConstraints eo (ImplicitParamT _ typ) var = searchForConstraints eo typ var
 searchForConstraints eo _ _ = return ()
 
 unifyGenericVariable :: [GenericInfo] -> String
-unifyGenericVariable genericInfos = case [nameBase name | GenericInfo _ _ (TypeFamilyKey name) <- genericInfos] of
+unifyGenericVariable genericInfos = case [nameBase name | GenericInfo _ (TypeFamilyKey name) <- genericInfos] of
   [] -> ""
   names -> " extends keyof " <> (L.intercalate " & " names)
 

@@ -155,7 +155,7 @@ data ExtraDeclOrGenericInfo = ExtraDecl Exp
                             | ExtraTopLevelDecs [Dec]
   deriving Show
 
-data GenericInfo = GenericInfo Name Name GenericInfoExtra
+data GenericInfo = GenericInfo Name GenericInfoExtra
   deriving Show
 
 data GenericInfoExtra = NormalStar
