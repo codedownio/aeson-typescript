@@ -58,11 +58,11 @@ getDatatypePredicate typ = AppT (ConT ''TypeScript) typ
 getDatatypePredicate typ = ClassP ''TypeScript [typ]
 #endif
 
-getTypeAsStringExp :: Type -> Exp
-getTypeAsStringExp typ = AppE (VarE 'getTypeScriptType) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) typ))
+getTypeAsStringExp :: Type -> Q Exp
+getTypeAsStringExp typ = [|getTypeScriptType (Proxy :: Proxy $(return typ))|]
 
-getOptionalAsBoolExp :: Type -> Exp
-getOptionalAsBoolExp typ = AppE (VarE 'getTypeScriptOptional) (SigE (ConE 'Proxy) (AppT (ConT ''Proxy) typ))
+getOptionalAsBoolExp :: Type -> Q Exp
+getOptionalAsBoolExp typ = [|getTypeScriptOptional (Proxy :: Proxy $(return typ))|]
 
 -- | Get the type of a tuple of constructor fields, as when we're packing a record-less constructor into a list
 getTupleType constructorFields = case length constructorFields of

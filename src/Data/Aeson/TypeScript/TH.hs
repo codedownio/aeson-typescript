@@ -263,15 +263,12 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
                                                                     $(return members)|]
 
     getTSFields :: WriterT [ExtraDeclOrGenericInfo] Q [Exp]
-    getTSFields = do
-      forM (namesAndTypes options ci) $ \(nameString, typ) -> do
-        (fieldTyp, optAsBool) <- case typ of
-          (AppT (ConT name) t)
-            | name == ''Maybe && not (omitNothingFields options) -> do
-                fieldTyp <- lift $ [|$(return $ getTypeAsStringExp t) <> " | null"|]
-                return (fieldTyp, getOptionalAsBoolExp t)
-          x -> return (getTypeAsStringExp typ, getOptionalAsBoolExp typ)
-        lift $ [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) |]
+    getTSFields = forM (namesAndTypes options ci) $ \(nameString, typ) -> do
+      (fieldTyp, optAsBool) <- lift $ case typ of
+        (AppT (ConT name) t) | name == ''Maybe && not (omitNothingFields options) -> 
+          ( , ) <$> [|$(getTypeAsStringExp t) <> " | null"|] <*> getOptionalAsBoolExp t
+        x -> ( , ) <$> getTypeAsStringExp typ <*> getOptionalAsBoolExp typ
+      lift $ [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) |]
 
 searchForConstraints :: ExtraTypeScriptOptions -> Type -> (Name, Name) -> WriterT [GenericInfo] Q ()
 searchForConstraints eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ) tup@(varName, genericName) 
