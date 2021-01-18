@@ -252,17 +252,15 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
 
     assembleInterfaceDeclaration members = [|TSInterfaceDeclaration $(TH.stringE interfaceName) $(listE [TH.stringE x | x <- genericVariables]) $(return members)|]
 
-
--- | Helper for handleConstructor
-getTSFields :: Options -> [(String, Type)] -> Q [Exp]
-getTSFields options namesAndTypes = do
-  forM namesAndTypes $ \(nameString, typ) -> do
-    (fieldTyp, optAsBool) <- case typ of
-      (AppT (ConT name) t) | not (omitNothingFields options) && name == ''Maybe -> do
-                               fieldTyp <- [|$(return $ getTypeAsStringExp t) <> " | null"|]
-                               return (fieldTyp, getOptionalAsBoolExp t)
-      _ -> return (getTypeAsStringExp typ, getOptionalAsBoolExp typ)
-    [| TSField $(return optAsBool) nameString $(return fieldTyp) |]
+    getTSFields :: Options -> [(String, Type)] -> Q [Exp]
+    getTSFields options namesAndTypes = do
+      forM namesAndTypes $ \(nameString, typ) -> do
+        (fieldTyp, optAsBool) <- case typ of
+          (AppT (ConT name) t) | not (omitNothingFields options) && name == ''Maybe -> do
+                                   fieldTyp <- [|$(return $ getTypeAsStringExp t) <> " | null"|]
+                                   return (fieldTyp, getOptionalAsBoolExp t)
+          _ -> return (getTypeAsStringExp typ, getOptionalAsBoolExp typ)
+        [| TSField $(return optAsBool) nameString $(return fieldTyp) |]
 
 
 -- * Convenience functions
