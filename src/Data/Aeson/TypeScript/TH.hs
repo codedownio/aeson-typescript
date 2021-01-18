@@ -112,6 +112,7 @@ main = putStrLn $ 'formatTSDeclarations' (
 
 module Data.Aeson.TypeScript.TH (
   deriveTypeScript,
+  deriveTypeScript',
   deriveTypeScriptLookupType,
 
   -- * The main typeclass
@@ -147,6 +148,8 @@ import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Lookup
 import Data.Aeson.TypeScript.Types
 import Data.Aeson.TypeScript.Util
+import qualified Data.List as L
+import Data.Maybe
 import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString
@@ -175,19 +178,27 @@ deriveTypeScript' options name extraOptions = do
   let predicates = constructorPreds <> typeVariablePreds
   let constraints = foldl AppT (TupleT (length predicates)) predicates
 
+  let eligibleGenericVars = catMaybes $ flip fmap (getDataTypeVars datatypeInfo) $ \case
+        SigT (VarT n) StarT -> Just n
+        _ -> Nothing
+  genericVariables <- forM (zip eligibleGenericVars allStarConstructors') $ \tuple@(var, genericVar) -> do
+    (_, genericInfos) <- runWriterT $ forM_ datatypeCons $ \ci ->
+      forM_ (namesAndTypes options ci) $ \(_, typ) -> do
+        lift $ reportWarning [i|Searching typ #{typ}|]
+        searchForConstraints extraOptions typ tuple
+    return $ unifyGenericVariable genericVar genericInfos
+  reportWarning [i|Got generic variables: '#{genericVariables}'|]
+
   -- Build the declarations
-  let genericVariables = []
   (types, extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor options datatypeInfo genericVariables) datatypeCons
   typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName datatypeName)
                                           $(listE [TH.stringE x | x <- genericVariables])
                                           $(listE $ fmap return types)|]
   let extraDecls = [x | ExtraDecl x <- extraDeclsOrGenericInfos]
-  let genericInfos = [(x, y) | GenericInfo x y <- extraDeclsOrGenericInfos]
-  reportWarning [i|Got genericInfos: #{genericInfos}|]
   declarationsFunctionBody <- [| $(return typeDeclaration) : $(listE (fmap return $ extraDecls)) |]
 
   [d|instance $(return constraints) => TypeScript $(return $ foldl AppT (ConT name) (getDataTypeVars datatypeInfo)) where
-       getTypeScriptType _ = $(TH.stringE $ getTypeName datatypeName)
+       getTypeScriptType _ = $(TH.stringE $ getTypeName datatypeName) <> getGenericBrackets $(listE $ fmap TH.stringE genericVariables)
        getTypeScriptDeclarations _ = $(return declarationsFunctionBody)
        getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return t))|]
                                   | t <- mconcat $ fmap constructorFields datatypeCons])
@@ -253,27 +264,35 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
     getTSFields :: WriterT [ExtraDeclOrGenericInfo] Q [Exp]
     getTSFields = do
       forM (namesAndTypes options ci) $ \(nameString, typ) -> do
-        searchGenericInfos typ
-
         (fieldTyp, optAsBool) <- case typ of
           (AppT (ConT name) t)
             | name == ''Maybe && not (omitNothingFields options) -> do
                 fieldTyp <- lift $ [|$(return $ getTypeAsStringExp t) <> " | null"|]
                 return (fieldTyp, getOptionalAsBoolExp t)
           x -> return (getTypeAsStringExp typ, getOptionalAsBoolExp typ)
-        lift $ [| TSField $(return optAsBool) nameString $(return fieldTyp) |]
+        lift $ [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) |]
 
-    searchGenericInfos :: Type -> WriterT [ExtraDeclOrGenericInfo] Q ()
-    searchGenericInfos (AppT (ConT name) typ) = lift (reify name) >>= \case
+searchForConstraints :: ExtraTypeScriptOptions -> Type -> (Name, Name) -> WriterT [GenericInfo] Q ()
+searchForConstraints eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ) tup@(varName, genericName) 
+  | typ == VarT varName && (name `L.elem` typeFamiliesToMapToTypeScript) = lift (reify name) >>= \case
       FamilyI (ClosedTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _) _) _ -> do
-        lift $ reportWarning [i|Found a type family application! #{name}|]
-        tell [GenericInfo (mkName "unknown") (TypeFamilyKey typeFamilyName)]
-      _ -> searchGenericInfos typ
-    searchGenericInfos (AppT t1 t2) = do
-      searchGenericInfos t1
-      searchGenericInfos t2
-    searchGenericInfos (VarT name) = tell [GenericInfo name NormalStar]
-    searchGenericInfos _ = return ()
+        tell [GenericInfo varName genericName (TypeFamilyKey typeFamilyName)]
+        searchForConstraints eo typ tup
+      _ -> searchForConstraints eo typ tup
+  | otherwise = searchForConstraints eo typ tup
+searchForConstraints eo (AppT typ1 typ2) tup = searchForConstraints eo typ1 tup >> searchForConstraints eo typ2 tup
+searchForConstraints eo (AppKindT typ _) tup = searchForConstraints eo typ tup
+searchForConstraints eo (SigT typ _) tup = searchForConstraints eo typ tup
+searchForConstraints eo (InfixT typ1 _ typ2) tup = searchForConstraints eo typ1 tup >> searchForConstraints eo typ2 tup
+searchForConstraints eo (UInfixT typ1 _ typ2) tup = searchForConstraints eo typ1 tup >> searchForConstraints eo typ2 tup
+searchForConstraints eo (ParensT typ) tup = searchForConstraints eo typ tup
+searchForConstraints eo (ImplicitParamT _ typ) tup = searchForConstraints eo typ tup
+searchForConstraints eo _ _ = return ()
+
+unifyGenericVariable :: Name -> [GenericInfo] -> String
+unifyGenericVariable genericVar genericInfos = case [nameBase name | GenericInfo _ _ (TypeFamilyKey name) <- genericInfos] of
+  [] -> nameBase genericVar
+  names -> nameBase genericVar <> " extends keyof " <> (L.intercalate " & " names)
 
 -- * Convenience functions
 

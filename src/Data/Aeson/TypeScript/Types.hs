@@ -134,6 +134,9 @@ instance TypeScript T10 where getTypeScriptType _ = "T10"
 allStarConstructors :: [Type]
 allStarConstructors = [ConT ''T1, ConT ''T2, ConT ''T3, ConT ''T4, ConT ''T5, ConT ''T6, ConT ''T7, ConT ''T8, ConT ''T9, ConT ''T10]                 
 
+allStarConstructors' :: [Name]
+allStarConstructors' = [''T1, ''T2, ''T3, ''T4, ''T5, ''T6, ''T7, ''T8, ''T9, ''T10]
+
 -- | Type variable gathering
 
 data ExtraTypeScriptOptions = ExtraTypeScriptOptions {
@@ -144,7 +147,11 @@ defaultExtraTypeScriptOptions :: ExtraTypeScriptOptions
 defaultExtraTypeScriptOptions = ExtraTypeScriptOptions []
 
 data ExtraDeclOrGenericInfo = ExtraDecl Exp
-                            | GenericInfo Name GenericInfoExtra
+                            | ExtraGeneric GenericInfo
+  deriving Show
+
+data GenericInfo = GenericInfo Name Name GenericInfoExtra
+  deriving Show
 
 data GenericInfoExtra = NormalStar
                       | TypeFamilyKey Name

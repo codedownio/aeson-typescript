@@ -31,14 +31,11 @@ import Prelude hiding (Double)
 import Database.Beam
 
 
-
 data TestT a = TestT {
   listOfA :: [a]
   , maybeA :: Maybe a
   }
-
 $(deriveTypeScript A.defaultOptions ''TestT)
-
 
 instance TypeScript UTCTime where
   getTypeScriptType _ = "DateTime"
@@ -66,6 +63,7 @@ instance TypeScript K8SEnvironment where getTypeScriptType _ = [i|"k8s_env"|]
 type family DeployEnvironment env = result | result -> env where
   DeployEnvironment SingleNodeEnvironment = SingleDE
   DeployEnvironment K8SEnvironment = K8SDE
+  DeployEnvironment T = ()
                         
 data UserT env f = User {
   _userUsername :: Columnar f T.Text
@@ -73,11 +71,11 @@ data UserT env f = User {
   , _userDeployEnvironment  :: Columnar f (DeployEnvironment env)
   }
 
-$(deriveTypeScriptLookupType ''DeployEnvironment "deployEnvDecl")
+-- $(deriveTypeScriptLookupType ''DeployEnvironment "deployEnvDecl")
 
-$(deriveTypeScript A.defaultOptions ''UserT)
+$(deriveTypeScript' A.defaultOptions ''UserT (ExtraTypeScriptOptions [''DeployEnvironment]))
              
 
-data HigherKind a = HigherKind { higherKindList :: [a] }
-$(deriveTypeScript A.defaultOptions ''HigherKind)
+-- data HigherKind a = HigherKind { higherKindList :: [a] }
+-- $(deriveTypeScript A.defaultOptions ''HigherKind)
 
