@@ -139,6 +139,7 @@ module Data.Aeson.TypeScript.TH (
   ) where
 
 import Control.Monad
+import Control.Monad.Writer
 import Data.Aeson as A
 import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.Formatting
@@ -194,49 +195,65 @@ deriveTypeScript options name = do
 
 getDeclarationFunctionBody :: Options -> DatatypeInfo -> [String] -> Q Exp
 getDeclarationFunctionBody options datatypeInfo@(DatatypeInfo {..}) genericVariables = do
-  xs <- mapM (handleConstructor options datatypeInfo genericVariables) datatypeCons
+  (types, extraDecls) <- runWriterT $ mapM (handleConstructor options datatypeInfo genericVariables) datatypeCons
   typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName datatypeName)
                                           $(listE [TH.stringE x | x <- genericVariables])
-                                          $(listE $ fmap (return . fst) xs)|]
-  [| $(return typeDeclaration) : $(listE (fmap return $ mapMaybe snd xs)) |]
+                                          $(listE $ fmap return types)|]
+  [| $(return typeDeclaration) : $(listE (fmap return $ extraDecls)) |]
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
-handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> Q (Exp, Maybe Exp)
-handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) =
-  if | (length datatypeCons == 1) && not (getTagSingleConstructors options) -> ((stringE interfaceNameWithBrackets, ) . Just) <$> singleConstructorEncoding
+handleConstructor :: Options -> DatatypeInfo -> [String] -> ConstructorInfo -> WriterT [Exp] Q Exp
+handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) = 
+  if | (length datatypeCons == 1) && not (getTagSingleConstructors options) -> do
+         writeSingleConstructorEncoding
+         lift $ TH.stringE interfaceNameWithBrackets
 
-     | allConstructorsAreNullary datatypeCons && allNullaryToStringTag options -> return stringEncoding
+     | allConstructorsAreNullary datatypeCons && allNullaryToStringTag options -> stringEncoding
 
      -- With UntaggedValue, nullary constructors are encoded as strings
-     | (isUntaggedValue $ sumEncoding options) && isConstructorNullary ci -> return stringEncoding
+     | (isUntaggedValue $ sumEncoding options) && isConstructorNullary ci -> stringEncoding
 
      -- Treat as a sum
-     | isObjectWithSingleField $ sumEncoding options -> ((stringE [i|{#{show constructorNameToUse}: #{interfaceNameWithBrackets}}|], ) . Just) <$> singleConstructorEncoding
-     | isTwoElemArray $ sumEncoding options -> ((stringE [i|[#{show constructorNameToUse}, #{interfaceNameWithBrackets}]|], ) . Just) <$> singleConstructorEncoding
-     | isUntaggedValue $ sumEncoding options -> ((stringE interfaceNameWithBrackets, ) . Just) <$> singleConstructorEncoding
+     | isObjectWithSingleField $ sumEncoding options -> do
+         writeSingleConstructorEncoding
+         lift $ TH.stringE [i|{#{show constructorNameToUse}: #{interfaceNameWithBrackets}}|]
+     | isTwoElemArray $ sumEncoding options -> do
+         writeSingleConstructorEncoding
+         lift $ TH.stringE [i|[#{show constructorNameToUse}, #{interfaceNameWithBrackets}]|]
+     | isUntaggedValue $ sumEncoding options -> do
+         writeSingleConstructorEncoding
+         lift $ TH.stringE interfaceNameWithBrackets
      | otherwise -> do
-         tagField :: [Exp] <- case sumEncoding options of
+         tagField :: [Exp] <- lift $ case sumEncoding options of
            TaggedObject tagFieldName _ -> (: []) <$> [|TSField False $(TH.stringE tagFieldName) $(TH.stringE [i|"#{constructorNameToUse}"|])|]
            _ -> return []
 
-         tsFields <- getTSFields options namesAndTypes
-         decl <- assembleInterfaceDeclaration (ListE (tagField ++ tsFields))
+         tsFields <- lift $ getTSFields options namesAndTypes
+         decl <- lift $ assembleInterfaceDeclaration (ListE (tagField ++ tsFields))
 
-         return (stringE interfaceNameWithBrackets, Just decl)
+         tell [decl]
+
+         lift $ TH.stringE interfaceNameWithBrackets
 
   where
-    stringEncoding = (stringE [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|], Nothing)
+    stringEncoding = lift $ TH.stringE [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|]
 
-    singleConstructorEncoding = if | constructorVariant ci == NormalConstructor -> tupleEncoding
-                                   | otherwise -> do
-                                       tsFields <- getTSFields options namesAndTypes 
-                                       assembleInterfaceDeclaration (ListE tsFields)
+    writeSingleConstructorEncoding = if
+      | constructorVariant ci == NormalConstructor -> do
+          encoding <- lift tupleEncoding
+          tell [encoding]
+      | otherwise -> do
+          tsFields <- lift $ getTSFields options namesAndTypes 
+          decl <- lift $ assembleInterfaceDeclaration (ListE tsFields)
+          tell [decl]
 
     -- * Type declaration to use
     interfaceName = "I" <> (lastNameComponent' $ constructorName ci)
     interfaceNameWithBrackets = interfaceName <> getGenericBrackets genericVariables
 
-    tupleEncoding = [|TSTypeAlternatives $(TH.stringE interfaceName) $(listE [TH.stringE x | x <- genericVariables]) [getTypeScriptType (Proxy :: Proxy $(return contentsTupleType))]|]
+    tupleEncoding = [|TSTypeAlternatives $(TH.stringE interfaceName)
+                                         $(listE [TH.stringE x | x <- genericVariables])
+                                         [getTypeScriptType (Proxy :: Proxy $(return contentsTupleType))]|]
 
     namesAndTypes :: [(String, Type)] = case constructorVariant ci of
       RecordConstructor names -> zip (fmap ((fieldLabelModifier options) . lastNameComponent') names) (constructorFields ci)
