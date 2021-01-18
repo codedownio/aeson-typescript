@@ -7,6 +7,7 @@ import Data.Aeson as A
 import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Types
 import qualified Data.List as L
+import Data.Maybe
 import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString
@@ -142,4 +143,14 @@ contentsTupleType ci = getTupleType (constructorFields ci)
 
 getBracketsExpression :: [Name] -> Q Exp
 getBracketsExpression [] = [|""|]
-getBracketsExpression names = [|"<" <> L.intercalate ", " $(listE [ [|getTypeScriptType (Proxy :: Proxy $(varT x))|] | x <- names]) <> ">"|]
+getBracketsExpression names = [|case $(genericVariablesListExpr names) of [] -> ""; vars -> "<" <> L.intercalate ", " vars <> ">"|]
+
+getBracketsExpressionAllTypes :: [Name] -> Q Exp
+getBracketsExpressionAllTypes [] = [|""|]
+getBracketsExpressionAllTypes names = [|"<" <> L.intercalate ", " $(listE [ [|getTypeScriptType (Proxy :: Proxy $(varT x))|] | x <- names]) <> ">"|]
+
+genericVariablesListExpr :: [Name] -> Q Exp
+genericVariablesListExpr genericVariables = [|catMaybes $(listE (fmap (\x ->
+  [|if isGenericVariable (Proxy :: Proxy $(varT x)) then Just (getTypeScriptType (Proxy :: Proxy $(varT x))) else Nothing|])
+  genericVariables))|]
+

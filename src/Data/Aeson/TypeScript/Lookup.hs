@@ -33,7 +33,6 @@ deriveTypeScriptLookupType :: Name
                            -> Q [Dec]
 deriveTypeScriptLookupType name declNameStr = do
   info <- reify name
-  reportWarning [i|Got datatypeInfo: #{info}|]
   case info of
     FamilyI (ClosedTypeFamilyD (TypeFamilyHead name vars sig maybeInject) eqns) decs -> do
       fields <- forM eqns $ \case

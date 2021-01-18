@@ -75,7 +75,7 @@ testDeclarations testName aesonOptions = do
                          <> getTypeScriptDeclarations (Proxy :: Proxy TwoField)
                          <> getTypeScriptDeclarations (Proxy :: Proxy Hybrid)
                          <> getTypeScriptDeclarations (Proxy :: Proxy TwoConstructor)
-                         <> getTypeScriptDeclarations (Proxy :: Proxy (Complex Int))
+                         <> getTypeScriptDeclarations (Proxy :: Proxy (Complex T))
                          <> getTypeScriptDeclarations (Proxy :: Proxy Optional)
                          |]
 

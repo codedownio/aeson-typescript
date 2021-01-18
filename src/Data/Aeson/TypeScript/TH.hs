@@ -184,22 +184,20 @@ deriveTypeScript' options name extraOptions = do
   genericVariablesAndSuffixes <- forM (zip eligibleGenericVars allStarConstructors') $ \tuple@(var, genericVar) -> do
     (_, genericInfos) <- runWriterT $ forM_ datatypeCons $ \ci ->
       forM_ (namesAndTypes options ci) $ \(_, typ) -> do
-        lift $ reportWarning [i|Searching typ #{typ}|]
         searchForConstraints extraOptions typ tuple
     return (var, unifyGenericVariable genericInfos)
-  reportWarning [i|Got generic variables: '#{genericVariablesAndSuffixes}'|]
   let genericVariables = fmap fst genericVariablesAndSuffixes
 
   -- Build the declarations
   (types, extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor options datatypeInfo genericVariables) datatypeCons
   typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName datatypeName)
-                                          $(listE [TH.stringE $ nameBase x | x <- genericVariables])
+                                          $(genericVariablesListExpr genericVariables)
                                           $(listE $ fmap return types)|]
   let extraDecls = [x | ExtraDecl x <- extraDeclsOrGenericInfos]
   declarationsFunctionBody <- [| $(return typeDeclaration) : $(listE (fmap return $ extraDecls)) |]
 
   [d|instance $(return constraints) => TypeScript $(return $ foldl AppT (ConT name) (getDataTypeVars datatypeInfo)) where
-       getTypeScriptType _ = $(TH.stringE $ getTypeName datatypeName) <> $(getBracketsExpression genericVariables)
+       getTypeScriptType _ = $(TH.stringE $ getTypeName datatypeName) <> $(getBracketsExpressionAllTypes genericVariables)
        getTypeScriptDeclarations _ = $(return declarationsFunctionBody)
        getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return t))|]
                                   | t <- mconcat $ fmap constructorFields datatypeCons])
@@ -222,7 +220,7 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
      | isObjectWithSingleField $ sumEncoding options -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression genericVariables
-         lift $ [|"{" <> $(TH.stringE $ show $ constructorNameToUse options ci) <> "}: " <> $(TH.stringE interfaceName) <> $(return brackets) <> "}"|]
+         lift $ [|"{" <> $(TH.stringE $ show $ constructorNameToUse options ci) <> ": " <> $(TH.stringE interfaceName) <> $(return brackets) <> "}"|]
      | isTwoElemArray $ sumEncoding options -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression genericVariables
@@ -258,11 +256,11 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci@(ConstructorIn
     interfaceName = "I" <> (lastNameComponent' $ constructorName ci)
 
     tupleEncoding = [|TSTypeAlternatives $(TH.stringE interfaceName)
-                                         $(listE [ [|getTypeScriptType (Proxy :: Proxy $(varT x))|] | x <- genericVariables])
+                                         $(genericVariablesListExpr genericVariables)
                                          [getTypeScriptType (Proxy :: Proxy $(return $ contentsTupleType ci))]|]
 
     assembleInterfaceDeclaration members = [|TSInterfaceDeclaration $(TH.stringE interfaceName)
-                                                                    $(listE [ [|getTypeScriptType (Proxy :: Proxy $(varT x))|] | x <- genericVariables])
+                                                                    $(genericVariablesListExpr genericVariables)
                                                                     $(return members)|]
 
     getTSFields :: WriterT [ExtraDeclOrGenericInfo] Q [Exp]

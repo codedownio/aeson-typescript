@@ -52,9 +52,13 @@ class (Typeable a) => TypeScript a where
   getTypeScriptOptional _ = False
 
   getParentTypes :: Proxy a -> [TSType]
-  getParentTypes _ = []
   -- ^ Get the types that this type depends on. This is useful for generating transitive closures of necessary types.
+  getParentTypes _ = []
 
+  isGenericVariable :: Proxy a -> Bool
+  -- ^ Special flag to indicate whether this type corresponds to a template variable.
+  isGenericVariable _ = False
+    
 -- | An existential wrapper for any TypeScript instance.
 data TSType = forall a. (Typeable a, TypeScript a) => TSType { unTSType :: Proxy a }
 
@@ -119,17 +123,17 @@ data T8 = T8
 data T9 = T9
 data T10 = T10
 
-instance TypeScript T where getTypeScriptType _ = "T"
-instance TypeScript T1 where getTypeScriptType _ = "T1"
-instance TypeScript T2 where getTypeScriptType _ = "T2"
-instance TypeScript T3 where getTypeScriptType _ = "T3"
-instance TypeScript T4 where getTypeScriptType _ = "T4"
-instance TypeScript T5 where getTypeScriptType _ = "T5"
-instance TypeScript T6 where getTypeScriptType _ = "T6"
-instance TypeScript T7 where getTypeScriptType _ = "T7"
-instance TypeScript T8 where getTypeScriptType _ = "T8"
-instance TypeScript T9 where getTypeScriptType _ = "T9"
-instance TypeScript T10 where getTypeScriptType _ = "T10"
+instance TypeScript T where getTypeScriptType _ = "T"; isGenericVariable _ = True
+instance TypeScript T1 where getTypeScriptType _ = "T1"; isGenericVariable _ = True
+instance TypeScript T2 where getTypeScriptType _ = "T2"; isGenericVariable _ = True
+instance TypeScript T3 where getTypeScriptType _ = "T3"; isGenericVariable _ = True
+instance TypeScript T4 where getTypeScriptType _ = "T4"; isGenericVariable _ = True
+instance TypeScript T5 where getTypeScriptType _ = "T5"; isGenericVariable _ = True
+instance TypeScript T6 where getTypeScriptType _ = "T6"; isGenericVariable _ = True
+instance TypeScript T7 where getTypeScriptType _ = "T7"; isGenericVariable _ = True
+instance TypeScript T8 where getTypeScriptType _ = "T8"; isGenericVariable _ = True
+instance TypeScript T9 where getTypeScriptType _ = "T9"; isGenericVariable _ = True
+instance TypeScript T10 where getTypeScriptType _ = "T10"; isGenericVariable _ = True
 
 allStarConstructors :: [Type]
 allStarConstructors = [ConT ''T1, ConT ''T2, ConT ''T3, ConT ''T4, ConT ''T5, ConT ''T6, ConT ''T7, ConT ''T8, ConT ''T9, ConT ''T10]                 
