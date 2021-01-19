@@ -44,7 +44,7 @@ getClosedTypeFamilyInterfaceDecl name eqns = do
   fields <- forM eqns $ \case
     TySynEqn Nothing (AppT (ConT _) (ConT arg)) result -> do
       [| TSField False (getTypeScriptType (Proxy :: Proxy $(conT arg))) (getTypeScriptType (Proxy :: Proxy $(return result))) |]
-    x -> fail [i|Don't know how to handle type family equation: '#{x}'|]
+    x -> fail [i|aeson-typescript doesn't know yet how to handle this type family equation: '#{x}'|]
 
   [| TSInterfaceDeclaration $(TH.stringE $ nameBase name) [] $(listE $ fmap return fields) |]  
 
@@ -52,4 +52,4 @@ getClosedTypeFamilyImage :: [TySynEqn] -> Q [Type]
 getClosedTypeFamilyImage eqns = do
   forM eqns $ \case
     TySynEqn Nothing (AppT (ConT _) (ConT _)) result -> return result
-    x -> fail [i|Don't know how to handle type family equation: '#{x}'|]
+    x -> fail [i|aeson-typescript doesn't know yet how to handle this type family equation: '#{x}'|]
