@@ -218,7 +218,7 @@ handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(
   if | (length datatypeCons == 1) && not (getTagSingleConstructors options) -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
-         lift $ [|$(TH.stringE interfaceName) <> $(return brackets)|]
+         lift [|$(TH.stringE interfaceName) <> $(return brackets)|]
      | allConstructorsAreNullary datatypeCons && allNullaryToStringTag options -> stringEncoding
 
      -- With UntaggedValue, nullary constructors are encoded as strings
@@ -228,15 +228,15 @@ handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(
      | isObjectWithSingleField $ sumEncoding options -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
-         lift $ [|"{" <> $(TH.stringE $ show $ constructorNameToUse options ci) <> ": " <> $(TH.stringE interfaceName) <> $(return brackets) <> "}"|]
+         lift [|"{" <> $(TH.stringE $ show $ constructorNameToUse options ci) <> ": " <> $(TH.stringE interfaceName) <> $(return brackets) <> "}"|]
      | isTwoElemArray $ sumEncoding options -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
-         lift $ [|"[" <> $(TH.stringE $ show $ constructorNameToUse options ci) <> ", " <> $(TH.stringE interfaceName) <> $(return brackets) <> "]"|]
+         lift [|"[" <> $(TH.stringE $ show $ constructorNameToUse options ci) <> ", " <> $(TH.stringE interfaceName) <> $(return brackets) <> "]"|]
      | isUntaggedValue $ sumEncoding options -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
-         lift $ [|$(TH.stringE interfaceName) <> $(return brackets)|]
+         lift [|$(TH.stringE interfaceName) <> $(return brackets)|]
      | otherwise -> do
          tagField :: [Exp] <- lift $ case sumEncoding options of
            TaggedObject tagFieldName _ -> (: []) <$> [|TSField False $(TH.stringE tagFieldName) $(TH.stringE [i|"#{constructorNameToUse options ci}"|])|]
@@ -246,7 +246,7 @@ handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(
          decl <- lift $ assembleInterfaceDeclaration (ListE (tagField ++ tsFields))
          tell [ExtraDecl decl]
          brackets <- lift $ getBracketsExpression False genericVariables
-         lift $ [|$(TH.stringE interfaceName) <> $(return brackets)|]
+         lift [|$(TH.stringE interfaceName) <> $(return brackets)|]
 
   where
     stringEncoding = lift $ TH.stringE [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|]
