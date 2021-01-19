@@ -111,32 +111,35 @@ main = putStrLn $ 'formatTSDeclarations' (
 -}
 
 module Data.Aeson.TypeScript.TH (
-  deriveTypeScript,
-  deriveTypeScript',
-  deriveTypeScriptLookupType,
+  deriveTypeScript
+  , deriveTypeScript'
+  , deriveTypeScriptLookupType
 
   -- * The main typeclass
-  TypeScript(..),
-  TSType(..),
+  , TypeScript(..)
+  , TSType(..)
 
-  TSDeclaration(TSRawDeclaration),
+  , TSDeclaration(TSRawDeclaration)
 
   -- * Formatting declarations
-  formatTSDeclarations,
-  formatTSDeclarations',
-  formatTSDeclaration,
-  FormattingOptions(..),
+  , formatTSDeclarations
+  , formatTSDeclarations'
+  , formatTSDeclaration
+  , FormattingOptions(..)
 
-  -- * Convenience tools
-  HasJSONOptions(..),
-  deriveJSONAndTypeScript,
-
-  T(..),
-  T1(..),
-  T2(..),
-  T3(..),
+  -- * Advanced options
+  , ExtraTypeScriptOptions
     
-  module Data.Aeson.TypeScript.Instances
+  -- * Convenience tools
+  , HasJSONOptions(..)
+  , deriveJSONAndTypeScript
+
+  , T(..)
+  , T1(..)
+  , T2(..)
+  , T3(..)
+    
+  , module Data.Aeson.TypeScript.Instances
   ) where
 
 import Control.Monad
