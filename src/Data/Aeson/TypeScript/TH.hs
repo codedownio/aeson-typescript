@@ -270,11 +270,17 @@ handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(
     getTSFields :: WriterT [ExtraDeclOrGenericInfo] Q [Exp]
     getTSFields = forM (namesAndTypes options ci) $ \(nameString, typ') -> do
       typ <- transformTypeFamilies extraOptions typ'
+      -- TODO: emit another constraint here to add to the main TypeScript instance
+      -- when (typ /= typ') $ do
+        -- inst3 <- lift $ [d|instance (TypeScript $(return typ')) => TypeScript $(return typ) where
+        --                      getTypeScriptType _ = "hiiii"
+        --                 |]
+        -- tell [ExtraTopLevelDecs inst3]
 
       (fieldTyp, optAsBool) <- lift $ case typ of
         (AppT (ConT name) t) | name == ''Maybe && not (omitNothingFields options) -> 
           ( , ) <$> [|$(getTypeAsStringExp t) <> " | null"|] <*> getOptionalAsBoolExp t
-        x -> ( , ) <$> getTypeAsStringExp typ <*> getOptionalAsBoolExp typ
+        x -> ( , ) <$> getTypeAsStringExp typ <*> getOptionalAsBoolExp typ'
       lift $ [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) |]
 
 transformTypeFamilies :: ExtraTypeScriptOptions -> Type -> WriterT [ExtraDeclOrGenericInfo] Q Type
@@ -282,8 +288,6 @@ transformTypeFamilies eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ)
   | name `L.elem` typeFamiliesToMapToTypeScript = lift (reify name) >>= \case
       FamilyI (ClosedTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _) _) _ -> do
         name' <- lift $ newName (nameBase typeFamilyName <> "'")
-        -- name' <- lift $ newName "Foo"
-        lift $ reportWarning [i|Made new name based on #{nameBase typeFamilyName}, need to export an instance for it: #{name'}|]
 
         f <- lift $ newName "f"
         let inst1 = DataD [] name' [PlainTV f] Nothing [] []
