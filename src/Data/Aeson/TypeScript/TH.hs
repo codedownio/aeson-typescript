@@ -197,19 +197,22 @@ deriveTypeScript' options name extraOptions = do
   let extraDecls = [x | ExtraDecl x <- extraDeclsOrGenericInfos]
   let extraTopLevelDecls = mconcat [x | ExtraTopLevelDecs x <- extraDeclsOrGenericInfos]
   let predicates = constructorPreds <> typeVariablePreds <> [x | ExtraConstraint x <- extraDeclsOrGenericInfos]
-  let constraints = foldl AppT (TupleT (length predicates)) predicates
-  -- let constraints = predicates
 
   declarationsFunctionBody <- [| $(return typeDeclaration) : $(listE (fmap return $ extraDecls)) |]
 
   let extraParentTypes = [x | ExtraParentType x <- extraDeclsOrGenericInfos]
-  inst <- [d|instance $(return constraints) => TypeScript $(return $ foldl AppT (ConT name) (getDataTypeVars datatypeInfo)) where
-               getTypeScriptType _ = $(TH.stringE $ getTypeName datatypeName) <> $(getBracketsExpressionAllTypesNoSuffix genericVariablesAndSuffixes)
-               getTypeScriptDeclarations _ = $(return declarationsFunctionBody)
-               getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return t))|]
-                                          | t <- (mconcat $ fmap constructorFields datatypeCons) <> extraParentTypes])
-               |]
 
+  -- Couldn't figure out how to put the constraints for "instance TypeScript..." in the quasiquote above without
+  -- introducing () when the constraints are empty, which causes "illegal tuple constraint" unless the user enables ConstraintKinds.
+  -- So, just use our mkInstance function
+  getTypeScriptTypeExp <- [|$(TH.stringE $ getTypeName datatypeName) <> $(getBracketsExpressionAllTypesNoSuffix genericVariablesAndSuffixes)|]
+  getParentTypesExp <- listE [ [|TSType (Proxy :: Proxy $(return t))|]
+                             | t <- (mconcat $ fmap constructorFields datatypeCons) <> extraParentTypes]
+  let inst = [mkInstance predicates (AppT (ConT ''TypeScript) (foldl AppT (ConT name) (getDataTypeVars datatypeInfo))) [
+                 FunD 'getTypeScriptType [Clause [WildP] (NormalB getTypeScriptTypeExp) []]
+                 , FunD 'getTypeScriptDeclarations [Clause [WildP] (NormalB declarationsFunctionBody) []]
+                 , FunD 'getParentTypes [Clause [WildP] (NormalB getParentTypesExp) []]
+                 ]]
   return (extraTopLevelDecls <> inst)
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration

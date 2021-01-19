@@ -124,6 +124,14 @@ isUntaggedValue UntaggedValue = True
 #endif
 isUntaggedValue _ = False
 
+-- Between Template Haskell 2.10 and 2.11, InstanceD got an additional argument
+mkInstance :: Cxt -> Type -> [Dec] -> Dec
+#if MIN_VERSION_template_haskell(2,11,0)
+mkInstance context typ decs = InstanceD Nothing context typ decs
+#else
+mkInstance context typ decs = InstanceD context typ decs
+#endif
+
 namesAndTypes :: Options -> ConstructorInfo -> [(String, Type)]
 namesAndTypes options ci = case constructorVariant ci of
   RecordConstructor names -> zip (fmap ((fieldLabelModifier options) . lastNameComponent') names) (constructorFields ci)
