@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a8a23c594d80e27e34cb591cabb2a8ed3849b7bb2e7fe79c05fe526992ad6898
+-- hash: b3411bc5359cf53933561d5ecc5dda2e3ab245d676bc521f8f74fa5970700895
 
 name:           aeson-typescript
 version:        0.2.0.0
@@ -65,6 +65,7 @@ test-suite aeson-typescript-test
   other-modules:
       HigherKind
       Live
+      Live2
       LiveLogging
       NoOmitNothingFields
       ObjectWithSingleFieldNoTagSingleConstructors

@@ -18,9 +18,11 @@ module Live where
 
 import Data.Aeson as A
 import Data.Aeson.TH as A
+import Data.Aeson.TypeScript.Recursive
 import Data.Aeson.TypeScript.TH
 import Data.Aeson.TypeScript.Types
 import Data.Kind
+import Data.Function
 import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString
@@ -32,17 +34,8 @@ import Prelude hiding (Double)
 import Database.Beam
 
 
--- data TestT a = TestT {
---   listOfA :: [a]
---   , maybeA :: Maybe a
---   }
--- $(deriveTypeScript A.defaultOptions ''TestT)
-
 instance TypeScript UTCTime where
   getTypeScriptType _ = "DateTime"
-
-instance (Typeable a) => TypeScript (Identity a) where
-  getTypeScriptType x = getTypeScriptType x
 
 instance TypeScript Identity where
   getTypeScriptType _ = "any"
@@ -72,11 +65,8 @@ data UserT env f = User {
   , _userDeployEnvironment  :: Columnar f (DeployEnvironment env)
   }
 
--- $(deriveTypeScriptLookupType ''DeployEnvironment "deployEnvDecl")
-
 $(deriveTypeScript' A.defaultOptions ''UserT (ExtraTypeScriptOptions [''DeployEnvironment]))
 
-
--- data HigherKind a = HigherKind { higherKindList :: [a] }
--- $(deriveTypeScript A.defaultOptions ''HigherKind)
-
+main = getTypeScriptDeclarationsRecursively (Proxy :: Proxy (UserT T Identity))
+     & formatTSDeclarations
+     & putStrLn

@@ -176,8 +176,6 @@ deriveTypeScript' options name extraOptions = do
   -- Probably overkill/not exactly right, but it's a start.
   let constructorPreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- mconcat $ fmap constructorFields datatypeCons]
   let typeVariablePreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- getDataTypeVars datatypeInfo]
-  let predicates = constructorPreds <> typeVariablePreds
-  let constraints = foldl AppT (TupleT (length predicates)) predicates
 
   let eligibleGenericVars = catMaybes $ flip fmap (getDataTypeVars datatypeInfo) $ \case
         SigT (VarT n) StarT -> Just n
@@ -195,13 +193,18 @@ deriveTypeScript' options name extraOptions = do
                                           $(listE $ fmap return types)|]
   let extraDecls = [x | ExtraDecl x <- extraDeclsOrGenericInfos]
   let extraTopLevelDecls = mconcat [x | ExtraTopLevelDecs x <- extraDeclsOrGenericInfos]
+  let predicates = constructorPreds <> typeVariablePreds <> [x | ExtraConstraint x <- extraDeclsOrGenericInfos]
+  let constraints = foldl AppT (TupleT (length predicates)) predicates
+
   declarationsFunctionBody <- [| $(return typeDeclaration) : $(listE (fmap return $ extraDecls)) |]
 
+  let extraParentTypes = [x | ExtraParentType x <- extraDeclsOrGenericInfos]
+  reportWarning [i|Extra parent types: #{extraParentTypes}|]
   inst <- [d|instance $(return constraints) => TypeScript $(return $ foldl AppT (ConT name) (getDataTypeVars datatypeInfo)) where
                getTypeScriptType _ = $(TH.stringE $ getTypeName datatypeName) <> $(getBracketsExpressionAllTypesNoSuffix genericVariablesAndSuffixes)
                getTypeScriptDeclarations _ = $(return declarationsFunctionBody)
                getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return t))|]
-                                          | t <- mconcat $ fmap constructorFields datatypeCons])
+                                          | t <- (mconcat $ fmap constructorFields datatypeCons) <> extraParentTypes])
                |]
 
   reportWarning [i|extraTopLevelDecls: #{extraTopLevelDecls}|]
@@ -270,12 +273,9 @@ handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(
     getTSFields :: WriterT [ExtraDeclOrGenericInfo] Q [Exp]
     getTSFields = forM (namesAndTypes options ci) $ \(nameString, typ') -> do
       typ <- transformTypeFamilies extraOptions typ'
-      -- TODO: emit another constraint here to add to the main TypeScript instance
-      -- when (typ /= typ') $ do
-        -- inst3 <- lift $ [d|instance (TypeScript $(return typ')) => TypeScript $(return typ) where
-        --                      getTypeScriptType _ = "hiiii"
-        --                 |]
-        -- tell [ExtraTopLevelDecs inst3]
+      when (typ /= typ') $ do
+        let constraint = AppT (ConT ''TypeScript) typ
+        tell [ExtraConstraint constraint]
 
       (fieldTyp, optAsBool) <- lift $ case typ of
         (AppT (ConT name) t) | name == ''Maybe && not (omitNothingFields options) -> 
@@ -286,7 +286,7 @@ handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(
 transformTypeFamilies :: ExtraTypeScriptOptions -> Type -> WriterT [ExtraDeclOrGenericInfo] Q Type
 transformTypeFamilies eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ)
   | name `L.elem` typeFamiliesToMapToTypeScript = lift (reify name) >>= \case
-      FamilyI (ClosedTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _) _) _ -> do
+      FamilyI (ClosedTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _) eqns) _ -> do
         name' <- lift $ newName (nameBase typeFamilyName <> "'")
 
         f <- lift $ newName "f"
@@ -294,13 +294,13 @@ transformTypeFamilies eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ)
         tell [ExtraTopLevelDecs [inst1]]
 
         g <- lift $ newName "g"
-        inst2 <- lift $ [d|instance (Typeable g) => TypeScript ($(conT name') g) where
-                             getTypeScriptType _ = "hi"
-        --               getTypeScriptDeclarations _ = $(return declarationsFunctionBody)
-        --               getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return t))|]
-        --                                          | t <- mconcat $ fmap constructorFields datatypeCons])
+        inst2 <- lift $ [d|instance (Typeable g, TypeScript g) => TypeScript ($(conT name') g) where
+                             getTypeScriptType _ = $(TH.stringE $ nameBase name) <> "[" <> (getTypeScriptType (Proxy :: Proxy g)) <> "]"
+                             getTypeScriptDeclarations _ = [$(getClosedTypeFamilyInterfaceDecl name eqns)]
                         |]
         tell [ExtraTopLevelDecs inst2]
+
+        tell [ExtraParentType (AppT (ConT name') (ConT ''T))]
 
         transformTypeFamilies eo (AppT (ConT name') typ) 
       _ -> AppT (ConT name) <$> transformTypeFamilies eo typ

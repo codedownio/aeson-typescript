@@ -153,6 +153,8 @@ defaultExtraTypeScriptOptions = ExtraTypeScriptOptions []
 data ExtraDeclOrGenericInfo = ExtraDecl Exp
                             | ExtraGeneric GenericInfo
                             | ExtraTopLevelDecs [Dec]
+                            | ExtraConstraint Type
+                            | ExtraParentType Type
   deriving Show
 
 data GenericInfo = GenericInfo Name GenericInfoExtra

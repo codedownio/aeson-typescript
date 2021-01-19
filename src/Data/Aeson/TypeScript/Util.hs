@@ -8,7 +8,6 @@ import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Types
 import qualified Data.List as L
 import Data.Maybe
-import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
@@ -16,13 +15,18 @@ import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
 import qualified Language.Haskell.TH.Lib as TH
 
+#if !MIN_VERSION_base(4,11,0)
+import Data.Monoid
+#endif
 
+getDataTypeVars :: DatatypeInfo -> [Type]
 #if MIN_VERSION_th_abstraction(0,3,0)
 getDataTypeVars (DatatypeInfo {datatypeInstTypes}) = datatypeInstTypes
 #else
 getDataTypeVars (DatatypeInfo {datatypeVars}) = datatypeVars
 #endif
 
+setDataTypeVars :: DatatypeInfo -> [Type] -> DatatypeInfo
 #if MIN_VERSION_th_abstraction(0,3,0)
 setDataTypeVars dti@(DatatypeInfo {}) vars = dti { datatypeInstTypes = vars }
 #else

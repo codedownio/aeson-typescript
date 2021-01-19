@@ -1,4 +1,5 @@
-{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, FlexibleInstances, OverlappingInstances #-}
+{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, FlexibleInstances, OverlappingInstances, CPP #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- Note: the OverlappingInstances pragma is only here so the overlapping instances in this file
 -- will work on older GHCs, like GHC 7.8.4
@@ -10,13 +11,15 @@ import Data.Aeson.TypeScript.Types
 import Data.Data
 import Data.HashMap.Strict
 import qualified Data.List as L
-import Data.Monoid
 import Data.Set
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Data.Void
 
+#if !MIN_VERSION_base(4,11,0)
+import Data.Monoid
+#endif
 
 instance TypeScript () where
   getTypeScriptType _ = "void"
