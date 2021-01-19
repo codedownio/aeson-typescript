@@ -184,27 +184,26 @@ deriveTypeScript' options name extraOptions = do
         1 -> [ConT ''T]
         _ -> take (length starVars) allStarConstructors
   let subMap = M.fromList $ zip starVars templateVarsToUse
-  let datatypeInfo = datatypeInfo' { datatypeCons = fmap (applySubstitution subMap) (datatypeCons datatypeInfo')}
-  let (DatatypeInfo {..}) = datatypeInfo
+  let dti = datatypeInfo' { datatypeCons = fmap (applySubstitution subMap) (datatypeCons datatypeInfo')}
 
   -- Build constraints: a TypeScript constraint for every constructor type and one for every type variable.
   -- Probably overkill/not exactly right, but it's a start.
-  let constructorPreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- mconcat $ fmap constructorFields datatypeCons
+  let constructorPreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- mconcat $ fmap constructorFields (datatypeCons dti)
                                                                , hasFreeTypeVariable x]
-  let typeVariablePreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- getDataTypeVars datatypeInfo]
+  let typeVariablePreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- getDataTypeVars dti]
 
-  let eligibleGenericVars = catMaybes $ flip fmap (getDataTypeVars datatypeInfo) $ \case
+  let eligibleGenericVars = catMaybes $ flip fmap (getDataTypeVars dti) $ \case
         SigT (VarT n) StarT -> Just n
         _ -> Nothing
   genericVariablesAndSuffixes <- forM eligibleGenericVars $ \var -> do
-    (_, genericInfos) <- runWriterT $ forM_ datatypeCons $ \ci ->
+    (_, genericInfos) <- runWriterT $ forM_ (datatypeCons dti) $ \ci ->
       forM_ (namesAndTypes options ci) $ \(_, typ) -> do
         searchForConstraints extraOptions typ var
     return (var, unifyGenericVariable genericInfos)
 
   -- Build the declarations
-  (types, extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor options extraOptions datatypeInfo genericVariablesAndSuffixes) datatypeCons
-  typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName datatypeName)
+  (types, extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor options extraOptions dti genericVariablesAndSuffixes) (datatypeCons dti)
+  typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName (datatypeName dti))
                                           $(genericVariablesListExpr True genericVariablesAndSuffixes)
                                           $(listE $ fmap return types)|]
   let extraDecls = [x | ExtraDecl x <- extraDeclsOrGenericInfos]
@@ -218,10 +217,10 @@ deriveTypeScript' options name extraOptions = do
   -- Couldn't figure out how to put the constraints for "instance TypeScript..." in the quasiquote above without
   -- introducing () when the constraints are empty, which causes "illegal tuple constraint" unless the user enables ConstraintKinds.
   -- So, just use our mkInstance function
-  getTypeScriptTypeExp <- [|$(TH.stringE $ getTypeName datatypeName) <> $(getBracketsExpressionAllTypesNoSuffix genericVariablesAndSuffixes)|]
+  getTypeScriptTypeExp <- [|$(TH.stringE $ getTypeName (datatypeName dti)) <> $(getBracketsExpressionAllTypesNoSuffix genericVariablesAndSuffixes)|]
   getParentTypesExp <- listE [ [|TSType (Proxy :: Proxy $(return t))|]
-                             | t <- (mconcat $ fmap constructorFields datatypeCons) <> extraParentTypes]
-  let inst = [mkInstance predicates (AppT (ConT ''TypeScript) (foldl AppT (ConT name) (getDataTypeVars datatypeInfo))) [
+                             | t <- (mconcat $ fmap constructorFields (datatypeCons datatypeInfo')) <> extraParentTypes]
+  let inst = [mkInstance predicates (AppT (ConT ''TypeScript) (foldl AppT (ConT name) (getDataTypeVars dti))) [
                  FunD 'getTypeScriptType [Clause [WildP] (NormalB getTypeScriptTypeExp) []]
                  , FunD 'getTypeScriptDeclarations [Clause [WildP] (NormalB declarationsFunctionBody) []]
                  , FunD 'getParentTypes [Clause [WildP] (NormalB getParentTypesExp) []]
