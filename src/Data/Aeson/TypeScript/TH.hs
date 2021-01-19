@@ -300,9 +300,11 @@ transformTypeFamilies eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ)
         let inst1 = DataD [] name' [PlainTV f] Nothing [] []
         tell [ExtraTopLevelDecs [inst1]]
 
+        imageTypes <- lift $ getClosedTypeFamilyImage eqns
         inst2 <- lift $ [d|instance (Typeable g, TypeScript g) => TypeScript ($(conT name') g) where
                              getTypeScriptType _ = $(TH.stringE $ nameBase name) <> "[" <> (getTypeScriptType (Proxy :: Proxy g)) <> "]"
                              getTypeScriptDeclarations _ = [$(getClosedTypeFamilyInterfaceDecl name eqns)]
+                             getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return x))|] | x <- imageTypes])
                         |]
         tell [ExtraTopLevelDecs inst2]
 

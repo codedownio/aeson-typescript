@@ -47,3 +47,9 @@ getClosedTypeFamilyInterfaceDecl name eqns = do
     x -> fail [i|Don't know how to handle type family equation: '#{x}'|]
 
   [| TSInterfaceDeclaration $(TH.stringE $ nameBase name) [] $(listE $ fmap return fields) |]  
+
+getClosedTypeFamilyImage :: [TySynEqn] -> Q [Type]
+getClosedTypeFamilyImage eqns = do
+  forM eqns $ \case
+    TySynEqn Nothing (AppT (ConT _) (ConT _)) result -> return result
+    x -> fail [i|Don't know how to handle type family equation: '#{x}'|]

@@ -20,7 +20,6 @@ module Live where
 import Data.Aeson as A
 import Data.Aeson.TypeScript.Recursive
 import Data.Aeson.TypeScript.TH
-import Data.Aeson.TypeScript.Types
 import Data.Function
 import Data.Functor.Identity
 import Data.Kind
