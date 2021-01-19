@@ -128,7 +128,7 @@ module Data.Aeson.TypeScript.TH (
   , FormattingOptions(..)
 
   -- * Advanced options
-  , ExtraTypeScriptOptions
+  , ExtraTypeScriptOptions(..)
     
   -- * Convenience tools
   , HasJSONOptions(..)
