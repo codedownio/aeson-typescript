@@ -133,6 +133,7 @@ module Data.Aeson.TypeScript.TH (
   -- * Convenience tools
   , HasJSONOptions(..)
   , deriveJSONAndTypeScript
+  , deriveJSONAndTypeScript'
 
   , T(..)
   , T1(..)
@@ -373,6 +374,14 @@ deriveJSONAndTypeScript :: Options
                         -> Q [Dec]
 deriveJSONAndTypeScript options name = (<>) <$> (deriveTypeScript options name) <*> (A.deriveJSON options name)
 
+deriveJSONAndTypeScript' :: Options
+                         -- ^ Encoding options.
+                         -> Name
+                         -- ^ Name of the type for which to generate 'A.ToJSON', 'A.FromJSON', and 'TypeScript' instance declarations.
+                         -> ExtraTypeScriptOptions
+                         -- ^ Extra options to control advanced features.
+                         -> Q [Dec]
+deriveJSONAndTypeScript' options name extraOptions = (<>) <$> (deriveTypeScript' options name extraOptions) <*> (A.deriveJSON options name)
 
 -- | Generates a 'TypeScript' instance declaration for the given data type.
 deriveTypeScript :: Options
