@@ -150,7 +150,6 @@ import Data.Aeson.TypeScript.Types
 import Data.Aeson.TypeScript.Util
 import qualified Data.List as L
 import Data.Maybe
-import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString
 import Data.Typeable
@@ -158,6 +157,9 @@ import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
 import qualified Language.Haskell.TH.Lib as TH
 
+#if !MIN_VERSION_base(4,11,0)
+import Data.Monoid
+#endif
 
 -- | Generates a 'TypeScript' instance declaration for the given data type.
 deriveTypeScript' :: Options
@@ -199,15 +201,12 @@ deriveTypeScript' options name extraOptions = do
   declarationsFunctionBody <- [| $(return typeDeclaration) : $(listE (fmap return $ extraDecls)) |]
 
   let extraParentTypes = [x | ExtraParentType x <- extraDeclsOrGenericInfos]
-  reportWarning [i|Extra parent types: #{extraParentTypes}|]
   inst <- [d|instance $(return constraints) => TypeScript $(return $ foldl AppT (ConT name) (getDataTypeVars datatypeInfo)) where
                getTypeScriptType _ = $(TH.stringE $ getTypeName datatypeName) <> $(getBracketsExpressionAllTypesNoSuffix genericVariablesAndSuffixes)
                getTypeScriptDeclarations _ = $(return declarationsFunctionBody)
                getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return t))|]
                                           | t <- (mconcat $ fmap constructorFields datatypeCons) <> extraParentTypes])
                |]
-
-  reportWarning [i|extraTopLevelDecls: #{extraTopLevelDecls}|]
 
   return (extraTopLevelDecls <> inst)
 
@@ -280,7 +279,7 @@ handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(
       (fieldTyp, optAsBool) <- lift $ case typ of
         (AppT (ConT name) t) | name == ''Maybe && not (omitNothingFields options) -> 
           ( , ) <$> [|$(getTypeAsStringExp t) <> " | null"|] <*> getOptionalAsBoolExp t
-        x -> ( , ) <$> getTypeAsStringExp typ <*> getOptionalAsBoolExp typ'
+        _ -> ( , ) <$> getTypeAsStringExp typ <*> getOptionalAsBoolExp typ'
       lift $ [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) |]
 
 transformTypeFamilies :: ExtraTypeScriptOptions -> Type -> WriterT [ExtraDeclOrGenericInfo] Q Type
@@ -293,7 +292,6 @@ transformTypeFamilies eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ)
         let inst1 = DataD [] name' [PlainTV f] Nothing [] []
         tell [ExtraTopLevelDecs [inst1]]
 
-        g <- lift $ newName "g"
         inst2 <- lift $ [d|instance (Typeable g, TypeScript g) => TypeScript ($(conT name') g) where
                              getTypeScriptType _ = $(TH.stringE $ nameBase name) <> "[" <> (getTypeScriptType (Proxy :: Proxy g)) <> "]"
                              getTypeScriptDeclarations _ = [$(getClosedTypeFamilyInterfaceDecl name eqns)]
@@ -312,7 +310,7 @@ transformTypeFamilies eo (InfixT typ1 n typ2) = InfixT <$> transformTypeFamilies
 transformTypeFamilies eo (UInfixT typ1 n typ2) = UInfixT <$> transformTypeFamilies eo typ1 <*> pure n <*> transformTypeFamilies eo typ2
 transformTypeFamilies eo (ParensT typ) = ParensT <$> transformTypeFamilies eo typ
 transformTypeFamilies eo (ImplicitParamT s typ) = ImplicitParamT s <$> transformTypeFamilies eo typ
-transformTypeFamilies eo typ = return typ
+transformTypeFamilies _ typ = return typ
 
 
 searchForConstraints :: ExtraTypeScriptOptions -> Type -> Name -> WriterT [GenericInfo] Q ()
@@ -330,7 +328,7 @@ searchForConstraints eo (InfixT typ1 _ typ2) var = searchForConstraints eo typ1 
 searchForConstraints eo (UInfixT typ1 _ typ2) var = searchForConstraints eo typ1 var >> searchForConstraints eo typ2 var
 searchForConstraints eo (ParensT typ) var = searchForConstraints eo typ var
 searchForConstraints eo (ImplicitParamT _ typ) var = searchForConstraints eo typ var
-searchForConstraints eo _ _ = return ()
+searchForConstraints _ _ _ = return ()
 
 unifyGenericVariable :: [GenericInfo] -> String
 unifyGenericVariable genericInfos = case [nameBase name | GenericInfo _ (TypeFamilyKey name) <- genericInfos] of

@@ -1,12 +1,16 @@
-{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns #-}
+{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns, CPP #-}
 
 module Data.Aeson.TypeScript.Formatting where
 
 import Data.Aeson.TypeScript.Types
-import Data.Monoid
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 
+#if !MIN_VERSION_base(4,11,0)
+import Data.Monoid
+#endif
+
+       
 -- | Same as 'formatTSDeclarations'', but uses default formatting options.
 formatTSDeclarations :: [TSDeclaration] -> String
 formatTSDeclarations = formatTSDeclarations' defaultFormattingOptions
@@ -19,9 +23,9 @@ formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVar
 
 formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceName genericVariables members) =
   [i|interface #{modifiedInterfaceName}#{getGenericBrackets genericVariables} {
-#{lines}
-}|] where lines = T.intercalate "\n" $ fmap T.pack [(replicate numIndentSpaces ' ') <> formatTSField member <> ";"| member <- members]
-          modifiedInterfaceName = (\(i, name) -> i <> interfaceNameModifier name) . splitAt 1 $ interfaceName
+#{ls}
+}|] where ls = T.intercalate "\n" $ fmap T.pack [(replicate numIndentSpaces ' ') <> formatTSField member <> ";"| member <- members]
+          modifiedInterfaceName = (\(li, name) -> li <> interfaceNameModifier name) . splitAt 1 $ interfaceName
 
 formatTSDeclaration (FormattingOptions {..}) (TSRawDeclaration text) = text
 
@@ -30,7 +34,7 @@ formatTSDeclarations' :: FormattingOptions -> [TSDeclaration] -> String
 formatTSDeclarations' options declarations = T.unpack $ T.intercalate "\n\n" (fmap (T.pack . formatTSDeclaration options) declarations)
 
 formatTSField :: TSField -> String
-formatTSField (TSField optional name typ) = [i|#{name}#{if optional then "?" else ""}: #{typ}|]
+formatTSField (TSField optional name typ) = [i|#{name}#{if optional then ("?" :: String) else ""}: #{typ}|]
 
 getGenericBrackets :: [String] -> String
 getGenericBrackets [] = ""

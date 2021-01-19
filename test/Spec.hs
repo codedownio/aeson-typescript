@@ -15,6 +15,8 @@ import qualified UntaggedTagSingleConstructors
 import qualified OmitNothingFields
 import qualified NoOmitNothingFields
 
+
+main :: IO ()
 main = hspec $ do
   ObjectWithSingleFieldTagSingleConstructors.tests
   ObjectWithSingleFieldNoTagSingleConstructors.tests

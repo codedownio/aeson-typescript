@@ -8,8 +8,10 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE MonoLocalBinds #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module NoOmitNothingFields (tests) where
+module NoOmitNothingFields (main, tests) where
 
 import Data.Aeson as A
 import Data.Aeson.TypeScript.TH
@@ -20,6 +22,7 @@ import TestBoilerplate
 
 $(testDeclarations "NoOmitNothingFields" (A.defaultOptions {omitNothingFields=False}))
 
+main :: IO ()
 main = hspec $ describe "NoOmitNothingFields" $ do
   it "encodes as expected" $ do
     let decls = getTypeScriptDeclarations (Proxy :: Proxy Optional)

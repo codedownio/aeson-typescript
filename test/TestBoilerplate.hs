@@ -79,7 +79,8 @@ testDeclarations testName aesonOptions = do
                          <> getTypeScriptDeclarations (Proxy :: Proxy Optional)
                          |]
 
-  tests <- [d|tests = describe $(return $ LitE $ StringL testName) $ it "type checks everything with tsc" $ testTypeCheckDeclarations $(return declarations) $(return typesAndValues)|]
+  tests <- [d|tests :: SpecWith ()
+              tests = describe $(return $ LitE $ StringL testName) $ it "type checks everything with tsc" $ testTypeCheckDeclarations $(return declarations) $(return typesAndValues)|]
 
   return $ decls ++ tests
 

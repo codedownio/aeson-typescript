@@ -43,8 +43,6 @@ getClosedTypeFamilyInterfaceDecl :: Name -> [TySynEqn] -> Q Exp
 getClosedTypeFamilyInterfaceDecl name eqns = do
   fields <- forM eqns $ \case
     TySynEqn Nothing (AppT (ConT _) (ConT arg)) result -> do
-      reportWarning [i|arg: #{arg}|]
-      reportWarning [i|result: #{result}|]
       [| TSField False (getTypeScriptType (Proxy :: Proxy $(conT arg))) (getTypeScriptType (Proxy :: Proxy $(return result))) |]
     x -> fail [i|Don't know how to handle type family equation: '#{x}'|]
 

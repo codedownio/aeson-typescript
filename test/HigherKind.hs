@@ -11,6 +11,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
 
 module HigherKind (tests) where
 
@@ -18,7 +19,6 @@ import Data.Aeson as A
 import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.TH
 import Data.Aeson.TypeScript.Types
-import Data.Kind
 import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString
@@ -45,6 +45,7 @@ $(deriveTypeScript A.defaultOptions ''HigherKindWithUnary)
 $(deriveJSON A.defaultOptions ''HigherKindWithUnary)
 
 
+tests :: SpecWith ()
 tests = describe "Higher kinds" $ do
   describe "Kind * -> *" $ do
     it [i|makes the declaration and types correctly|] $ do
@@ -99,9 +100,10 @@ tests = describe "Higher kinds" $ do
       testTypeCheckDeclarations declarations typesAndValues
 
 
+main :: IO ()
 main = hspec tests
 
-
+main' :: IO ()
 main' = putStrLn $ formatTSDeclarations (
    (getTypeScriptDeclarations (Proxy :: Proxy (HigherKind T))) <>
    (getTypeScriptDeclarations (Proxy :: Proxy (DoubleHigherKind T1 T2))) <>

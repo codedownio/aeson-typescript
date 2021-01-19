@@ -17,21 +17,7 @@
 module Live2 where
 
 import Data.Aeson as A
-import Data.Aeson.TH as A
-import Data.Aeson.TypeScript.Recursive
 import Data.Aeson.TypeScript.TH
-import Data.Aeson.TypeScript.Types
-import Data.Kind
-import Data.Function
-import Data.Monoid
-import Data.Proxy
-import Data.String.Interpolate.IsString
-import qualified Data.Text as T
-import Data.Time
-import Database.Beam
-import Language.Haskell.TH
-import Prelude hiding (Double)
-import Database.Beam
 
        
 data TestT a = TestT {

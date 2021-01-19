@@ -8,14 +8,14 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE MonoLocalBinds #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module UntaggedNoTagSingleConstructors (tests) where
+module UntaggedNoTagSingleConstructors (main, tests) where
 
 import Data.Aeson as A
-import Data.Aeson.TH as A
 import Test.Hspec
 import TestBoilerplate
-import Util
 
 -- Between Aeson 0.11.3.0 and 1.0.0.0, UntaggedValue was added
 -- Disable these tests if it's not present
@@ -25,4 +25,5 @@ $(testDeclarations "UntaggedNoTagSingleConstructors" (A.defaultOptions {sumEncod
 tests = describe "UntaggedNoTagSingleConstructors" $ it "tests are disabled for this Aeson version" $ 2 `shouldBe` 2
 #endif
 
+main :: IO ()
 main = hspec tests

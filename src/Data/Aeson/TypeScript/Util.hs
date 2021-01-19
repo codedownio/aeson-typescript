@@ -69,6 +69,7 @@ getOptionalAsBoolExp :: Type -> Q Exp
 getOptionalAsBoolExp typ = [|getTypeScriptOptional (Proxy :: Proxy $(return typ))|]
 
 -- | Get the type of a tuple of constructor fields, as when we're packing a record-less constructor into a list
+getTupleType :: [Type] -> Type
 getTupleType constructorFields = case length constructorFields of
   0 -> AppT ListT (ConT ''())
   1 -> head constructorFields
@@ -83,15 +84,6 @@ applyToArgsT constructor (x:xs) = applyToArgsT (AppT constructor x) xs
 applyToArgsE :: Exp -> [Exp] -> Exp
 applyToArgsE f [] = f
 applyToArgsE f (x:xs) = applyToArgsE (AppE f x) xs
-
-stringE = LitE . StringL
-
--- Between Template Haskell 2.10 and 2.11, InstanceD got an additional argument
-#if MIN_VERSION_template_haskell(2,11,0)
-mkInstance context typ decs = InstanceD Nothing context typ decs
-#else
-mkInstance context typ decs = InstanceD context typ decs
-#endif
 
 -- Between Aeson 1.1.2.0 and 1.2.0.0, tagSingleConstructors was added
 getTagSingleConstructors :: Options -> Bool
@@ -115,34 +107,36 @@ assertExtensionsTurnedOn _ = return ()
 #endif
 
 -- Older versions of Aeson don't have an Eq instance for SumEncoding so we do this
+isObjectWithSingleField :: SumEncoding -> Bool
 isObjectWithSingleField ObjectWithSingleField = True
 isObjectWithSingleField _ = False
 
 -- Older versions of Aeson don't have an Eq instance for SumEncoding so we do this
+isTwoElemArray :: SumEncoding -> Bool
 isTwoElemArray TwoElemArray = True
 isTwoElemArray _ = False
 
 -- Older versions of Aeson don't have an Eq instance for SumEncoding so we do this
 -- UntaggedValue was added between Aeson 0.11.3.0 and 1.0.0.0
+isUntaggedValue :: SumEncoding -> Bool
 #if MIN_VERSION_aeson(1,0,0)
 isUntaggedValue UntaggedValue = True
 #endif
 isUntaggedValue _ = False
 
-fst3 (x, _, _) = x
-snd3 (_, y, _) = y
-
 namesAndTypes :: Options -> ConstructorInfo -> [(String, Type)]
 namesAndTypes options ci = case constructorVariant ci of
   RecordConstructor names -> zip (fmap ((fieldLabelModifier options) . lastNameComponent') names) (constructorFields ci)
-  NormalConstructor -> case sumEncoding options of
+  _ -> case sumEncoding options of
     TaggedObject _ contentsFieldName
       | isConstructorNullary ci -> []
       | otherwise -> [(contentsFieldName, contentsTupleType ci)]
     _ -> [(constructorNameToUse options ci, contentsTupleType ci)]
 
+constructorNameToUse :: Options -> ConstructorInfo -> String
 constructorNameToUse options ci = (constructorTagModifier options) $ lastNameComponent' (constructorName ci)
 
+contentsTupleType :: ConstructorInfo -> Type
 contentsTupleType ci = getTupleType (constructorFields ci)
 
 getBracketsExpression :: Bool -> [(Name, String)] -> Q Exp

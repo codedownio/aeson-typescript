@@ -8,15 +8,16 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE MonoLocalBinds #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module TaggedObjectNoTagSingleConstructors (tests) where
+module TaggedObjectNoTagSingleConstructors (main, tests) where
 
 import Data.Aeson as A
-import Data.Aeson.TH as A
 import Test.Hspec
 import TestBoilerplate
-import Util
 
 $(testDeclarations "TaggedObject with tagSingleConstructors=False" A.defaultOptions)
 
+main :: IO ()
 main = hspec tests
