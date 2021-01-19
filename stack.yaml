@@ -6,9 +6,3 @@ packages:
 
 # ghc-options:
 #   "$locals": -fwrite-ide-info
-
-extra-deps:
-- git: https://github.com/thomasjm/beam.git
-  commit: d4564da8625961b32a3aafacb358c00ebd3e5370
-  subdirs:
-    - beam-core

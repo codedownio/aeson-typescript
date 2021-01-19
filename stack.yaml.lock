@@ -3,20 +3,7 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages:
-- completed:
-    subdir: beam-core
-    name: beam-core
-    version: 0.9.0.0
-    git: https://github.com/thomasjm/beam.git
-    pantry-tree:
-      size: 2704
-      sha256: e54dabae556fcac9079587adcce1b2bb107c196688c476dabdd84ca86ad556af
-    commit: d4564da8625961b32a3aafacb358c00ebd3e5370
-  original:
-    subdir: beam-core
-    git: https://github.com/thomasjm/beam.git
-    commit: d4564da8625961b32a3aafacb358c00ebd3e5370
+packages: []
 snapshots:
 - completed:
     size: 532380

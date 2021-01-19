@@ -22,19 +22,15 @@ import Data.Aeson.TypeScript.Recursive
 import Data.Aeson.TypeScript.TH
 import Data.Aeson.TypeScript.Types
 import Data.Function
+import Data.Functor.Identity
+import Data.Kind
 import Data.Proxy
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
-import Data.Time
-import Database.Beam
 import Prelude hiding (Double)
 
 
-instance TypeScript UTCTime where
-  getTypeScriptType _ = "DateTime"
-
-instance TypeScript Identity where
-  getTypeScriptType _ = "any"
+instance TypeScript Identity where getTypeScriptType _ = "any"
 
 data SingleDE = SingleDE
 instance TypeScript SingleDE where getTypeScriptType _ = [i|"single"|]
@@ -50,14 +46,24 @@ data K8SEnvironment = K8SEnvironment
   deriving (Eq, Show)
 instance TypeScript K8SEnvironment where getTypeScriptType _ = [i|"k8s_env"|]
 
+data Nullable (c :: Type -> Type) x
+data Exposed x
+type family Columnar (f :: Type -> Type) x where
+    Columnar Exposed x = Exposed x
+    Columnar Identity x = x
+    Columnar (Nullable c) x = Columnar c (Maybe x)
+    Columnar f x = f x
+
 type family DeployEnvironment env = result | result -> env where
   DeployEnvironment SingleNodeEnvironment = SingleDE
   DeployEnvironment K8SEnvironment = K8SDE
   DeployEnvironment T = ()
-                        
+
+-- * The main type
+
 data UserT env f = User {
   _userUsername :: Columnar f T.Text
-  , _userCreatedAt  :: Columnar f UTCTime
+  , _userCreatedAt  :: Columnar f Int
   , _userDeployEnvironment  :: Columnar f (DeployEnvironment env)
   }
 
