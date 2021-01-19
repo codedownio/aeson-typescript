@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 948862e20e0fbcabe4b159708168aacdb2987aa650871b8c181025d99e7370d4
+-- hash: c5f3990cf145c3739268d2bf2869bd68dbb2c4272a47ae4d8d61dd16d51a37e4
 
 name:           aeson-typescript
 version:        0.2.0.0
@@ -61,6 +61,7 @@ test-suite aeson-typescript-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Basic
       HigherKind
       Live
       Live2
