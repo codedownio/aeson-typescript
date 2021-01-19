@@ -176,7 +176,8 @@ deriveTypeScript' options name extraOptions = do
 
   -- Build constraints: a TypeScript constraint for every constructor type and one for every type variable.
   -- Probably overkill/not exactly right, but it's a start.
-  let constructorPreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- mconcat $ fmap constructorFields datatypeCons]
+  let constructorPreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- mconcat $ fmap constructorFields datatypeCons
+                                                               , hasFreeTypeVariable x]
   let typeVariablePreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- getDataTypeVars datatypeInfo]
 
   let eligibleGenericVars = catMaybes $ flip fmap (getDataTypeVars datatypeInfo) $ \case
@@ -197,6 +198,7 @@ deriveTypeScript' options name extraOptions = do
   let extraTopLevelDecls = mconcat [x | ExtraTopLevelDecs x <- extraDeclsOrGenericInfos]
   let predicates = constructorPreds <> typeVariablePreds <> [x | ExtraConstraint x <- extraDeclsOrGenericInfos]
   let constraints = foldl AppT (TupleT (length predicates)) predicates
+  -- let constraints = predicates
 
   declarationsFunctionBody <- [| $(return typeDeclaration) : $(listE (fmap return $ extraDecls)) |]
 
@@ -329,6 +331,17 @@ searchForConstraints eo (UInfixT typ1 _ typ2) var = searchForConstraints eo typ1
 searchForConstraints eo (ParensT typ) var = searchForConstraints eo typ var
 searchForConstraints eo (ImplicitParamT _ typ) var = searchForConstraints eo typ var
 searchForConstraints _ _ _ = return ()
+
+hasFreeTypeVariable :: Type -> Bool
+hasFreeTypeVariable (VarT _) = True
+hasFreeTypeVariable (AppT typ1 typ2) = hasFreeTypeVariable typ1 || hasFreeTypeVariable typ2
+hasFreeTypeVariable (AppKindT typ _) = hasFreeTypeVariable typ
+hasFreeTypeVariable (SigT typ _) = hasFreeTypeVariable typ
+hasFreeTypeVariable (InfixT typ1 _ typ2) = hasFreeTypeVariable typ1 || hasFreeTypeVariable typ2
+hasFreeTypeVariable (UInfixT typ1 _ typ2) = hasFreeTypeVariable typ1 || hasFreeTypeVariable typ2
+hasFreeTypeVariable (ParensT typ) = hasFreeTypeVariable typ
+hasFreeTypeVariable (ImplicitParamT _ typ) = hasFreeTypeVariable typ
+hasFreeTypeVariable _ = False
 
 unifyGenericVariable :: [GenericInfo] -> String
 unifyGenericVariable genericInfos = case [nameBase name | GenericInfo _ (TypeFamilyKey name) <- genericInfos] of

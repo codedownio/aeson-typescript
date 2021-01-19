@@ -23,6 +23,6 @@ data TestT a = TestT {
 $(deriveTypeScript A.defaultOptions ''TestT)
 
 main :: IO ()
-main = getTypeScriptDeclarations (Proxy :: Proxy (TestT Int))
+main = getTypeScriptDeclarations (Proxy :: Proxy (TestT T))
      & formatTSDeclarations
      & putStrLn
