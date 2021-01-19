@@ -153,6 +153,7 @@ import Data.Aeson.TypeScript.Lookup
 import Data.Aeson.TypeScript.Types
 import Data.Aeson.TypeScript.Util
 import qualified Data.List as L
+import qualified Data.Map as M
 import Data.Maybe
 import Data.Proxy
 import Data.String.Interpolate.IsString
@@ -174,9 +175,17 @@ deriveTypeScript' :: Options
                   -- ^ Extra options to control advanced features.
                   -> Q [Dec]
 deriveTypeScript' options name extraOptions = do
-  datatypeInfo@(DatatypeInfo {..}) <- reifyDatatype name
+  datatypeInfo' <- reifyDatatype name
+  assertExtensionsTurnedOn datatypeInfo'
 
-  assertExtensionsTurnedOn datatypeInfo
+  -- Plug in generic variables for all star free variables
+  let starVars = [name | (isStarType -> Just name) <- getDataTypeVars datatypeInfo']
+  let templateVarsToUse = case length starVars of
+        1 -> [ConT ''T]
+        _ -> take (length starVars) allStarConstructors
+  let subMap = M.fromList $ zip starVars templateVarsToUse
+  let datatypeInfo = datatypeInfo' { datatypeCons = fmap (applySubstitution subMap) (datatypeCons datatypeInfo')}
+  let (DatatypeInfo {..}) = datatypeInfo
 
   -- Build constraints: a TypeScript constraint for every constructor type and one for every type variable.
   -- Probably overkill/not exactly right, but it's a start.

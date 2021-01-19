@@ -7,7 +7,6 @@ import Data.Aeson as A
 import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Types
 import qualified Data.List as L
-import Data.Maybe
 import Data.Proxy
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
@@ -154,9 +153,13 @@ getBracketsExpressionAllTypesNoSuffix [] = [|""|]
 getBracketsExpressionAllTypesNoSuffix names = [|"<" <> L.intercalate ", " $(listE [ [|(getTypeScriptType (Proxy :: Proxy $(varT x)))|] | (x, _suffix) <- names]) <> ">"|]
 
 genericVariablesListExpr :: Bool -> [(Name, String)] -> Q Exp
-genericVariablesListExpr True genericVariables = [|catMaybes $(listE (fmap (\(x, suffix) ->
-  [|if isGenericVariable (Proxy :: Proxy $(varT x)) then Just ((getTypeScriptType (Proxy :: Proxy $(varT x))) <> $(TH.stringE suffix)) else Nothing|])
-  genericVariables))|]
-genericVariablesListExpr False genericVariables = [|catMaybes $(listE (fmap (\(x, _suffix) ->
-  [|if isGenericVariable (Proxy :: Proxy $(varT x)) then Just (getTypeScriptType (Proxy :: Proxy $(varT x))) else Nothing|])
-  genericVariables))|]
+genericVariablesListExpr includeSuffix genericVariables = listE (fmap (\((_, suffix), correspondingGeneric) ->
+  [|(getTypeScriptType (Proxy :: Proxy $(return correspondingGeneric))) <> $(TH.stringE (if includeSuffix then suffix else ""))|])
+  (case genericVariables of
+      [x] -> [(x, ConT ''T)]
+      xs -> zip xs allStarConstructors)
+  )
+
+isStarType :: Type -> Maybe Name
+isStarType (SigT (VarT n) StarT) = Just n
+isStarType _ = Nothing
