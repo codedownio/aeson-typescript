@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 85d96fd14a5fe287a9a28190585d9c9d6318007cb79b131fbf2965951b54ae8b
+-- hash: 948862e20e0fbcabe4b159708168aacdb2987aa650871b8c181025d99e7370d4
 
 name:           aeson-typescript
 version:        0.2.0.0
@@ -74,6 +74,7 @@ test-suite aeson-typescript-test
       TestBoilerplate
       TwoElemArrayNoTagSingleConstructors
       TwoElemArrayTagSingleConstructors
+      TypeFamilies
       UntaggedNoTagSingleConstructors
       UntaggedTagSingleConstructors
       Util

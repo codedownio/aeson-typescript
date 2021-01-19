@@ -259,7 +259,7 @@ handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(
 
     writeSingleConstructorEncoding = if
       | constructorVariant ci == NormalConstructor -> do
-          encoding <- lift tupleEncoding
+          encoding <- tupleEncoding
           tell [ExtraDecl encoding]
       | otherwise -> do
           tsFields <- getTSFields
@@ -269,9 +269,11 @@ handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(
     -- * Type declaration to use
     interfaceName = "I" <> (lastNameComponent' $ constructorName ci)
 
-    tupleEncoding = [|TSTypeAlternatives $(TH.stringE interfaceName)
-                                         $(genericVariablesListExpr True genericVariables)
-                                         [getTypeScriptType (Proxy :: Proxy $(return $ contentsTupleType ci))]|]
+    tupleEncoding = do
+      tupleType <- transformTypeFamilies extraOptions (contentsTupleType ci)
+      lift $ [|TSTypeAlternatives $(TH.stringE interfaceName)
+                                  $(genericVariablesListExpr True genericVariables)
+                                  [getTypeScriptType (Proxy :: Proxy $(return tupleType))]|]
 
     assembleInterfaceDeclaration members = [|TSInterfaceDeclaration $(TH.stringE interfaceName)
                                                                     $(genericVariablesListExpr True genericVariables)

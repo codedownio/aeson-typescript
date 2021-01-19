@@ -68,13 +68,6 @@ getTypeAsStringExp typ = [|getTypeScriptType (Proxy :: Proxy $(return typ))|]
 getOptionalAsBoolExp :: Type -> Q Exp
 getOptionalAsBoolExp typ = [|getTypeScriptOptional (Proxy :: Proxy $(return typ))|]
 
--- | Get the type of a tuple of constructor fields, as when we're packing a record-less constructor into a list
-getTupleType :: [Type] -> Type
-getTupleType constructorFields = case length constructorFields of
-  0 -> AppT ListT (ConT ''())
-  1 -> head constructorFields
-  x -> applyToArgsT (ConT $ tupleTypeName x) constructorFields
-
 -- | Helper to apply a type constructor to a list of type args
 applyToArgsT :: Type -> [Type] -> Type
 applyToArgsT constructor [] = constructor
@@ -144,8 +137,13 @@ namesAndTypes options ci = case constructorVariant ci of
 constructorNameToUse :: Options -> ConstructorInfo -> String
 constructorNameToUse options ci = (constructorTagModifier options) $ lastNameComponent' (constructorName ci)
 
+-- | Get the type of a tuple of constructor fields, as when we're packing a record-less constructor into a list
 contentsTupleType :: ConstructorInfo -> Type
-contentsTupleType ci = getTupleType (constructorFields ci)
+contentsTupleType ci = let fields = constructorFields ci in
+  case length fields of
+    0 -> AppT ListT (ConT ''())
+    1 -> head fields
+    x -> applyToArgsT (ConT $ tupleTypeName x) fields
 
 getBracketsExpression :: Bool -> [(Name, String)] -> Q Exp
 getBracketsExpression _ [] = [|""|]

@@ -4,6 +4,7 @@ module Main where
 import Test.Hspec
 
 import qualified HigherKind
+import qualified TypeFamilies
 import qualified ObjectWithSingleFieldNoTagSingleConstructors
 import qualified ObjectWithSingleFieldTagSingleConstructors
 import qualified TaggedObjectNoTagSingleConstructors
@@ -18,6 +19,9 @@ import qualified NoOmitNothingFields
 
 main :: IO ()
 main = hspec $ do
+  HigherKind.tests
+  TypeFamilies.tests
+
   ObjectWithSingleFieldTagSingleConstructors.tests
   ObjectWithSingleFieldNoTagSingleConstructors.tests
   TaggedObjectTagSingleConstructors.tests
@@ -26,6 +30,5 @@ main = hspec $ do
   TwoElemArrayNoTagSingleConstructors.tests
   UntaggedTagSingleConstructors.tests
   UntaggedNoTagSingleConstructors.tests
-  HigherKind.tests
   OmitNothingFields.tests
   NoOmitNothingFields.tests

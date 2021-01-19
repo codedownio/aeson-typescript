@@ -8,6 +8,9 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module TestBoilerplate where
 
@@ -15,8 +18,11 @@ import Control.Monad.Writer.Lazy hiding (Product)
 import qualified Data.Aeson as A
 import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.TH
+import Data.Functor.Identity
+import Data.Kind
 import Data.Proxy
-import Language.Haskell.TH
+import Data.String.Interpolate.IsString
+import Language.Haskell.TH hiding (Type)
 import Test.Hspec
 import Util
 
@@ -30,6 +36,31 @@ data TwoConstructor = Con1 { con1String :: String } | Con2 { con2String :: Strin
 data Complex a = Nullary | Unary Int | Product String Char a | Record { testOne :: Int, testTwo :: Bool, testThree :: Complex a} deriving Eq
 data Optional = Optional {optionalInt :: Maybe Int}
 
+-- * For testing type families
+
+instance TypeScript Identity where getTypeScriptType _ = "any"
+
+data SingleDE = SingleDE
+instance TypeScript SingleDE where getTypeScriptType _ = [i|"single"|]
+
+data K8SDE = K8SDE
+instance TypeScript K8SDE where getTypeScriptType _ = [i|"k8s"|]
+
+data SingleNodeEnvironment = SingleNodeEnvironment deriving (Eq, Show)
+instance TypeScript SingleNodeEnvironment where getTypeScriptType _ = [i|"single_node_env"|]
+
+data K8SEnvironment = K8SEnvironment deriving (Eq, Show)
+instance TypeScript K8SEnvironment where getTypeScriptType _ = [i|"k8s_env"|]
+
+data Nullable (c :: Type -> Type) x
+data Exposed x
+type family Columnar (f :: Type -> Type) x where
+    Columnar Exposed x = Exposed x
+    Columnar Identity x = x
+    Columnar (Nullable c) x = Columnar c (Maybe x)
+    Columnar f x = f x
+
+-- * Declarations
 
 testDeclarations :: String -> A.Options -> Q [Dec]
 testDeclarations testName aesonOptions = do
