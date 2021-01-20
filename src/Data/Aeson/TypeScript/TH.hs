@@ -198,7 +198,7 @@ deriveTypeScript' options name extraOptions = do
         SigT (VarT n) StarT -> Just n
         _ -> Nothing
   genericVariablesAndSuffixes <- forM eligibleGenericVars $ \var -> do
-    (_, genericInfos) <- runWriterT $ forM_ (datatypeCons dti) $ \ci ->
+    (_, genericInfos) <- runWriterT $ forM_ (datatypeCons datatypeInfo') $ \ci ->
       forM_ (namesAndTypes options ci) $ \(_, typ) -> do
         searchForConstraints extraOptions typ var
     return (var, unifyGenericVariable genericInfos)
