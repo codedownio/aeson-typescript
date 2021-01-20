@@ -146,7 +146,8 @@ contentsTupleType ci = let fields = constructorFields ci in
 
 getBracketsExpression :: Bool -> [(Name, String)] -> Q Exp
 getBracketsExpression _ [] = [|""|]
-getBracketsExpression includeSuffix names = [|case $(genericVariablesListExpr includeSuffix names) of [] -> ""; vars -> "<" <> L.intercalate ", " vars <> ">"|]
+getBracketsExpression includeSuffix names =
+  [|let vars = $(genericVariablesListExpr includeSuffix names) in "<" <> L.intercalate ", " vars <> ">"|]
 
 getBracketsExpressionAllTypesNoSuffix :: [(Name, String)] -> Q Exp
 getBracketsExpressionAllTypesNoSuffix [] = [|""|]
