@@ -10,6 +10,7 @@ jobs:
     name: ${{ matrix.os }} / ghc ${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macOS-latest]
         cabal: ["3.2"]
@@ -58,6 +59,7 @@ jobs:
     name: stack / ghc ${{ matrix.ghc }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         stack: ["2.5.1"]
         ghc:
