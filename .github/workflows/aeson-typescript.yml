@@ -49,7 +49,7 @@ jobs:
         node-version: '12'
     - name: Install TSC
       run: |
-        npm install -g tsc
+        npm install -g typescript
 
     - name: Build
       run: |
@@ -92,7 +92,7 @@ jobs:
         node-version: '12'
     - name: Install TSC
       run: |
-        npm install -g tsc
+        npm install -g typescript
 
     - name: Build
       run: |
