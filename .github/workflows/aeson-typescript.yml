@@ -43,6 +43,14 @@ jobs:
         path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
         key: ${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}
 
+    # Install TSC
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '12'
+    - name: Install TSC
+      run: |
+        npm install -g tsc
+
     - name: Build
       run: |
         cabal configure --enable-tests --enable-benchmarks --test-show-details=direct
@@ -77,6 +85,14 @@ jobs:
       with:
         path: ~/.stack
         key: ${{ runner.os }}-${{ matrix.ghc }}-stack
+
+    # Install TSC
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '12'
+    - name: Install TSC
+      run: |
+        npm install -g tsc
 
     - name: Build
       run: |
