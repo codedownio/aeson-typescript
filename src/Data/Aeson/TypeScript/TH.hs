@@ -129,7 +129,7 @@ module Data.Aeson.TypeScript.TH (
 
   -- * Advanced options
   , ExtraTypeScriptOptions(..)
-    
+
   -- * Convenience tools
   , HasJSONOptions(..)
   , deriveJSONAndTypeScript
@@ -139,7 +139,7 @@ module Data.Aeson.TypeScript.TH (
   , T1(..)
   , T2(..)
   , T3(..)
-    
+
   , module Data.Aeson.TypeScript.Instances
   ) where
 
@@ -231,7 +231,7 @@ deriveTypeScript' options name extraOptions = do
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
 handleConstructor :: Options -> ExtraTypeScriptOptions -> DatatypeInfo -> [(Name, String)] -> ConstructorInfo -> WriterT [ExtraDeclOrGenericInfo] Q Exp
-handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) = 
+handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) =
   if | (length datatypeCons == 1) && not (getTagSingleConstructors options) -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
@@ -298,7 +298,7 @@ handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(
         tell [ExtraConstraint constraint]
 
       (fieldTyp, optAsBool) <- lift $ case typ of
-        (AppT (ConT name) t) | name == ''Maybe && not (omitNothingFields options) -> 
+        (AppT (ConT name) t) | name == ''Maybe && not (omitNothingFields options) ->
           ( , ) <$> [|$(getTypeAsStringExp t) <> " | null"|] <*> getOptionalAsBoolExp t
         _ -> ( , ) <$> getTypeAsStringExp typ <*> getOptionalAsBoolExp typ'
       lift $ [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) |]
@@ -323,16 +323,18 @@ transformTypeFamilies eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ)
 
         tell [ExtraParentType (AppT (ConT name') (ConT ''T))]
 
-        transformTypeFamilies eo (AppT (ConT name') typ) 
+        transformTypeFamilies eo (AppT (ConT name') typ)
       _ -> AppT (ConT name) <$> transformTypeFamilies eo typ
   | otherwise = AppT (ConT name) <$> transformTypeFamilies eo typ
 transformTypeFamilies eo (AppT typ1 typ2) = AppT <$> transformTypeFamilies eo typ1 <*> transformTypeFamilies eo typ2
-transformTypeFamilies eo (AppKindT typ kind) = flip AppKindT kind <$> transformTypeFamilies eo typ
 transformTypeFamilies eo (SigT typ kind) = flip SigT kind <$> transformTypeFamilies eo typ
 transformTypeFamilies eo (InfixT typ1 n typ2) = InfixT <$> transformTypeFamilies eo typ1 <*> pure n <*> transformTypeFamilies eo typ2
 transformTypeFamilies eo (UInfixT typ1 n typ2) = UInfixT <$> transformTypeFamilies eo typ1 <*> pure n <*> transformTypeFamilies eo typ2
 transformTypeFamilies eo (ParensT typ) = ParensT <$> transformTypeFamilies eo typ
+#if MIN_VERSION_template_haskell(2,15,0)
+transformTypeFamilies eo (AppKindT typ kind) = flip AppKindT kind <$> transformTypeFamilies eo typ
 transformTypeFamilies eo (ImplicitParamT s typ) = ImplicitParamT s <$> transformTypeFamilies eo typ
+#endif
 transformTypeFamilies _ typ = return typ
 
 
@@ -345,23 +347,27 @@ searchForConstraints eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ) var
       _ -> searchForConstraints eo typ var
   | otherwise = searchForConstraints eo typ var
 searchForConstraints eo (AppT typ1 typ2) var = searchForConstraints eo typ1 var >> searchForConstraints eo typ2 var
-searchForConstraints eo (AppKindT typ _) var = searchForConstraints eo typ var
 searchForConstraints eo (SigT typ _) var = searchForConstraints eo typ var
 searchForConstraints eo (InfixT typ1 _ typ2) var = searchForConstraints eo typ1 var >> searchForConstraints eo typ2 var
 searchForConstraints eo (UInfixT typ1 _ typ2) var = searchForConstraints eo typ1 var >> searchForConstraints eo typ2 var
 searchForConstraints eo (ParensT typ) var = searchForConstraints eo typ var
+#if MIN_VERSION_template_haskell(2,15,0)
+searchForConstraints eo (AppKindT typ _) var = searchForConstraints eo typ var
 searchForConstraints eo (ImplicitParamT _ typ) var = searchForConstraints eo typ var
+#endif
 searchForConstraints _ _ _ = return ()
 
 hasFreeTypeVariable :: Type -> Bool
 hasFreeTypeVariable (VarT _) = True
 hasFreeTypeVariable (AppT typ1 typ2) = hasFreeTypeVariable typ1 || hasFreeTypeVariable typ2
-hasFreeTypeVariable (AppKindT typ _) = hasFreeTypeVariable typ
 hasFreeTypeVariable (SigT typ _) = hasFreeTypeVariable typ
 hasFreeTypeVariable (InfixT typ1 _ typ2) = hasFreeTypeVariable typ1 || hasFreeTypeVariable typ2
 hasFreeTypeVariable (UInfixT typ1 _ typ2) = hasFreeTypeVariable typ1 || hasFreeTypeVariable typ2
 hasFreeTypeVariable (ParensT typ) = hasFreeTypeVariable typ
+#if MIN_VERSION_template_haskell(2,15,0)
+hasFreeTypeVariable (AppKindT typ _) = hasFreeTypeVariable typ
 hasFreeTypeVariable (ImplicitParamT _ typ) = hasFreeTypeVariable typ
+#endif
 hasFreeTypeVariable _ = False
 
 unifyGenericVariable :: [GenericInfo] -> String

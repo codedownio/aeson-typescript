@@ -42,14 +42,22 @@ deriveTypeScriptLookupType name declNameStr = do
 getClosedTypeFamilyInterfaceDecl :: Name -> [TySynEqn] -> Q Exp
 getClosedTypeFamilyInterfaceDecl name eqns = do
   fields <- forM eqns $ \case
+#if MIN_VERSION_template_haskell(2,15,0)
     TySynEqn Nothing (AppT (ConT _) (ConT arg)) result -> do
+#else
+    TySynEqn [ConT arg] result -> do
+#endif
       [| TSField False (getTypeScriptType (Proxy :: Proxy $(conT arg))) (getTypeScriptType (Proxy :: Proxy $(return result))) |]
     x -> fail [i|aeson-typescript doesn't know yet how to handle this type family equation: '#{x}'|]
 
-  [| TSInterfaceDeclaration $(TH.stringE $ nameBase name) [] $(listE $ fmap return fields) |]  
+  [| TSInterfaceDeclaration $(TH.stringE $ nameBase name) [] $(listE $ fmap return fields) |]
 
 getClosedTypeFamilyImage :: [TySynEqn] -> Q [Type]
 getClosedTypeFamilyImage eqns = do
   forM eqns $ \case
+#if MIN_VERSION_template_haskell(2,15,0)
     TySynEqn Nothing (AppT (ConT _) (ConT _)) result -> return result
+#else
+    TySynEqn [ConT _] result -> return result
+#endif
     x -> fail [i|aeson-typescript doesn't know yet how to handle this type family equation: '#{x}'|]
