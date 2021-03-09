@@ -58,7 +58,7 @@ class (Typeable a) => TypeScript a where
   isGenericVariable :: Proxy a -> Bool
   -- ^ Special flag to indicate whether this type corresponds to a template variable.
   isGenericVariable _ = False
-    
+
 -- | An existential wrapper for any TypeScript instance.
 data TSType = forall a. (Typeable a, TypeScript a) => TSType { unTSType :: Proxy a }
 
@@ -91,6 +91,12 @@ instance IsString (TSString a) where
 
 -- * Formatting options
 
+data ExportMode =
+  ExportEach
+  -- ^ Prefix every declaration with the "export" keyword (suitable for putting in a TypeScripe module)
+  | ExportNone
+  -- ^ No exporting (suitable for putting in a .d.ts file)
+
 data FormattingOptions = FormattingOptions
   { numIndentSpaces       :: Int
   -- ^ How many spaces to indent TypeScript blocks
@@ -98,6 +104,8 @@ data FormattingOptions = FormattingOptions
   -- ^ Function applied to generated interface names
   , typeNameModifier :: String -> String
   -- ^ Function applied to generated type names
+  , exportMode :: ExportMode
+  -- ^ Prefix the generated types with "export" if set to 'True'.
   }
 
 defaultFormattingOptions :: FormattingOptions
@@ -105,6 +113,7 @@ defaultFormattingOptions = FormattingOptions
   { numIndentSpaces = 2
   , interfaceNameModifier = id
   , typeNameModifier = id
+  , exportMode = ExportNone
   }
 
 -- | Convenience typeclass class you can use to "attach" a set of Aeson encoding options to a type.
@@ -136,7 +145,7 @@ instance TypeScript T9 where getTypeScriptType _ = "T9"; isGenericVariable _ = T
 instance TypeScript T10 where getTypeScriptType _ = "T10"; isGenericVariable _ = True
 
 allStarConstructors :: [Type]
-allStarConstructors = [ConT ''T1, ConT ''T2, ConT ''T3, ConT ''T4, ConT ''T5, ConT ''T6, ConT ''T7, ConT ''T8, ConT ''T9, ConT ''T10]                 
+allStarConstructors = [ConT ''T1, ConT ''T2, ConT ''T3, ConT ''T4, ConT ''T5, ConT ''T6, ConT ''T7, ConT ''T8, ConT ''T9, ConT ''T10]
 
 allStarConstructors' :: [Name]
 allStarConstructors' = [''T1, ''T2, ''T3, ''T4, ''T5, ''T6, ''T7, ''T8, ''T9, ''T10]
