@@ -9,7 +9,7 @@ import Data.Aeson (defaultOptions)
 import Data.Aeson.TypeScript.TH
 import Data.Aeson.TypeScript.Types
 import Data.Proxy
-import Data.String.Interpolate.IsString
+import Data.String.Interpolate
 import Test.Hspec
 
 data D = S | F deriving (Eq, Show)

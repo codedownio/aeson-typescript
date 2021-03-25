@@ -157,7 +157,7 @@ import qualified Data.List as L
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Proxy
-import Data.String.Interpolate.IsString
+import Data.String.Interpolate
 import Data.Typeable
 import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype

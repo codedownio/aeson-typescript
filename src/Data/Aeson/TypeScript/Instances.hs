@@ -12,7 +12,7 @@ import Data.Data
 import Data.HashMap.Strict
 import qualified Data.List as L
 import Data.Set
-import Data.String.Interpolate.IsString
+import Data.String.Interpolate
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Data.Void

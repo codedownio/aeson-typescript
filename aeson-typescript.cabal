@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 16f81138b5a26b66ca80560ddcb787ab65a090a9f77906fef1236ac6309141be
+-- hash: 385395a69edf1409fddc1301dd9be0cf0c7e05e3e477585d26f8b5363316931f
 
 name:           aeson-typescript
 version:        0.2.0.1
@@ -50,8 +50,8 @@ library
       aeson
     , base >=4.7 && <5
     , containers
-    , interpolate
     , mtl
+    , string-interpolate
     , template-haskell
     , text
     , th-abstraction <0.5
@@ -103,9 +103,9 @@ test-suite aeson-typescript-test
     , directory
     , filepath
     , hspec
-    , interpolate
     , mtl
     , process
+    , string-interpolate
     , template-haskell
     , temporary
     , text

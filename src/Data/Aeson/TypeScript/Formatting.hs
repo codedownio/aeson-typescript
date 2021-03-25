@@ -3,7 +3,7 @@
 module Data.Aeson.TypeScript.Formatting where
 
 import Data.Aeson.TypeScript.Types
-import Data.String.Interpolate.IsString
+import Data.String.Interpolate
 import qualified Data.Text as T
 
 #if !MIN_VERSION_base(4,11,0)
@@ -26,7 +26,7 @@ formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVar
     alternatives = T.intercalate " | " (fmap T.pack names)
     alternativesEnum = T.intercalate ", " $ [toEnumName entry | entry <- T.pack <$> names]
     alternativesEnumWithType = T.intercalate ", " $ [toEnumName entry <> "=" <> entry | entry <- T.pack <$> names]
-    enumType = [i|\n\ntype #{name} = keyof typeof #{typeNameModifier name};|]
+    enumType = [i|\n\ntype #{name} = keyof typeof #{typeNameModifier name};|] :: T.Text
     toEnumName = T.replace "\"" ""
 
 formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceName genericVariables members) =

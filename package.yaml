@@ -29,7 +29,7 @@ dependencies:
 - aeson
 - base >= 4.7 && < 5
 - containers
-- interpolate
+- string-interpolate
 - mtl
 - template-haskell
 - text
