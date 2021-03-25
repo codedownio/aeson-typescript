@@ -24,10 +24,8 @@ formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVar
     TypeAlias -> [i|#{exportPrefix exportMode}type #{typeNameModifier name}#{getGenericBrackets genericVariables} = #{alternatives};|]
   where
     alternatives = T.intercalate " | " (fmap T.pack names)
-    alternativesEnum = T.intercalate ", " $
-      [T.pack (replicate numIndentSpaces ' ') <> toEnumName entry | entry <- T.pack <$> names]
-    alternativesEnumWithType = T.intercalate ", " $
-      [T.pack (replicate numIndentSpaces ' ') <> toEnumName entry <> "=" <> entry | entry <- T.pack <$> names]
+    alternativesEnum = T.intercalate ", " $ [toEnumName entry | entry <- T.pack <$> names]
+    alternativesEnumWithType = T.intercalate ", " $ [toEnumName entry <> "=" <> entry | entry <- T.pack <$> names]
     enumType = [i|\n\ntype #{name} = keyof typeof #{typeNameModifier name};|]
     toEnumName = T.replace "\"" ""
 
