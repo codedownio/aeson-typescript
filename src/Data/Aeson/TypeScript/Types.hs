@@ -99,9 +99,9 @@ data FormattingOptions = FormattingOptions
   , typeNameModifier :: String -> String
   -- ^ Function applied to generated type names
   , exportMode :: ExportMode
-  -- ^ Prefix the generated types with "export" if set to 'True'.
-  , sumTypeFormat :: SumTypeFormat
-  -- ^ How to format sum types
+  -- ^ Whether to include the export keyword in declarations
+  , typeAlternativesFormat :: SumTypeFormat
+  -- ^ How to format the declaration of the alternatives when multiple constructors exist
   }
 
 data ExportMode =
@@ -112,7 +112,7 @@ data ExportMode =
 
 -- | TODO: docstrings here
 data SumTypeFormat =
-  StringLiteralType
+  TypeAlias
   | Enum
   | EnumWithType
   deriving (Eq, Show)
@@ -123,7 +123,7 @@ defaultFormattingOptions = FormattingOptions
   , interfaceNameModifier = id
   , typeNameModifier = id
   , exportMode = ExportNone
-  , sumTypeFormat = StringLiteralType
+  , typeAlternativesFormat = TypeAlias
   }
 
 -- | Convenience typeclass class you can use to "attach" a set of Aeson encoding options to a type.

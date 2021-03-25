@@ -18,10 +18,10 @@ formatTSDeclarations = formatTSDeclarations' defaultFormattingOptions
 -- | Format a single TypeScript declaration. This version accepts a FormattingOptions object in case you want more control over the output.
 formatTSDeclaration :: FormattingOptions -> TSDeclaration -> String
 formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVariables names) =
-  case sumTypeFormat of
+  case typeAlternativesFormat of
     Enum -> [i|#{exportPrefix exportMode}enum #{typeNameModifier name} { #{alternativesEnum} }|]
     EnumWithType -> [i|#{exportPrefix exportMode}enum #{typeNameModifier name} { #{alternativesEnumWithType} }#{enumType}|]
-    _ -> [i|#{exportPrefix exportMode}type #{typeNameModifier name}#{getGenericBrackets genericVariables} = #{alternatives};|]
+    TypeAlias -> [i|#{exportPrefix exportMode}type #{typeNameModifier name}#{getGenericBrackets genericVariables} = #{alternatives};|]
   where
     alternatives = T.intercalate " | " (fmap T.pack names)
     alternativesEnum = T.intercalate ", " $
@@ -49,9 +49,9 @@ formatTSDeclarations' options declarations = T.unpack $ T.intercalate "\n\n" (fm
 
 validateFormattingOptions :: FormattingOptions -> [TSDeclaration] -> FormattingOptions
 validateFormattingOptions options@FormattingOptions{..} decls
-  | sumTypeFormat == Enum && isPlainSumType decls = options
-  | sumTypeFormat == EnumWithType && isPlainSumType decls = options { typeNameModifier = flip (<>) "Enum" }
-  | otherwise = options { sumTypeFormat = StringLiteralType }
+  | typeAlternativesFormat == Enum && isPlainSumType decls = options
+  | typeAlternativesFormat == EnumWithType && isPlainSumType decls = options { typeNameModifier = flip (<>) "Enum" }
+  | otherwise = options { typeAlternativesFormat = TypeAlias }
   where
     isInterface :: TSDeclaration -> Bool
     isInterface TSInterfaceDeclaration{} = True
