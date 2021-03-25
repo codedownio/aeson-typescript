@@ -91,12 +91,6 @@ instance IsString (TSString a) where
 
 -- * Formatting options
 
-data ExportMode =
-  ExportEach
-  -- ^ Prefix every declaration with the "export" keyword (suitable for putting in a TypeScripe module)
-  | ExportNone
-  -- ^ No exporting (suitable for putting in a .d.ts file)
-
 data FormattingOptions = FormattingOptions
   { numIndentSpaces       :: Int
   -- ^ How many spaces to indent TypeScript blocks
@@ -106,7 +100,22 @@ data FormattingOptions = FormattingOptions
   -- ^ Function applied to generated type names
   , exportMode :: ExportMode
   -- ^ Prefix the generated types with "export" if set to 'True'.
+  , sumTypeFormat :: SumTypeFormat
+  -- ^ How to format sum types
   }
+
+data ExportMode =
+  ExportEach
+  -- ^ Prefix every declaration with the "export" keyword (suitable for putting in a TypeScripe module)
+  | ExportNone
+  -- ^ No exporting (suitable for putting in a .d.ts file)
+
+-- | TODO: docstrings here
+data SumTypeFormat =
+  StringLiteralType
+  | Enum
+  | EnumWithType
+  deriving (Eq, Show)
 
 defaultFormattingOptions :: FormattingOptions
 defaultFormattingOptions = FormattingOptions
@@ -114,6 +123,7 @@ defaultFormattingOptions = FormattingOptions
   , interfaceNameModifier = id
   , typeNameModifier = id
   , exportMode = ExportNone
+  , sumTypeFormat = StringLiteralType
   }
 
 -- | Convenience typeclass class you can use to "attach" a set of Aeson encoding options to a type.

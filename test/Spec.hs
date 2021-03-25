@@ -3,8 +3,10 @@ module Main where
 
 import Test.Hspec
 
+import qualified Formatting
 import qualified HigherKind
 import qualified TypeFamilies
+
 import qualified ObjectWithSingleFieldNoTagSingleConstructors
 import qualified ObjectWithSingleFieldTagSingleConstructors
 import qualified TaggedObjectNoTagSingleConstructors
@@ -19,6 +21,7 @@ import qualified NoOmitNothingFields
 
 main :: IO ()
 main = hspec $ do
+  Formatting.tests
   HigherKind.tests
   TypeFamilies.tests
 

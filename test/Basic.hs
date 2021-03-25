@@ -16,15 +16,12 @@
 module Basic (tests) where
 
 import Data.Aeson as A
-import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.TH
 import Data.Aeson.TypeScript.Types
-import Data.Monoid
 import Data.Proxy
 import Data.String.Interpolate.IsString
 import Prelude hiding (Double)
 import Test.Hspec
-import Util
 
 
 data Unit1 = Unit1
@@ -32,7 +29,7 @@ $(deriveTypeScript A.defaultOptions ''Unit1)
 
 data Unit2 = Unit2
 $(deriveTypeScript (A.defaultOptions { A.tagSingleConstructors = True
-                                     , A.constructorTagModifier = const "foo" }) ''Unit2)  
+                                     , A.constructorTagModifier = const "foo" }) ''Unit2)
 
 tests :: SpecWith ()
 tests = describe "Basic tests" $ do
@@ -45,7 +42,7 @@ tests = describe "Basic tests" $ do
 
     it [i|Works with a unit with constructorTagModifier|] $ do
       (getTypeScriptDeclarations (Proxy :: Proxy Unit2)) `shouldBe` ([])
-       
+
 
 main :: IO ()
 main = hspec tests

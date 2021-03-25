@@ -1,5 +1,5 @@
 name:                aeson-typescript
-version:             0.2.0.0
+version:             0.2.0.1
 github:              "codedownio/aeson-typescript"
 license:             BSD3
 category:            Text, Web, JSON
@@ -33,7 +33,7 @@ dependencies:
 - mtl
 - template-haskell
 - text
-- th-abstraction < 0.4
+- th-abstraction < 0.5
 - unordered-containers
 
 library:
