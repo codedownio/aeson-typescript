@@ -1,11 +1,11 @@
 name:                aeson-typescript
-version:             0.2.0.1
+version:             0.3.0.0
 github:              "codedownio/aeson-typescript"
 license:             BSD3
 category:            Text, Web, JSON
 author:              "Tom McLaughlin"
 maintainer:          "tom@codedown.io"
-copyright:           "2018 CodeDown"
+copyright:           "2021 CodeDown"
 
 extra-source-files:
 - README.md

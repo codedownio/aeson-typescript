@@ -1,13 +1,13 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 16f81138b5a26b66ca80560ddcb787ab65a090a9f77906fef1236ac6309141be
+-- hash: 19d5c6fbe324603190ea2987b9bacb04c42f5832447d310d8f7c33f344910511
 
 name:           aeson-typescript
-version:        0.2.0.1
+version:        0.3.0.0
 synopsis:       Generate TypeScript definition files from your ADTs
 description:    Please see the README on Github at <https://github.com/codedownio/aeson-typescript#readme>
 category:       Text, Web, JSON
@@ -15,10 +15,11 @@ homepage:       https://github.com/codedownio/aeson-typescript#readme
 bug-reports:    https://github.com/codedownio/aeson-typescript/issues
 author:         Tom McLaughlin
 maintainer:     tom@codedown.io
-copyright:      2018 CodeDown
+copyright:      2021 CodeDown
 license:        BSD3
 license-file:   LICENSE
-tested-with:    GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.2
+tested-with:
+    GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.2
 build-type:     Simple
 extra-source-files:
     README.md

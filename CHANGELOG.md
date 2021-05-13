@@ -1,6 +1,6 @@
 # Change log
 
-## Unreleased changes
+## 0.3.0.0
 
 * Update th-abstraction dependency to < 0.5 to support working with newer Stack LTS.
 * Major refactors to improve TH quality.
