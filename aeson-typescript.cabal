@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 19d5c6fbe324603190ea2987b9bacb04c42f5832447d310d8f7c33f344910511
+-- hash: 73021b1b79e95ae7e4b67a45fafb5d452d8ab05ae59d4071098e8628cf8f29e4
 
 name:           aeson-typescript
 version:        0.3.0.0
@@ -23,7 +23,7 @@ tested-with:
 build-type:     Simple
 extra-source-files:
     README.md
-    ChangeLog.md
+    CHANGELOG.md
     test/assets/package.json
     test/assets/npm_install.sh
     test/assets/yarn_install.sh

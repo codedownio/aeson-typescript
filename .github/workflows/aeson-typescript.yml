@@ -69,6 +69,7 @@ jobs:
         stack: ["2.5.1"]
         ghc:
           - "8.8.4"
+          - "8.10.4"
 
     steps:
     - uses: actions/checkout@v2
