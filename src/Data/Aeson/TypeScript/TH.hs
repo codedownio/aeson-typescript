@@ -127,6 +127,7 @@ module Data.Aeson.TypeScript.TH (
   , formatTSDeclaration
   , FormattingOptions(..)
   , SumTypeFormat(..)
+  , ExportMode(..)
 
   -- * Advanced options
   , ExtraTypeScriptOptions(..)
