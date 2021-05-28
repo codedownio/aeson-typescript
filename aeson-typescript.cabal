@@ -5,7 +5,7 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           aeson-typescript
-version:        0.3.0.0
+version:        0.3.0.1
 synopsis:       Generate TypeScript definition files from your ADTs
 description:    Please see the README on Github at <https://github.com/codedownio/aeson-typescript#readme>
 category:       Text, Web, JSON
@@ -18,7 +18,7 @@ license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
 tested-with:
-    GHC == 8.10.4, GHC == 8.10.3, GHC == 8.8.4, GHC == 8.8.3
+    GHC == 9.0.1, GHC == 8.10.4, GHC == 8.10.3, GHC == 8.8.4, GHC == 8.8.3
 extra-source-files:
     README.md
     CHANGELOG.md

@@ -1,5 +1,9 @@
 # Change log
 
+## 0.3.0.1
+
+* Support GHC 9.0.1
+
 ## 0.3.0.0
 
 * Update th-abstraction dependency to < 0.5 to support working with newer Stack LTS.
@@ -16,4 +20,3 @@
 ## 0.1.0.0
 
 * Initial release.
-
