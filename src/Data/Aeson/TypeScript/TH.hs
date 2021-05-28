@@ -48,7 +48,7 @@ $('deriveTypeScript' ('defaultOptions' {'fieldLabelModifier' = 'drop' 4, 'constr
 Now we can use the newly created instances.
 
 @
->>> putStrLn $ 'formatTSDeclarations' $ 'getTypeScriptDeclarations' (Proxy :: Proxy D)
+>>> putStrLn $ 'formatTSDeclarations' $ 'getTypeScriptDeclarations' (Proxy :: Proxy (D T))
 
 type D\<T\> = INullary\<T\> | IUnary\<T\> | IProduct\<T\> | IRecord\<T\>;
 
