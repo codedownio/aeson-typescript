@@ -22,7 +22,7 @@ import Data.Aeson.TypeScript.TH
 import Data.Aeson.TypeScript.Types
 import Data.Functor.Identity
 import Data.Proxy
-import Data.String.Interpolate.IsString
+import Data.String.Interpolate
 import qualified Data.Text as T
 import Prelude hiding (Double)
 import Test.Hspec

@@ -19,7 +19,7 @@ import Control.Monad
 import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Types
 import Data.Proxy
-import Data.String.Interpolate.IsString
+import Data.String.Interpolate
 import Language.Haskell.TH hiding (stringE)
 import qualified Language.Haskell.TH.Lib as TH
 

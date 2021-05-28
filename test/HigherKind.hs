@@ -21,7 +21,7 @@ import Data.Aeson.TypeScript.TH
 import Data.Aeson.TypeScript.Types
 import Data.Monoid
 import Data.Proxy
-import Data.String.Interpolate.IsString
+import Data.String.Interpolate
 import Prelude hiding (Double)
 import Test.Hspec
 import Util

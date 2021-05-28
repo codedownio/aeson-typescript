@@ -158,7 +158,7 @@ import qualified Data.List as L
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Proxy
-import Data.String.Interpolate.IsString
+import Data.String.Interpolate
 import Data.Typeable
 import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
@@ -181,7 +181,7 @@ deriveTypeScript' options name extraOptions = do
   assertExtensionsTurnedOn datatypeInfo'
 
   -- Plug in generic variables for all star free variables
-  let starVars = [name | (isStarType -> Just name) <- getDataTypeVars datatypeInfo']
+  let starVars = [name | (isStarType -> Just _) <- getDataTypeVars datatypeInfo']
   let templateVarsToUse = case length starVars of
         1 -> [ConT ''T]
         _ -> take (length starVars) allStarConstructors
@@ -312,7 +312,11 @@ transformTypeFamilies eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ)
         name' <- lift $ newName (nameBase typeFamilyName <> "'")
 
         f <- lift $ newName "f"
+#if MIN_VERSION_template_haskell(2,17,0)
+        let inst1 = DataD [] name' [PlainTV f ()] Nothing [] []
+#else
         let inst1 = DataD [] name' [PlainTV f] Nothing [] []
+#endif
         tell [ExtraTopLevelDecs [inst1]]
 
         imageTypes <- lift $ getClosedTypeFamilyImage eqns

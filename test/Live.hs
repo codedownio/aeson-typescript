@@ -23,7 +23,7 @@ import Data.Function
 import Data.Functor.Identity
 import Data.Kind
 import Data.Proxy
-import Data.String.Interpolate.IsString
+import Data.String.Interpolate
 import qualified Data.Text as T
 import Prelude hiding (Double)
 

@@ -8,7 +8,7 @@ import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Types
 import qualified Data.List as L
 import Data.Proxy
-import Data.String.Interpolate.IsString
+import Data.String.Interpolate
 import qualified Data.Text as T
 import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
@@ -35,7 +35,7 @@ setDataTypeVars dti@(DatatypeInfo {}) vars = dti { datatypeVars = vars }
 dropLeadingIFromInterfaceName :: TSDeclaration -> TSDeclaration
 dropLeadingIFromInterfaceName decl@(TSInterfaceDeclaration {interfaceName=('I':xs)}) = decl { interfaceName = xs }
 dropLeadingIFromInterfaceName decl@(TSTypeAlternatives {typeName=('I':xs)}) = decl { typeName = xs }
-dropLeadingIFromInterfaceName x = x       
+dropLeadingIFromInterfaceName x = x
 
 lastNameComponent :: String -> String
 lastNameComponent x = T.unpack $ last $ T.splitOn "." (T.pack x)
@@ -92,8 +92,8 @@ assertExtensionsTurnedOn (DatatypeInfo {..}) = do
   -- Check that necessary language extensions are turned on
   scopedTypeVariablesEnabled <- isExtEnabled ScopedTypeVariables
   kindSignaturesEnabled <- isExtEnabled KindSignatures
-  when (not scopedTypeVariablesEnabled) $ error [i|The ScopedTypeVariables extension is required; please enable it before calling deriveTypeScript. (For example: put {-# LANGUAGE ScopedTypeVariables #-} at the top of the file.)|]
-  when ((not kindSignaturesEnabled) && (length datatypeVars > 0)) $ error [i|The KindSignatures extension is required since type #{datatypeName} is a higher order type; please enable it before calling deriveTypeScript. (For example: put {-# LANGUAGE KindSignatures #-} at the top of the file.)|]
+  when (not scopedTypeVariablesEnabled) $ error [i|The ScopedTypeVariables extension is required; please enable it before calling deriveTypeScript. (For example: put {-\# LANGUAGE ScopedTypeVariables \#-} at the top of the file.)|]
+  when ((not kindSignaturesEnabled) && (length datatypeVars > 0)) $ error [i|The KindSignatures extension is required since type #{datatypeName} is a higher order type; please enable it before calling deriveTypeScript. (For example: put {-\# LANGUAGE KindSignatures \#-} at the top of the file.)|]
 #else
 assertExtensionsTurnedOn _ = return ()
 #endif

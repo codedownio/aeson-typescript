@@ -7,7 +7,7 @@ import Data.Aeson as A
 import Data.Aeson.TypeScript.TH
 import qualified Data.ByteString.Lazy as B
 import Data.Proxy
-import Data.String.Interpolate.IsString
+import Data.String.Interpolate
 import qualified Data.Text as T
 import System.Directory
 import System.Environment

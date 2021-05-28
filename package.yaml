@@ -23,17 +23,17 @@ synopsis:            Generate TypeScript definition files from your ADTs
 # common to point users to the README.md file.
 description:         Please see the README on Github at <https://github.com/codedownio/aeson-typescript#readme>
 
-tested-with: GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.2
+tested-with: GHC == 8.10.4, GHC == 8.10.3, GHC == 8.8.4, GHC == 8.8.3
 
 dependencies:
 - aeson
 - base >= 4.7 && < 5
 - containers
-- interpolate
 - mtl
+- string-interpolate
 - template-haskell
 - text
-- th-abstraction < 0.5
+- th-abstraction
 - unordered-containers
 
 library:
