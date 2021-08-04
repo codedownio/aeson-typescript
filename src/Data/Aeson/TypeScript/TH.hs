@@ -212,7 +212,7 @@ deriveTypeScript' options name extraOptions = do
                                           $(listE $ fmap return types)|]
   let extraDecls = [x | ExtraDecl x <- extraDeclsOrGenericInfos]
   let extraTopLevelDecls = mconcat [x | ExtraTopLevelDecs x <- extraDeclsOrGenericInfos]
-  let predicates = constructorPreds <> constructorPreds' <> typeVariablePreds <> [x | ExtraConstraint x <- extraDeclsOrGenericInfos]
+  let predicates = L.nub (constructorPreds <> constructorPreds' <> typeVariablePreds <> [x | ExtraConstraint x <- extraDeclsOrGenericInfos])
 
   declarationsFunctionBody <- [| $(return typeDeclaration) : $(listE (fmap return $ extraDecls)) |]
 
