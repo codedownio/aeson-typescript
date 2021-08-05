@@ -16,10 +16,13 @@ import Data.String.Interpolate
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Data.Void
+import Data.Word
+import GHC.Int
 
 #if !MIN_VERSION_base(4,11,0)
 import Data.Monoid
 #endif
+
 
 instance TypeScript () where
   getTypeScriptType _ = "void"
@@ -48,8 +51,17 @@ instance TypeScript Bool where
 instance TypeScript Int where
   getTypeScriptType _ = "number"
 
+instance TypeScript Int32 where
+  getTypeScriptType _ = "number"
+
+instance TypeScript Int64 where
+  getTypeScriptType _ = "number"
+
 instance TypeScript Char where
   getTypeScriptType _ = "string"
+
+instance TypeScript Word8 where
+  getTypeScriptType _ = "number"
 
 instance {-# OVERLAPPABLE #-} (TypeScript a) => TypeScript [a] where
   getTypeScriptType _ = (getTypeScriptType (Proxy :: Proxy a)) ++ "[]"
