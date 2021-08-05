@@ -25,6 +25,13 @@ getDataTypeVars (DatatypeInfo {datatypeInstTypes}) = datatypeInstTypes
 getDataTypeVars (DatatypeInfo {datatypeVars}) = datatypeVars
 #endif
 
+coveredByDataTypeVars :: [Type] -> Type -> Bool
+-- Don't include a type found in a constructor if it's already found as a datatype var
+coveredByDataTypeVars dataTypeVars candidate | candidate `L.elem` dataTypeVars = True
+-- Don't include a type found in a constructor if the version with a simple star kind signature is already present
+coveredByDataTypeVars dataTypeVars candidate | (SigT candidate StarT) `L.elem` dataTypeVars = True
+coveredByDataTypeVars _ _ = False
+
 setDataTypeVars :: DatatypeInfo -> [Type] -> DatatypeInfo
 #if MIN_VERSION_th_abstraction(0,3,0)
 setDataTypeVars dti@(DatatypeInfo {}) vars = dti { datatypeInstTypes = vars }
