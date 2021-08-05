@@ -35,7 +35,7 @@ formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceNa
 }|] where ls = T.intercalate "\n" $ fmap T.pack [(replicate numIndentSpaces ' ') <> formatTSField member <> ";"| member <- members]
           modifiedInterfaceName = (\(li, name) -> li <> interfaceNameModifier name) . splitAt 1 $ interfaceName
 
-formatTSDeclaration (FormattingOptions {..}) (TSRawDeclaration text) = text
+formatTSDeclaration _ (TSRawDeclaration text) = text
 
 exportPrefix :: ExportMode -> String
 exportPrefix ExportEach = "export "
