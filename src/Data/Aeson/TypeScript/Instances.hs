@@ -10,7 +10,9 @@ import qualified Data.Aeson as A
 import Data.Aeson.TypeScript.Types
 import Data.Data
 import Data.HashMap.Strict
+import Data.HashSet
 import qualified Data.List as L
+import Data.Map.Strict
 import Data.Set
 import Data.String.Interpolate
 import qualified Data.Text as T
@@ -116,6 +118,11 @@ instance (TypeScript a) => TypeScript (Maybe a) where
 instance TypeScript A.Value where
   getTypeScriptType _ = "any";
 
+instance (TypeScript a, TypeScript b) => TypeScript (Map a b) where
+  getTypeScriptType _ =
+    "{[k: " ++ getTypeScriptType (Proxy :: Proxy a) ++ "]: " ++ getTypeScriptType (Proxy :: Proxy b) ++ "}"
+  getParentTypes _ = [TSType (Proxy :: Proxy a), TSType (Proxy :: Proxy b)]
+
 instance (TypeScript a, TypeScript b) => TypeScript (HashMap a b) where
   getTypeScriptType _ = [i|{[k: #{getTypeScriptType (Proxy :: Proxy a)}]: #{getTypeScriptType (Proxy :: Proxy b)}}|]
   getParentTypes _ = L.nub ((getParentTypes (Proxy :: Proxy a))
@@ -124,3 +131,7 @@ instance (TypeScript a, TypeScript b) => TypeScript (HashMap a b) where
 instance (TypeScript a) => TypeScript (Set a) where
   getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a) <> "[]";
   getParentTypes _ = L.nub (getParentTypes (Proxy :: Proxy a))
+
+instance (TypeScript a) => TypeScript (HashSet a) where
+  getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a) ++ "[]"
+  getParentTypes _ = [TSType (Proxy :: Proxy a)]
