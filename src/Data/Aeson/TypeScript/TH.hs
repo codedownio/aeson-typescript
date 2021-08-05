@@ -191,9 +191,13 @@ deriveTypeScript' options name extraOptions = do
   -- Build constraints: a TypeScript constraint for every constructor type and one for every type variable.
   -- Probably overkill/not exactly right, but it's a start.
   let constructorPreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- mconcat $ fmap constructorFields (datatypeCons dti)
-                                                               , hasFreeTypeVariable x]
+                                                               , hasFreeTypeVariable x
+                                                               , not $ coveredByDataTypeVars (getDataTypeVars dti) x
+                                                               ]
   let constructorPreds' :: [Pred] = [AppT (ConT ''TypeScript) x | x <- mconcat $ fmap constructorFields (datatypeCons datatypeInfo')
-                                                                , hasFreeTypeVariable x]
+                                                                , hasFreeTypeVariable x
+                                                                , not $ coveredByDataTypeVars (getDataTypeVars dti) x
+                                                                ]
   let typeVariablePreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- getDataTypeVars dti]
 
   let eligibleGenericVars = catMaybes $ flip fmap (getDataTypeVars dti) $ \case
@@ -212,7 +216,7 @@ deriveTypeScript' options name extraOptions = do
                                           $(listE $ fmap return types)|]
   let extraDecls = [x | ExtraDecl x <- extraDeclsOrGenericInfos]
   let extraTopLevelDecls = mconcat [x | ExtraTopLevelDecs x <- extraDeclsOrGenericInfos]
-  let predicates = constructorPreds <> constructorPreds' <> typeVariablePreds <> [x | ExtraConstraint x <- extraDeclsOrGenericInfos]
+  let predicates = L.nub (constructorPreds <> constructorPreds' <> typeVariablePreds <> [x | ExtraConstraint x <- extraDeclsOrGenericInfos])
 
   declarationsFunctionBody <- [| $(return typeDeclaration) : $(listE (fmap return $ extraDecls)) |]
 
