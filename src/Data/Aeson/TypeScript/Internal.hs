@@ -3,6 +3,7 @@
 
 module Data.Aeson.TypeScript.Internal (
   TSDeclaration(..)
+  , TSField(..)
   ) where
 
 import Data.Aeson.TypeScript.Types
