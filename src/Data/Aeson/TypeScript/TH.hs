@@ -15,7 +15,7 @@
 
 {-|
 Module:      Data.Aeson.TypeScript.TH
-Copyright:   (c) 2018 Tom McLaughlin
+Copyright:   (c) 2021 Tom McLaughlin
 License:     BSD3
 Stability:   experimental
 Portability: portable
