@@ -4,6 +4,7 @@ module Main where
 import Test.Hspec
 
 import qualified Formatting
+import qualified Generic
 import qualified HigherKind
 import qualified ClosedTypeFamilies
 
@@ -22,6 +23,7 @@ import qualified NoOmitNothingFields
 main :: IO ()
 main = hspec $ do
   Formatting.tests
+  Generic.tests
   HigherKind.tests
   ClosedTypeFamilies.tests
 
