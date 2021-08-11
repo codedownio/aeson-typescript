@@ -1,5 +1,14 @@
 # Change log
 
+## 0.4.0.0
+
+* Add new built-in instances (Word8, Int32, Int64, Map, HashSet)
+* Export TSField in the Internal module
+* Avoid producing redundant constraints (for fewer warnings when using -Wredundant-constraints)
+* Encode maps as mapped types (allows you to have unions as keys)
+* Support mapping open type families to lookup types (+ progress on handling promoted types)
+* Improve propagation of T variables in declarations
+
 ## 0.3.0.1
 
 * Support GHC 9.0.1
