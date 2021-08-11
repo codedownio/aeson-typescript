@@ -49,6 +49,7 @@ tests:
     source-dirs:
     - test
     - src
+    - dev
     ghc-options:
     - -Wall
     - -threaded
