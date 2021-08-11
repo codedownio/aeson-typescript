@@ -1,4 +1,15 @@
-{-# LANGUAGE CPP, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, FlexibleInstances, NamedFieldPuns, MultiWayIf, ViewPatterns, PolyKinds #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE PolyKinds #-}
 
 module Data.Aeson.TypeScript.Util where
 
@@ -17,6 +28,7 @@ import qualified Language.Haskell.TH.Lib as TH
 #if !MIN_VERSION_base(4,11,0)
 import Data.Monoid
 #endif
+
 
 getDataTypeVars :: DatatypeInfo -> [Type]
 #if MIN_VERSION_th_abstraction(0,3,0)
@@ -63,7 +75,7 @@ isConstructorNullary (ConstructorInfo {constructorVariant, constructorFields}) =
 -- In earlier versions, it has constructors
 getDatatypePredicate :: Type -> Pred
 #if MIN_VERSION_template_haskell(2,10,0)
-getDatatypePredicate typ = AppT (ConT ''TypeScript) typ
+getDatatypePredicate = AppT (ConT ''TypeScript)
 #else
 getDatatypePredicate typ = ClassP ''TypeScript [typ]
 #endif
@@ -87,7 +99,7 @@ applyToArgsE f (x:xs) = applyToArgsE (AppE f x) xs
 -- Between Aeson 1.1.2.0 and 1.2.0.0, tagSingleConstructors was added
 getTagSingleConstructors :: Options -> Bool
 #if MIN_VERSION_aeson(1,2,0)
-getTagSingleConstructors options = tagSingleConstructors options
+getTagSingleConstructors = tagSingleConstructors
 #else
 getTagSingleConstructors _ = False
 #endif
@@ -99,8 +111,10 @@ assertExtensionsTurnedOn (DatatypeInfo {..}) = do
   -- Check that necessary language extensions are turned on
   scopedTypeVariablesEnabled <- isExtEnabled ScopedTypeVariables
   kindSignaturesEnabled <- isExtEnabled KindSignatures
-  when (not scopedTypeVariablesEnabled) $ error [i|The ScopedTypeVariables extension is required; please enable it before calling deriveTypeScript. (For example: put {-\# LANGUAGE ScopedTypeVariables \#-} at the top of the file.)|]
-  when ((not kindSignaturesEnabled) && (length datatypeVars > 0)) $ error [i|The KindSignatures extension is required since type #{datatypeName} is a higher order type; please enable it before calling deriveTypeScript. (For example: put {-\# LANGUAGE KindSignatures \#-} at the top of the file.)|]
+  unless scopedTypeVariablesEnabled $
+    error [i|The ScopedTypeVariables extension is required; please enable it before calling deriveTypeScript. (For example: put {-\# LANGUAGE ScopedTypeVariables \#-} at the top of the file.)|]
+  unless (kindSignaturesEnabled || (L.null datatypeVars)) $
+    error [i|The KindSignatures extension is required since type #{datatypeName} is a higher order type; please enable it before calling deriveTypeScript. (For example: put {-\# LANGUAGE KindSignatures \#-} at the top of the file.)|]
 #else
 assertExtensionsTurnedOn _ = return ()
 #endif
@@ -126,19 +140,19 @@ isUntaggedValue _ = False
 -- Between Template Haskell 2.10 and 2.11, InstanceD got an additional argument
 mkInstance :: Cxt -> Type -> [Dec] -> Dec
 #if MIN_VERSION_template_haskell(2,11,0)
-mkInstance context typ decs = InstanceD Nothing context typ decs
+mkInstance = InstanceD Nothing
 #else
-mkInstance context typ decs = InstanceD context typ decs
+mkInstance = InstanceD
 #endif
 
-namesAndTypes :: Options -> ConstructorInfo -> [(String, Type)]
-namesAndTypes options ci = case constructorVariant ci of
+namesAndTypes :: Options -> [(Name, String)] -> ConstructorInfo -> [(String, Type)]
+namesAndTypes options genericVariables ci = case constructorVariant ci of
   RecordConstructor names -> zip (fmap ((fieldLabelModifier options) . lastNameComponent') names) (constructorFields ci)
   _ -> case sumEncoding options of
     TaggedObject _ contentsFieldName
       | isConstructorNullary ci -> []
-      | otherwise -> [(contentsFieldName, contentsTupleType ci)]
-    _ -> [(constructorNameToUse options ci, contentsTupleType ci)]
+      | otherwise -> [(contentsFieldName, contentsTupleTypeSubstituted genericVariables ci)]
+    _ -> [(constructorNameToUse options ci, contentsTupleTypeSubstituted genericVariables ci)]
 
 constructorNameToUse :: Options -> ConstructorInfo -> String
 constructorNameToUse options ci = (constructorTagModifier options) $ lastNameComponent' (constructorName ci)
@@ -146,10 +160,37 @@ constructorNameToUse options ci = (constructorTagModifier options) $ lastNameCom
 -- | Get the type of a tuple of constructor fields, as when we're packing a record-less constructor into a list
 contentsTupleType :: ConstructorInfo -> Type
 contentsTupleType ci = let fields = constructorFields ci in
-  case length fields of
-    0 -> AppT ListT (ConT ''())
-    1 -> head fields
-    x -> applyToArgsT (ConT $ tupleTypeName x) fields
+  case fields of
+    [] -> AppT ListT (ConT ''())
+    [x] -> x
+    xs-> applyToArgsT (ConT $ tupleTypeName (L.length xs)) fields
+
+contentsTupleTypeSubstituted :: [(Name, String)] -> ConstructorInfo -> Type
+contentsTupleTypeSubstituted genericVariables ci = let fields = constructorFields ci in
+  case fields of
+    [] -> AppT ListT (ConT ''())
+    [x] -> mapType x
+    xs -> applyToArgsT (ConT $ tupleTypeName (L.length xs)) (fmap mapType xs)
+  where
+    mapType x@(VarT name) = tryPromote x name
+    mapType x@(ConT name) = tryPromote x name
+    mapType x@(PromotedT name) = tryPromote x name
+    mapType x = x
+
+    tryPromote _ (flip L.lookup genericVariables -> Just "") = ConT ''T
+    tryPromote _ (flip L.lookup genericVariables -> Just "T") = ConT ''T
+    tryPromote _ (flip L.lookup genericVariables -> Just "T1") = ConT ''T1
+    tryPromote _ (flip L.lookup genericVariables -> Just "T2") = ConT ''T2
+    tryPromote _ (flip L.lookup genericVariables -> Just "T3") = ConT ''T3
+    tryPromote _ (flip L.lookup genericVariables -> Just "T4") = ConT ''T4
+    tryPromote _ (flip L.lookup genericVariables -> Just "T5") = ConT ''T5
+    tryPromote _ (flip L.lookup genericVariables -> Just "T6") = ConT ''T6
+    tryPromote _ (flip L.lookup genericVariables -> Just "T7") = ConT ''T7
+    tryPromote _ (flip L.lookup genericVariables -> Just "T8") = ConT ''T8
+    tryPromote _ (flip L.lookup genericVariables -> Just "T9") = ConT ''T9
+    tryPromote _ (flip L.lookup genericVariables -> Just "T10") = ConT ''T10
+    tryPromote x _ = x
+
 
 getBracketsExpression :: Bool -> [(Name, String)] -> Q Exp
 getBracketsExpression _ [] = [|""|]

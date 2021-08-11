@@ -20,13 +20,24 @@ import Data.Function
 import Data.Proxy
 
 
-data BulkCommandNoArg k = BulkCommandNoArg {
-  bulkCommandNoArgKeys :: [k]
-  } deriving (Show)
-$(deriveJSONAndTypeScript defaultOptions ''BulkCommandNoArg)
+data Complex a = Product Int a | Unary Int deriving Eq
+
+data Complex2 a = Product2 Int a
+
+-- data BulkCommandNoArg k = BulkCommandNoArg {
+--   bulkCommandNoArgKeys :: [k]
+--   } deriving (Show)
+-- $(deriveTypeScript defaultOptions ''BulkCommandNoArg)
+
+$(deriveTypeScript defaultOptions ''Complex)
+
+$(deriveTypeScript (defaultOptions { sumEncoding = UntaggedValue }) ''Complex2)
 
 
 main :: IO ()
-main = getTypeScriptDeclarations (Proxy @(BulkCommandNoArg Int))
-     & formatTSDeclarations
-     & putStrLn
+-- main = printThing (Proxy @(BulkCommandNoArg Int))
+main = printThing (Proxy @(Complex2 String))
+
+printThing x = getTypeScriptDeclarations x
+             & formatTSDeclarations
+             & putStrLn

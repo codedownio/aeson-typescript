@@ -205,7 +205,7 @@ deriveTypeScript' options name extraOptions = do
         _ -> Nothing
   genericVariablesAndSuffixes <- forM eligibleGenericVars $ \var -> do
     (_, genericInfos) <- runWriterT $ forM_ (datatypeCons datatypeInfo') $ \ci ->
-      forM_ (namesAndTypes options ci) $ \(_, typ) -> do
+      forM_ (namesAndTypes options [] ci) $ \(_, typ) -> do
         searchForConstraints extraOptions typ var
     return (var, unifyGenericVariable genericInfos)
 
@@ -237,7 +237,7 @@ deriveTypeScript' options name extraOptions = do
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
 handleConstructor :: Options -> ExtraTypeScriptOptions -> DatatypeInfo -> [(Name, String)] -> ConstructorInfo -> WriterT [ExtraDeclOrGenericInfo] Q Exp
-handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) =
+handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) = do
   if | (length datatypeCons == 1) && not (getTagSingleConstructors options) -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
@@ -287,17 +287,17 @@ handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(
     interfaceName = "I" <> (lastNameComponent' $ constructorName ci)
 
     tupleEncoding = do
-      tupleType <- transformTypeFamilies extraOptions (contentsTupleType ci)
-      lift $ [|TSTypeAlternatives $(TH.stringE interfaceName)
-                                  $(genericVariablesListExpr True genericVariables)
-                                  [getTypeScriptType (Proxy :: Proxy $(return tupleType))]|]
+      tupleType <- transformTypeFamilies extraOptions (contentsTupleTypeSubstituted genericVariables ci)
+      lift [|TSTypeAlternatives $(TH.stringE interfaceName)
+                                $(genericVariablesListExpr True genericVariables)
+                                [getTypeScriptType (Proxy :: Proxy $(return tupleType))]|]
 
     assembleInterfaceDeclaration members = [|TSInterfaceDeclaration $(TH.stringE interfaceName)
                                                                     $(genericVariablesListExpr True genericVariables)
                                                                     $(return members)|]
 
     getTSFields :: WriterT [ExtraDeclOrGenericInfo] Q [Exp]
-    getTSFields = forM (namesAndTypes options ci) $ \(nameString, typ') -> do
+    getTSFields = forM (namesAndTypes options genericVariables ci) $ \(nameString, typ') -> do
       typ <- transformTypeFamilies extraOptions typ'
       when (typ /= typ') $ do
         let constraint = AppT (ConT ''TypeScript) typ
