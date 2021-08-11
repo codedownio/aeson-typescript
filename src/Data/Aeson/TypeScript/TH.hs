@@ -313,7 +313,14 @@ transformTypeFamilies :: ExtraTypeScriptOptions -> Type -> WriterT [ExtraDeclOrG
 transformTypeFamilies eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ)
   | name `L.elem` typeFamiliesToMapToTypeScript = lift (reify name) >>= \case
       FamilyI (ClosedTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _) eqns) _ -> handle typeFamilyName eqns
+
+
+#if MIN_VERSION_template_haskell(2,15,0)
       FamilyI (OpenTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _)) decs -> handle typeFamilyName [eqn | TySynInstD eqn <- decs]
+#else
+      FamilyI (OpenTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _)) decs -> handle typeFamilyName [eqn | TySynInstD _name eqn <- decs]
+#endif
+
       _ -> AppT (ConT name) <$> transformTypeFamilies eo typ
   | otherwise = AppT (ConT name) <$> transformTypeFamilies eo typ
         where
