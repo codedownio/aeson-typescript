@@ -312,30 +312,35 @@ handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(
 transformTypeFamilies :: ExtraTypeScriptOptions -> Type -> WriterT [ExtraDeclOrGenericInfo] Q Type
 transformTypeFamilies eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ)
   | name `L.elem` typeFamiliesToMapToTypeScript = lift (reify name) >>= \case
-      FamilyI (ClosedTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _) eqns) _ -> do
-        name' <- lift $ newName (nameBase typeFamilyName <> "'")
-
-        f <- lift $ newName "f"
-#if MIN_VERSION_template_haskell(2,17,0)
-        let inst1 = DataD [] name' [PlainTV f ()] Nothing [] []
-#else
-        let inst1 = DataD [] name' [PlainTV f] Nothing [] []
-#endif
-        tell [ExtraTopLevelDecs [inst1]]
-
-        imageTypes <- lift $ getClosedTypeFamilyImage eqns
-        inst2 <- lift $ [d|instance (Typeable g, TypeScript g) => TypeScript ($(conT name') g) where
-                             getTypeScriptType _ = $(TH.stringE $ nameBase name) <> "[" <> (getTypeScriptType (Proxy :: Proxy g)) <> "]"
-                             getTypeScriptDeclarations _ = [$(getClosedTypeFamilyInterfaceDecl name eqns)]
-                             getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return x))|] | x <- imageTypes])
-                        |]
-        tell [ExtraTopLevelDecs inst2]
-
-        tell [ExtraParentType (AppT (ConT name') (ConT ''T))]
-
-        transformTypeFamilies eo (AppT (ConT name') typ)
+      FamilyI (ClosedTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _) eqns) _ -> handle typeFamilyName eqns
+      FamilyI (OpenTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _)) decs -> handle typeFamilyName [eqn | TySynInstD eqn <- decs]
       _ -> AppT (ConT name) <$> transformTypeFamilies eo typ
   | otherwise = AppT (ConT name) <$> transformTypeFamilies eo typ
+        where
+          handle :: Name -> [TySynEqn] -> WriterT [ExtraDeclOrGenericInfo] Q Type
+          handle typeFamilyName eqns = do
+            name' <- lift $ newName (nameBase typeFamilyName <> "'")
+
+            f <- lift $ newName "f"
+#if MIN_VERSION_template_haskell(2,17,0)
+            let inst1 = DataD [] name' [PlainTV f ()] Nothing [] []
+#else
+            let inst1 = DataD [] name' [PlainTV f] Nothing [] []
+#endif
+            tell [ExtraTopLevelDecs [inst1]]
+
+            imageTypes <- lift $ getClosedTypeFamilyImage eqns
+            inst2 <- lift $ [d|instance (Typeable g, TypeScript g) => TypeScript ($(conT name') g) where
+                                 getTypeScriptType _ = $(TH.stringE $ nameBase name) <> "[" <> (getTypeScriptType (Proxy :: Proxy g)) <> "]"
+                                 getTypeScriptDeclarations _ = [$(getClosedTypeFamilyInterfaceDecl name eqns)]
+                                 getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return x))|] | x <- imageTypes])
+                            |]
+            tell [ExtraTopLevelDecs inst2]
+
+            tell [ExtraParentType (AppT (ConT name') (ConT ''T))]
+
+            transformTypeFamilies eo (AppT (ConT name') typ)
+
 transformTypeFamilies eo (AppT typ1 typ2) = AppT <$> transformTypeFamilies eo typ1 <*> transformTypeFamilies eo typ2
 transformTypeFamilies eo (SigT typ kind) = flip SigT kind <$> transformTypeFamilies eo typ
 transformTypeFamilies eo (InfixT typ1 n typ2) = InfixT <$> transformTypeFamilies eo typ1 <*> pure n <*> transformTypeFamilies eo typ2
@@ -352,6 +357,9 @@ searchForConstraints :: ExtraTypeScriptOptions -> Type -> Name -> WriterT [Gener
 searchForConstraints eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ) var
   | typ == VarT var && (name `L.elem` typeFamiliesToMapToTypeScript) = lift (reify name) >>= \case
       FamilyI (ClosedTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _) _) _ -> do
+        tell [GenericInfo var (TypeFamilyKey typeFamilyName)]
+        searchForConstraints eo typ var
+      FamilyI (OpenTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _)) _ -> do
         tell [GenericInfo var (TypeFamilyKey typeFamilyName)]
         searchForConstraints eo typ var
       _ -> searchForConstraints eo typ var

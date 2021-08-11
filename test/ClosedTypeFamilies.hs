@@ -14,7 +14,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
 
-module TypeFamilies (tests) where
+module ClosedTypeFamilies (tests) where
 
 import Data.Aeson as A
 import Data.Aeson.TypeScript.Recursive

@@ -57,26 +57,29 @@ library
     , unordered-containers
   default-language: Haskell2010
 
-test-suite aeson-typescript-test
+test-suite aeson-typescript-tests
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
       Basic
+      ClosedTypeFamilies
       Formatting
       HigherKind
       Live
       Live2
+      Live3
+      Live4
       LiveLogging
       NoOmitNothingFields
       ObjectWithSingleFieldNoTagSingleConstructors
       ObjectWithSingleFieldTagSingleConstructors
       OmitNothingFields
+      OpenTypeFamilies
       TaggedObjectNoTagSingleConstructors
       TaggedObjectTagSingleConstructors
       TestBoilerplate
       TwoElemArrayNoTagSingleConstructors
       TwoElemArrayTagSingleConstructors
-      TypeFamilies
       UntaggedNoTagSingleConstructors
       UntaggedTagSingleConstructors
       Util

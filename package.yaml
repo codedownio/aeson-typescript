@@ -44,7 +44,7 @@ library:
     - Data.Aeson.TypeScript.Recursive
 
 tests:
-  aeson-typescript-test:
+  aeson-typescript-tests:
     main:                Spec.hs
     source-dirs:
     - test
