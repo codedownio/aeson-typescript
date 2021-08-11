@@ -59,7 +59,7 @@ getClosedTypeFamilyImage :: [TySynEqn] -> Q [Type]
 getClosedTypeFamilyImage eqns = do
   forM eqns $ \case
 #if MIN_VERSION_template_haskell(2,15,0)
-    TySynEqn Nothing (AppT (ConT _) (ConT _)) result -> return result
+    TySynEqn Nothing (AppT (ConT _) _) result -> return result
 #else
     TySynEqn [ConT _] result -> return result
 #endif

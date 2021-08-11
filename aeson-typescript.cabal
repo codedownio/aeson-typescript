@@ -65,10 +65,6 @@ test-suite aeson-typescript-tests
       ClosedTypeFamilies
       Formatting
       HigherKind
-      Live
-      Live2
-      Live3
-      Live4
       LiveLogging
       NoOmitNothingFields
       ObjectWithSingleFieldNoTagSingleConstructors
