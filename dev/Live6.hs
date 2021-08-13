@@ -17,21 +17,23 @@ import Data.Aeson as A
 import Data.Aeson.TypeScript.Recursive
 import Data.Aeson.TypeScript.TH
 import Data.Function
+import Data.Map
 import Data.Proxy
+import Data.Text
 
 
 data Complex a = Product Int a | Unary Int deriving Eq
 
 data Complex2 a = Product2 Int a
 
-data BulkCommandNoArg k = BulkCommandNoArg {
-  bulkCommandNoArgKeys :: [k]
+data Complex3 k = Complex3 {
+  bulkCommandNoArgKeys :: Map Text k
   } deriving (Show)
-$(deriveTypeScript defaultOptions ''BulkCommandNoArg)
+$(deriveTypeScript defaultOptions ''Complex3)
 
 main :: IO ()
 -- main = printThing (Proxy @(BulkCommandNoArg Int))
-main = printThing (Proxy @(BulkCommandNoArg String))
+main = printThing (Proxy @(Complex3 Double))
 
 printThing x = getTypeScriptDeclarations x
              & formatTSDeclarations

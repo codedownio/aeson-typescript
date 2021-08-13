@@ -176,10 +176,18 @@ contentsTupleTypeSubstituted genericVariables ci = let fields = constructorField
     xs -> applyToArgsT (ConT $ tupleTypeName (L.length xs)) (fmap (mapType genericVariables) xs)
 
 mapType :: [(Name, (Suffix, Var))] -> Type -> Type
-mapType genericVariables x@(VarT name) = tryPromote x genericVariables name
-mapType genericVariables x@(ConT name) = tryPromote x genericVariables name
-mapType genericVariables x@(PromotedT name) = tryPromote x genericVariables name
-mapType genericVariables (AppT ListT val) = AppT ListT $ mapType genericVariables val
+mapType g x@(VarT name) = tryPromote x g name
+mapType g x@(ConT name) = tryPromote x g name
+mapType g x@(PromotedT name) = tryPromote x g name
+mapType g (AppT typ1 typ2) = AppT (mapType g typ1) (mapType g typ2)
+mapType g (SigT typ x) = SigT (mapType g typ) x
+mapType g (InfixT typ1 x typ2) = InfixT (mapType g typ1) x (mapType g typ2)
+mapType g (UInfixT typ1 x typ2) = UInfixT (mapType g typ1) x (mapType g typ2)
+mapType g (ParensT typ) = ParensT (mapType g typ)
+#if MIN_VERSION_template_haskell(2,15,0)
+mapType g (AppKindT typ x) = AppKindT (mapType g typ) x
+mapType g (ImplicitParamT x typ) = ImplicitParamT x (mapType g typ)
+#endif
 mapType _ x = x
 
 tryPromote _ genericVariables (flip L.lookup genericVariables -> Just (_, "")) = ConT ''T
