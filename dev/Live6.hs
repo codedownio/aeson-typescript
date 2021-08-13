@@ -24,19 +24,14 @@ data Complex a = Product Int a | Unary Int deriving Eq
 
 data Complex2 a = Product2 Int a
 
--- data BulkCommandNoArg k = BulkCommandNoArg {
---   bulkCommandNoArgKeys :: [k]
---   } deriving (Show)
--- $(deriveTypeScript defaultOptions ''BulkCommandNoArg)
-
-$(deriveTypeScript defaultOptions ''Complex)
-
-$(deriveTypeScript (defaultOptions { sumEncoding = UntaggedValue }) ''Complex2)
-
+data BulkCommandNoArg k = BulkCommandNoArg {
+  bulkCommandNoArgKeys :: [k]
+  } deriving (Show)
+$(deriveTypeScript defaultOptions ''BulkCommandNoArg)
 
 main :: IO ()
 -- main = printThing (Proxy @(BulkCommandNoArg Int))
-main = printThing (Proxy @(Complex2 String))
+main = printThing (Proxy @(BulkCommandNoArg String))
 
 printThing x = getTypeScriptDeclarations x
              & formatTSDeclarations

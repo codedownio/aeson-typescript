@@ -30,6 +30,9 @@ import Data.Monoid
 #endif
 
 
+type Suffix = String
+type Var = String
+
 getDataTypeVars :: DatatypeInfo -> [Type]
 #if MIN_VERSION_th_abstraction(0,3,0)
 getDataTypeVars (DatatypeInfo {datatypeInstTypes}) = datatypeInstTypes
@@ -145,7 +148,7 @@ mkInstance = InstanceD Nothing
 mkInstance = InstanceD
 #endif
 
-namesAndTypes :: Options -> [(Name, String)] -> ConstructorInfo -> [(String, Type)]
+namesAndTypes :: Options -> [(Name, (Suffix, Var))] -> ConstructorInfo -> [(String, Type)]
 namesAndTypes options genericVariables ci = case constructorVariant ci of
   RecordConstructor names -> zip (fmap ((fieldLabelModifier options) . lastNameComponent') names) (constructorFields ci)
   _ -> case sumEncoding options of
@@ -165,45 +168,45 @@ contentsTupleType ci = let fields = constructorFields ci in
     [x] -> x
     xs-> applyToArgsT (ConT $ tupleTypeName (L.length xs)) fields
 
-contentsTupleTypeSubstituted :: [(Name, String)] -> ConstructorInfo -> Type
+contentsTupleTypeSubstituted :: [(Name, (Suffix, Var))] -> ConstructorInfo -> Type
 contentsTupleTypeSubstituted genericVariables ci = let fields = constructorFields ci in
   case fields of
     [] -> AppT ListT (ConT ''())
     [x] -> mapType genericVariables x
     xs -> applyToArgsT (ConT $ tupleTypeName (L.length xs)) (fmap (mapType genericVariables) xs)
 
-mapType :: [(Name, String)] -> Type -> Type
+mapType :: [(Name, (Suffix, Var))] -> Type -> Type
 mapType genericVariables x@(VarT name) = tryPromote x genericVariables name
 mapType genericVariables x@(ConT name) = tryPromote x genericVariables name
 mapType genericVariables x@(PromotedT name) = tryPromote x genericVariables name
 mapType genericVariables (AppT ListT val) = AppT ListT $ mapType genericVariables val
 mapType _ x = x
 
-tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "") = ConT ''T
-tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T") = ConT ''T
-tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T1") = ConT ''T1
-tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T2") = ConT ''T2
-tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T3") = ConT ''T3
-tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T4") = ConT ''T4
-tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T5") = ConT ''T5
-tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T6") = ConT ''T6
-tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T7") = ConT ''T7
-tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T8") = ConT ''T8
-tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T9") = ConT ''T9
-tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T10") = ConT ''T10
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just (_, "")) = ConT ''T
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just (_, "T")) = ConT ''T
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just (_, "T1")) = ConT ''T1
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just (_, "T2")) = ConT ''T2
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just (_, "T3")) = ConT ''T3
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just (_, "T4")) = ConT ''T4
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just (_, "T5")) = ConT ''T5
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just (_, "T6")) = ConT ''T6
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just (_, "T7")) = ConT ''T7
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just (_, "T8")) = ConT ''T8
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just (_, "T9")) = ConT ''T9
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just (_, "T10")) = ConT ''T10
 tryPromote x _ _ = x
 
-getBracketsExpression :: Bool -> [(Name, String)] -> Q Exp
+getBracketsExpression :: Bool -> [(Name, (Suffix, Var))] -> Q Exp
 getBracketsExpression _ [] = [|""|]
 getBracketsExpression includeSuffix names =
   [|let vars = $(genericVariablesListExpr includeSuffix names) in "<" <> L.intercalate ", " vars <> ">"|]
 
-getBracketsExpressionAllTypesNoSuffix :: [(Name, String)] -> Q Exp
+getBracketsExpressionAllTypesNoSuffix :: [(Name, (Suffix, Var))] -> Q Exp
 getBracketsExpressionAllTypesNoSuffix [] = [|""|]
-getBracketsExpressionAllTypesNoSuffix names = [|"<" <> L.intercalate ", " $(listE [ [|(getTypeScriptType (Proxy :: Proxy $(varT x)))|] | (x, _suffix) <- names]) <> ">"|]
+getBracketsExpressionAllTypesNoSuffix names = [|"<" <> L.intercalate ", " $(listE [ [|(getTypeScriptType (Proxy :: Proxy $(varT x)))|] | (x, (_suffix, _)) <- names]) <> ">"|]
 
-genericVariablesListExpr :: Bool -> [(Name, String)] -> Q Exp
-genericVariablesListExpr includeSuffix genericVariables = listE (fmap (\((_, suffix), correspondingGeneric) ->
+genericVariablesListExpr :: Bool -> [(Name, (Suffix, Var))] -> Q Exp
+genericVariablesListExpr includeSuffix genericVariables = listE (fmap (\((_, (suffix, _)), correspondingGeneric) ->
   [|(getTypeScriptType (Proxy :: Proxy $(return correspondingGeneric))) <> $(TH.stringE (if includeSuffix then suffix else ""))|])
   (case genericVariables of
       [x] -> [(x, ConT ''T)]

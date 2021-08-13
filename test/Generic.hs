@@ -58,5 +58,12 @@ tests = describe "Generic instances" $ do
       ,TSTypeAlternatives {typeName = "Complex3", typeGenericVariables = ["T"], alternativeTypes = ["IProduct3<T>"]}
       ]
 
+    (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (Complex3 Int))) `shouldBe` [
+      TSInterfaceDeclaration {interfaceName = "IProduct3", interfaceGenericVariables = ["T"], interfaceMembers = [
+                                 TSField {fieldOptional = False, fieldName = "record3", fieldType = "T[]"}
+                                 ]}
+      ,TSTypeAlternatives {typeName = "Complex3", typeGenericVariables = ["T"], alternativeTypes = ["IProduct3<T>"]}
+      ]
+
 main :: IO ()
 main = hspec tests

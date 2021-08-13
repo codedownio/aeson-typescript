@@ -167,6 +167,9 @@ allStarConstructors = [ConT ''T1, ConT ''T2, ConT ''T3, ConT ''T4, ConT ''T5, Co
 allStarConstructors' :: [Name]
 allStarConstructors' = [''T1, ''T2, ''T3, ''T4, ''T5, ''T6, ''T7, ''T8, ''T9, ''T10]
 
+allStarConstructors'' :: [String]
+allStarConstructors'' = ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10"]
+
 -- | Type variable gathering
 
 data ExtraTypeScriptOptions = ExtraTypeScriptOptions {

@@ -160,7 +160,6 @@ import Data.Maybe
 import Data.Proxy
 import Data.String.Interpolate
 import Data.Typeable
-import Debug.Trace
 import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
 import qualified Language.Haskell.TH.Lib as TH
@@ -204,11 +203,15 @@ deriveTypeScript' options name extraOptions = do
   let eligibleGenericVars = catMaybes $ flip fmap (getDataTypeVars dti) $ \case
         SigT (VarT n) StarT -> Just n
         _ -> Nothing
-  genericVariablesAndSuffixes <- forM eligibleGenericVars $ \var -> do
+  let varsAndTVars = case eligibleGenericVars of
+        [] -> []
+        [x] -> [(x, "T")]
+        xs -> zip xs allStarConstructors''
+  genericVariablesAndSuffixes <- forM varsAndTVars $ \(var, tvar) -> do
     (_, genericInfos) <- runWriterT $ forM_ (datatypeCons datatypeInfo') $ \ci ->
       forM_ (namesAndTypes options [] ci) $ \(_, typ) -> do
         searchForConstraints extraOptions typ var
-    return (var, unifyGenericVariable genericInfos)
+    return (var, (unifyGenericVariable genericInfos, tvar))
 
   -- Build the declarations
   (types, extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor options extraOptions dti genericVariablesAndSuffixes) (datatypeCons dti)
@@ -237,8 +240,8 @@ deriveTypeScript' options name extraOptions = do
   return (extraTopLevelDecls <> inst)
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
-handleConstructor :: Options -> ExtraTypeScriptOptions -> DatatypeInfo -> [(Name, String)] -> ConstructorInfo -> WriterT [ExtraDeclOrGenericInfo] Q Exp
-handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(ConstructorInfo {}) = do
+handleConstructor :: Options -> ExtraTypeScriptOptions -> DatatypeInfo -> [(Name, (Suffix, Var))] -> ConstructorInfo -> WriterT [ExtraDeclOrGenericInfo] Q Exp
+handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables  ci@(ConstructorInfo {}) = do
   if | (length datatypeCons == 1) && not (getTagSingleConstructors options) -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
