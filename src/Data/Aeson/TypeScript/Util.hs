@@ -169,28 +169,29 @@ contentsTupleTypeSubstituted :: [(Name, String)] -> ConstructorInfo -> Type
 contentsTupleTypeSubstituted genericVariables ci = let fields = constructorFields ci in
   case fields of
     [] -> AppT ListT (ConT ''())
-    [x] -> mapType x
-    xs -> applyToArgsT (ConT $ tupleTypeName (L.length xs)) (fmap mapType xs)
-  where
-    mapType x@(VarT name) = tryPromote x name
-    mapType x@(ConT name) = tryPromote x name
-    mapType x@(PromotedT name) = tryPromote x name
-    mapType x = x
+    [x] -> mapType genericVariables x
+    xs -> applyToArgsT (ConT $ tupleTypeName (L.length xs)) (fmap (mapType genericVariables) xs)
 
-    tryPromote _ (flip L.lookup genericVariables -> Just "") = ConT ''T
-    tryPromote _ (flip L.lookup genericVariables -> Just "T") = ConT ''T
-    tryPromote _ (flip L.lookup genericVariables -> Just "T1") = ConT ''T1
-    tryPromote _ (flip L.lookup genericVariables -> Just "T2") = ConT ''T2
-    tryPromote _ (flip L.lookup genericVariables -> Just "T3") = ConT ''T3
-    tryPromote _ (flip L.lookup genericVariables -> Just "T4") = ConT ''T4
-    tryPromote _ (flip L.lookup genericVariables -> Just "T5") = ConT ''T5
-    tryPromote _ (flip L.lookup genericVariables -> Just "T6") = ConT ''T6
-    tryPromote _ (flip L.lookup genericVariables -> Just "T7") = ConT ''T7
-    tryPromote _ (flip L.lookup genericVariables -> Just "T8") = ConT ''T8
-    tryPromote _ (flip L.lookup genericVariables -> Just "T9") = ConT ''T9
-    tryPromote _ (flip L.lookup genericVariables -> Just "T10") = ConT ''T10
-    tryPromote x _ = x
+mapType :: [(Name, String)] -> Type -> Type
+mapType genericVariables x@(VarT name) = tryPromote x genericVariables name
+mapType genericVariables x@(ConT name) = tryPromote x genericVariables name
+mapType genericVariables x@(PromotedT name) = tryPromote x genericVariables name
+mapType genericVariables (AppT ListT val) = AppT ListT $ mapType genericVariables val
+mapType _ x = x
 
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "") = ConT ''T
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T") = ConT ''T
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T1") = ConT ''T1
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T2") = ConT ''T2
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T3") = ConT ''T3
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T4") = ConT ''T4
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T5") = ConT ''T5
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T6") = ConT ''T6
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T7") = ConT ''T7
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T8") = ConT ''T8
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T9") = ConT ''T9
+tryPromote _ genericVariables (flip L.lookup genericVariables -> Just "T10") = ConT ''T10
+tryPromote x _ _ = x
 
 getBracketsExpression :: Bool -> [(Name, String)] -> Q Exp
 getBracketsExpression _ [] = [|""|]

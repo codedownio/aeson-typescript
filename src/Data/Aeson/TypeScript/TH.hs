@@ -160,6 +160,7 @@ import Data.Maybe
 import Data.Proxy
 import Data.String.Interpolate
 import Data.Typeable
+import Debug.Trace
 import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
 import qualified Language.Haskell.TH.Lib as TH
@@ -304,9 +305,9 @@ handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci@(
         tell [ExtraConstraint constraint]
 
       (fieldTyp, optAsBool) <- lift $ case typ of
-        (AppT (ConT name) t) | name == ''Maybe && not (omitNothingFields options) ->
+        (AppT (ConT name) (mapType genericVariables -> t)) | name == ''Maybe && not (omitNothingFields options) ->
           ( , ) <$> [|$(getTypeAsStringExp t) <> " | null"|] <*> getOptionalAsBoolExp t
-        _ -> ( , ) <$> getTypeAsStringExp typ <*> getOptionalAsBoolExp typ'
+        _ -> ( , ) <$> getTypeAsStringExp (mapType genericVariables typ) <*> getOptionalAsBoolExp (mapType genericVariables typ')
       lift $ [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) |]
 
 transformTypeFamilies :: ExtraTypeScriptOptions -> Type -> WriterT [ExtraDeclOrGenericInfo] Q Type

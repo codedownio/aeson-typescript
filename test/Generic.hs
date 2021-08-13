@@ -26,11 +26,14 @@ import Prelude hiding (Double)
 import Test.Hspec
 
 
-data Complex a = Product Int a | Unary Int deriving Eq
+data Complex a = Product Int a | Unary Int
 $(deriveTypeScript defaultOptions ''Complex)
 
 data Complex2 a = Product2 Int a
 $(deriveTypeScript (defaultOptions { sumEncoding = UntaggedValue }) ''Complex2)
+
+data Complex3 k = Product3 { record3 :: [k] }
+$(deriveTypeScript defaultOptions ''Complex3)
 
 tests :: SpecWith ()
 tests = describe "Generic instances" $ do
@@ -45,6 +48,14 @@ tests = describe "Generic instances" $ do
     (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (Complex2 String))) `shouldBe` [
       TSTypeAlternatives {typeName = "Complex2", typeGenericVariables = ["T"], alternativeTypes = ["IProduct2<T>"]}
       ,TSTypeAlternatives {typeName = "IProduct2", typeGenericVariables = ["T"], alternativeTypes = ["[number, T]"]}
+      ]
+
+  it [i|Complex3 makes the declaration and types correctly|] $ do
+    (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (Complex3 String))) `shouldBe` [
+      TSInterfaceDeclaration {interfaceName = "IProduct3", interfaceGenericVariables = ["T"], interfaceMembers = [
+                                 TSField {fieldOptional = False, fieldName = "record3", fieldType = "T[]"}
+                                 ]}
+      ,TSTypeAlternatives {typeName = "Complex3", typeGenericVariables = ["T"], alternativeTypes = ["IProduct3<T>"]}
       ]
 
 main :: IO ()
