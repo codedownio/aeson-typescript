@@ -54,6 +54,10 @@ class (Typeable a) => TypeScript a where
   getTypeScriptType :: Proxy a -> String
   -- ^ Get the type as a string.
 
+  getTypeScriptKeyType :: Proxy a -> String
+  getTypeScriptKeyType proxy = getTypeScriptType proxy
+  -- ^ Get the key type as a string.
+
   getTypeScriptOptional :: Proxy a -> Bool
   -- ^ Get a flag representing whether this type is optional.
   getTypeScriptOptional _ = False
