@@ -130,7 +130,10 @@ module Data.Aeson.TypeScript.TH (
   , ExportMode(..)
 
   -- * Advanced options
-  , ExtraTypeScriptOptions(..)
+  , defaultExtraTypeScriptOptions
+  , keyType
+  , typeFamiliesToMapToTypeScript
+  , ExtraTypeScriptOptions
 
   -- * Convenience tools
   , HasJSONOptions(..)
