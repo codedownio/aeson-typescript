@@ -14,7 +14,6 @@
 module Live6 where
 
 import Data.Aeson as A
-import Data.Aeson.TypeScript.Recursive
 import Data.Aeson.TypeScript.TH
 import Data.Function
 import Data.Map

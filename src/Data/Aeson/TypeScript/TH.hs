@@ -153,13 +153,13 @@ import Data.Aeson.TypeScript.Formatting
 import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Lookup
 import Data.Aeson.TypeScript.Transform
+import Data.Aeson.TypeScript.TypeManipulation
 import Data.Aeson.TypeScript.Types
 import Data.Aeson.TypeScript.Util
 import qualified Data.List as L
 import Data.Maybe
 import Data.Proxy
 import Data.String.Interpolate
-import Data.Typeable
 import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
 import qualified Language.Haskell.TH.Lib as TH
@@ -307,46 +307,6 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci = do
         _ -> ( , ) <$> getTypeAsStringExp typ <*> getOptionalAsBoolExp typ
       lift $ [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) |]
 
-
-searchForConstraints :: ExtraTypeScriptOptions -> Type -> Name -> WriterT [GenericInfo] Q ()
-searchForConstraints eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ) var
-  | typ == VarT var && (name `L.elem` typeFamiliesToMapToTypeScript) = lift (reify name) >>= \case
-      FamilyI (ClosedTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _) _) _ -> do
-        tell [GenericInfo var (TypeFamilyKey typeFamilyName)]
-        searchForConstraints eo typ var
-      FamilyI (OpenTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _)) _ -> do
-        tell [GenericInfo var (TypeFamilyKey typeFamilyName)]
-        searchForConstraints eo typ var
-      _ -> searchForConstraints eo typ var
-  | otherwise = searchForConstraints eo typ var
-searchForConstraints eo (AppT typ1 typ2) var = searchForConstraints eo typ1 var >> searchForConstraints eo typ2 var
-searchForConstraints eo (SigT typ _) var = searchForConstraints eo typ var
-searchForConstraints eo (InfixT typ1 _ typ2) var = searchForConstraints eo typ1 var >> searchForConstraints eo typ2 var
-searchForConstraints eo (UInfixT typ1 _ typ2) var = searchForConstraints eo typ1 var >> searchForConstraints eo typ2 var
-searchForConstraints eo (ParensT typ) var = searchForConstraints eo typ var
-#if MIN_VERSION_template_haskell(2,15,0)
-searchForConstraints eo (AppKindT typ _) var = searchForConstraints eo typ var
-searchForConstraints eo (ImplicitParamT _ typ) var = searchForConstraints eo typ var
-#endif
-searchForConstraints _ _ _ = return ()
-
-hasFreeTypeVariable :: Type -> Bool
-hasFreeTypeVariable (VarT _) = True
-hasFreeTypeVariable (AppT typ1 typ2) = hasFreeTypeVariable typ1 || hasFreeTypeVariable typ2
-hasFreeTypeVariable (SigT typ _) = hasFreeTypeVariable typ
-hasFreeTypeVariable (InfixT typ1 _ typ2) = hasFreeTypeVariable typ1 || hasFreeTypeVariable typ2
-hasFreeTypeVariable (UInfixT typ1 _ typ2) = hasFreeTypeVariable typ1 || hasFreeTypeVariable typ2
-hasFreeTypeVariable (ParensT typ) = hasFreeTypeVariable typ
-#if MIN_VERSION_template_haskell(2,15,0)
-hasFreeTypeVariable (AppKindT typ _) = hasFreeTypeVariable typ
-hasFreeTypeVariable (ImplicitParamT _ typ) = hasFreeTypeVariable typ
-#endif
-hasFreeTypeVariable _ = False
-
-unifyGenericVariable :: [GenericInfo] -> String
-unifyGenericVariable genericInfos = case [nameBase name | GenericInfo _ (TypeFamilyKey name) <- genericInfos] of
-  [] -> ""
-  names -> " extends keyof " <> (L.intercalate " & " names)
 
 -- * Convenience functions
 
