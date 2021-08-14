@@ -152,6 +152,7 @@ import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.Formatting
 import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Lookup
+import Data.Aeson.TypeScript.Transform
 import Data.Aeson.TypeScript.Types
 import Data.Aeson.TypeScript.Util
 import qualified Data.List as L
@@ -213,7 +214,7 @@ deriveTypeScript' options name extraOptions = do
   let typeVariablePreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- getDataTypeVars dti]
 
   -- Build the declarations
-  (types, (extraDeclsOrGenericInfosInitial <>) -> extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor options extraOptions dti genericVariablesAndSuffixes) (datatypeCons dti)
+  (types, (extraDeclsOrGenericInfosInitial <>) -> extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor options dti genericVariablesAndSuffixes) (datatypeCons dti)
   typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName (datatypeName dti))
                                           $(genericVariablesListExpr True genericVariablesAndSuffixes)
                                           $(listE $ fmap return types)|]
@@ -239,8 +240,8 @@ deriveTypeScript' options name extraOptions = do
   return (extraTopLevelDecls <> inst)
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
-handleConstructor :: Options -> ExtraTypeScriptOptions -> DatatypeInfo -> [(Name, (Suffix, Var))] -> ConstructorInfo -> WriterT [ExtraDeclOrGenericInfo] Q Exp
-handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci = do
+handleConstructor :: Options -> DatatypeInfo -> [(Name, (Suffix, Var))] -> ConstructorInfo -> WriterT [ExtraDeclOrGenericInfo] Q Exp
+handleConstructor options (DatatypeInfo {..}) genericVariables ci = do
   if | (length datatypeCons == 1) && not (getTagSingleConstructors options) -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
@@ -289,11 +290,10 @@ handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci =
     -- * Type declaration to use
     interfaceName = "I" <> (lastNameComponent' $ constructorName ci)
 
-    tupleEncoding = do
-      let tupleType = contentsTupleTypeSubstituted genericVariables ci
+    tupleEncoding =
       lift [|TSTypeAlternatives $(TH.stringE interfaceName)
                                 $(genericVariablesListExpr True genericVariables)
-                                [getTypeScriptType (Proxy :: Proxy $(return tupleType))]|]
+                                [getTypeScriptType (Proxy :: Proxy $(return (contentsTupleTypeSubstituted genericVariables ci)))]|]
 
     assembleInterfaceDeclaration members = [|TSInterfaceDeclaration $(TH.stringE interfaceName)
                                                                     $(genericVariablesListExpr True genericVariables)
@@ -306,56 +306,6 @@ handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci =
           ( , ) <$> [|$(getTypeAsStringExp t) <> " | null"|] <*> getOptionalAsBoolExp t
         _ -> ( , ) <$> getTypeAsStringExp typ <*> getOptionalAsBoolExp typ
       lift $ [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) |]
-
-transformTypeFamilies :: ExtraTypeScriptOptions -> Type -> WriterT [ExtraDeclOrGenericInfo] Q Type
-transformTypeFamilies eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ)
-  | name `L.elem` typeFamiliesToMapToTypeScript = lift (reify name) >>= \case
-      FamilyI (ClosedTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _) eqns) _ -> handle typeFamilyName eqns
-
-#if MIN_VERSION_template_haskell(2,15,0)
-      FamilyI (OpenTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _)) decs -> handle typeFamilyName [eqn | TySynInstD eqn <- decs]
-#else
-      FamilyI (OpenTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _)) decs -> handle typeFamilyName [eqn | TySynInstD _name eqn <- decs]
-#endif
-
-      _ -> AppT (ConT name) <$> transformTypeFamilies eo typ
-  | otherwise = AppT (ConT name) <$> transformTypeFamilies eo typ
-        where
-          handle :: Name -> [TySynEqn] -> WriterT [ExtraDeclOrGenericInfo] Q Type
-          handle typeFamilyName eqns = do
-            name' <- lift $ newName (nameBase typeFamilyName <> "'")
-
-            f <- lift $ newName "f"
-#if MIN_VERSION_template_haskell(2,17,0)
-            let inst1 = DataD [] name' [PlainTV f ()] Nothing [] []
-#else
-            let inst1 = DataD [] name' [PlainTV f] Nothing [] []
-#endif
-            tell [ExtraTopLevelDecs [inst1]]
-
-            imageTypes <- lift $ getClosedTypeFamilyImage eqns
-            inst2 <- lift $ [d|instance (Typeable g, TypeScript g) => TypeScript ($(conT name') g) where
-                                 getTypeScriptType _ = $(TH.stringE $ nameBase name) <> "[" <> (getTypeScriptType (Proxy :: Proxy g)) <> "]"
-                                 getTypeScriptDeclarations _ = [$(getClosedTypeFamilyInterfaceDecl name eqns)]
-                                 getParentTypes _ = $(listE [ [|TSType (Proxy :: Proxy $(return x))|] | x <- imageTypes])
-                            |]
-            tell [ExtraTopLevelDecs inst2]
-
-            tell [ExtraParentType (AppT (ConT name') (ConT ''T))]
-
-            ret <- transformTypeFamilies eo (AppT (ConT name') typ)
-            tell [ExtraConstraint (AppT (ConT ''TypeScript) ret)]
-            return ret
-transformTypeFamilies eo (AppT typ1 typ2) = AppT <$> transformTypeFamilies eo typ1 <*> transformTypeFamilies eo typ2
-transformTypeFamilies eo (SigT typ kind) = flip SigT kind <$> transformTypeFamilies eo typ
-transformTypeFamilies eo (InfixT typ1 n typ2) = InfixT <$> transformTypeFamilies eo typ1 <*> pure n <*> transformTypeFamilies eo typ2
-transformTypeFamilies eo (UInfixT typ1 n typ2) = UInfixT <$> transformTypeFamilies eo typ1 <*> pure n <*> transformTypeFamilies eo typ2
-transformTypeFamilies eo (ParensT typ) = ParensT <$> transformTypeFamilies eo typ
-#if MIN_VERSION_template_haskell(2,15,0)
-transformTypeFamilies eo (AppKindT typ kind) = flip AppKindT kind <$> transformTypeFamilies eo typ
-transformTypeFamilies eo (ImplicitParamT s typ) = ImplicitParamT s <$> transformTypeFamilies eo typ
-#endif
-transformTypeFamilies _ typ = return typ
 
 
 searchForConstraints :: ExtraTypeScriptOptions -> Type -> Name -> WriterT [GenericInfo] Q ()

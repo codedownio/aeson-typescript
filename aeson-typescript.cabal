@@ -40,6 +40,7 @@ library
       Data.Aeson.TypeScript.Formatting
       Data.Aeson.TypeScript.Instances
       Data.Aeson.TypeScript.Lookup
+      Data.Aeson.TypeScript.Transform
       Data.Aeson.TypeScript.Types
       Data.Aeson.TypeScript.Util
       Paths_aeson_typescript
@@ -86,6 +87,7 @@ test-suite aeson-typescript-tests
       Data.Aeson.TypeScript.Lookup
       Data.Aeson.TypeScript.Recursive
       Data.Aeson.TypeScript.TH
+      Data.Aeson.TypeScript.Transform
       Data.Aeson.TypeScript.Types
       Data.Aeson.TypeScript.Util
       Live
