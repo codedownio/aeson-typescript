@@ -195,10 +195,9 @@ deriveTypeScript' options name extraOptions = do
     return (var, (unifyGenericVariable genericInfos, tvar))
 
   -- Plug in generic variables and de-family-ify
-  (newConstructorInfos, extraDeclsOrGenericInfosInitial) <- runWriterT $ forM (datatypeCons datatypeInfo') $ \ci ->
+  ((\x -> (datatypeInfo' { datatypeCons = x })) -> dti, extraDeclsOrGenericInfosInitial) <- runWriterT $ forM (datatypeCons datatypeInfo') $ \ci ->
     ((\x -> ci { constructorFields = x }) <$>) $ forM (constructorFields ci) $
       transformTypeFamilies extraOptions . mapType genericVariablesAndSuffixes
-  let dti = datatypeInfo' { datatypeCons = newConstructorInfos }
 
   -- Build constraints: a TypeScript constraint for every constructor type and one for every type variable.
   -- Probably overkill/not exactly right, but it's a start.
