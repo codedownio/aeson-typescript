@@ -19,12 +19,16 @@ module Live where
 import Data.Aeson as A
 import Data.Aeson.TypeScript.Recursive
 import Data.Aeson.TypeScript.TH
+import Data.Aeson.TypeScript.Types
 import Data.Function
 import Data.Functor.Identity
 import Data.Kind
+import Data.List
+import Data.Map
 import Data.Proxy
 import Data.String.Interpolate
 import qualified Data.Text as T
+import Data.Typeable
 import Prelude hiding (Double)
 
 
@@ -60,14 +64,17 @@ type family DeployEnvironment env = result | result -> env where
 -- * The main type
 
 data UserT env f = User {
-  _userUsername :: Columnar f T.Text
-  , _userCreatedAt  :: Columnar f Int
-  , _userDeployEnvironment  :: Columnar f (DeployEnvironment env)
+  _userDeployEnv  :: Columnar f (DeployEnvironment env)
   }
 
--- $(deriveTypeScript' A.defaultOptions ''UserT (ExtraTypeScriptOptions [''DeployEnvironment]))
+data Complex3 k = Complex3 {
+  bulkCommandNoArgKeys :: Map T.Text k
+  } deriving (Show)
 
--- main :: IO ()
--- main = getTypeScriptDeclarationsRecursively (Proxy :: Proxy (UserT T Identity))
---      & formatTSDeclarations
---      & putStrLn
+
+deriveTypeScript' A.defaultOptions ''UserT (ExtraTypeScriptOptions [''DeployEnvironment])
+
+main :: IO ()
+main = getTypeScriptDeclarationsRecursively (Proxy :: Proxy (UserT T Identity))
+     & formatTSDeclarations
+     & putStrLn

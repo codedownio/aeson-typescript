@@ -155,7 +155,6 @@ import Data.Aeson.TypeScript.Lookup
 import Data.Aeson.TypeScript.Types
 import Data.Aeson.TypeScript.Util
 import qualified Data.List as L
-import qualified Data.Map as M
 import Data.Maybe
 import Data.Proxy
 import Data.String.Interpolate
@@ -180,13 +179,26 @@ deriveTypeScript' options name extraOptions = do
   datatypeInfo' <- reifyDatatype name
   assertExtensionsTurnedOn datatypeInfo'
 
-  -- Plug in generic variables for all star free variables
-  let starVars = [name | (isStarType -> Just _) <- getDataTypeVars datatypeInfo']
-  let templateVarsToUse = case length starVars of
-        1 -> [ConT ''T]
-        _ -> take (length starVars) allStarConstructors
-  let subMap = M.fromList $ zip starVars templateVarsToUse
-  let dti = datatypeInfo' { datatypeCons = fmap (applySubstitution subMap) (datatypeCons datatypeInfo')}
+  -- Figure out what the generic variables are
+  let eligibleGenericVars = catMaybes $ flip fmap (getDataTypeVars datatypeInfo') $ \case
+        SigT (VarT n) StarT -> Just n
+        _ -> Nothing
+  let varsAndTVars = case eligibleGenericVars of
+        [] -> []
+        [x] -> [(x, "T")]
+        xs -> zip xs allStarConstructors''
+  genericVariablesAndSuffixes <- forM varsAndTVars $ \(var, tvar) -> do
+    (_, genericInfos) <- runWriterT $ forM_ (datatypeCons datatypeInfo') $ \ci ->
+      forM_ (namesAndTypes options [] ci) $ \(_, typ) -> do
+        searchForConstraints extraOptions typ var
+    return (var, (unifyGenericVariable genericInfos, tvar))
+
+  -- Plug in generic variables and de-family-ify
+  (newConstructorInfos, extraDeclsOrGenericInfosInitial) <- runWriterT $ forM (datatypeCons datatypeInfo') $ \ci@(ConstructorInfo {..}) -> do
+    newFields <- forM constructorFields $ \t ->
+      transformTypeFamilies extraOptions $ mapType genericVariablesAndSuffixes t
+    return (ci { constructorFields = newFields })
+  let dti = datatypeInfo' { datatypeCons = newConstructorInfos }
 
   -- Build constraints: a TypeScript constraint for every constructor type and one for every type variable.
   -- Probably overkill/not exactly right, but it's a start.
@@ -200,21 +212,8 @@ deriveTypeScript' options name extraOptions = do
                                                                 ]
   let typeVariablePreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- getDataTypeVars dti]
 
-  let eligibleGenericVars = catMaybes $ flip fmap (getDataTypeVars dti) $ \case
-        SigT (VarT n) StarT -> Just n
-        _ -> Nothing
-  let varsAndTVars = case eligibleGenericVars of
-        [] -> []
-        [x] -> [(x, "T")]
-        xs -> zip xs allStarConstructors''
-  genericVariablesAndSuffixes <- forM varsAndTVars $ \(var, tvar) -> do
-    (_, genericInfos) <- runWriterT $ forM_ (datatypeCons datatypeInfo') $ \ci ->
-      forM_ (namesAndTypes options [] ci) $ \(_, typ) -> do
-        searchForConstraints extraOptions typ var
-    return (var, (unifyGenericVariable genericInfos, tvar))
-
   -- Build the declarations
-  (types, extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor options extraOptions dti genericVariablesAndSuffixes) (datatypeCons dti)
+  (types, (extraDeclsOrGenericInfosInitial <>) -> extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor options extraOptions dti genericVariablesAndSuffixes) (datatypeCons dti)
   typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName (datatypeName dti))
                                           $(genericVariablesListExpr True genericVariablesAndSuffixes)
                                           $(listE $ fmap return types)|]
@@ -291,7 +290,7 @@ handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci =
     interfaceName = "I" <> (lastNameComponent' $ constructorName ci)
 
     tupleEncoding = do
-      tupleType <- transformTypeFamilies extraOptions (contentsTupleTypeSubstituted genericVariables ci)
+      let tupleType = contentsTupleTypeSubstituted genericVariables ci
       lift [|TSTypeAlternatives $(TH.stringE interfaceName)
                                 $(genericVariablesListExpr True genericVariables)
                                 [getTypeScriptType (Proxy :: Proxy $(return tupleType))]|]
@@ -301,13 +300,11 @@ handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci =
                                                                     $(return members)|]
 
     getTSFields :: WriterT [ExtraDeclOrGenericInfo] Q [Exp]
-    getTSFields = forM (namesAndTypes options genericVariables ci) $ \(nameString, typ') -> do
-      typ <- transformTypeFamilies extraOptions typ'
-
+    getTSFields = forM (namesAndTypes options genericVariables ci) $ \(nameString, typ) -> do
       (fieldTyp, optAsBool) <- lift $ case typ of
-        (AppT (ConT name) (mapType genericVariables -> t)) | name == ''Maybe && not (omitNothingFields options) ->
+        (AppT (ConT name) t) | name == ''Maybe && not (omitNothingFields options) ->
           ( , ) <$> [|$(getTypeAsStringExp t) <> " | null"|] <*> getOptionalAsBoolExp t
-        _ -> ( , ) <$> getTypeAsStringExp (mapType genericVariables typ) <*> getOptionalAsBoolExp (mapType genericVariables typ')
+        _ -> ( , ) <$> getTypeAsStringExp typ <*> getOptionalAsBoolExp typ
       lift $ [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) |]
 
 transformTypeFamilies :: ExtraTypeScriptOptions -> Type -> WriterT [ExtraDeclOrGenericInfo] Q Type
