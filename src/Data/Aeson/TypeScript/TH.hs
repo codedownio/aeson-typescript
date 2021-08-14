@@ -226,11 +226,16 @@ deriveTypeScript' options name extraOptions = do
   getParentTypesExp <- listE [ [|TSType (Proxy :: Proxy $(return t))|]
                              | t <- (mconcat $ fmap constructorFields (datatypeCons datatypeInfo')) <> [x | ExtraParentType x <- extraDeclsOrGenericInfos]]
   let predicates = L.nub (constructorPreds <> constructorPreds' <> typeVariablePreds <> [x | ExtraConstraint x <- extraDeclsOrGenericInfos])
-  let inst = [mkInstance predicates (AppT (ConT ''TypeScript) (foldl AppT (ConT name) (getDataTypeVars dti))) [
+  keyTypeDecl <- case keyType extraOptions of
+    Nothing -> return []
+    Just kt -> do
+      keyTypeExp <- [|$(TH.stringE kt)|]
+      return $ [FunD 'getTypeScriptKeyType [Clause [WildP] (NormalB keyTypeExp) []]]
+  let inst = [mkInstance predicates (AppT (ConT ''TypeScript) (foldl AppT (ConT name) (getDataTypeVars dti))) ([
                  FunD 'getTypeScriptType [Clause [WildP] (NormalB getTypeScriptTypeExp) []]
                  , FunD 'getTypeScriptDeclarations [Clause [WildP] (NormalB declarationsFunctionBody) []]
                  , FunD 'getParentTypes [Clause [WildP] (NormalB getParentTypesExp) []]
-                 ]]
+                 ] <> keyTypeDecl)]
   return (mconcat [x | ExtraTopLevelDecs x <- extraDeclsOrGenericInfos] <> inst)
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
