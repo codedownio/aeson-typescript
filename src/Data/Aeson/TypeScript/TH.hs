@@ -195,10 +195,9 @@ deriveTypeScript' options name extraOptions = do
     return (var, (unifyGenericVariable genericInfos, tvar))
 
   -- Plug in generic variables and de-family-ify
-  (newConstructorInfos, extraDeclsOrGenericInfosInitial) <- runWriterT $ forM (datatypeCons datatypeInfo') $ \ci@(ConstructorInfo {..}) -> do
-    newFields <- forM constructorFields $ \t ->
-      transformTypeFamilies extraOptions $ mapType genericVariablesAndSuffixes t
-    return (ci { constructorFields = newFields })
+  (newConstructorInfos, extraDeclsOrGenericInfosInitial) <- runWriterT $ forM (datatypeCons datatypeInfo') $ \ci ->
+    ((\x -> ci { constructorFields = x }) <$>) $ forM (constructorFields ci) $
+      transformTypeFamilies extraOptions . mapType genericVariablesAndSuffixes
   let dti = datatypeInfo' { datatypeCons = newConstructorInfos }
 
   -- Build constraints: a TypeScript constraint for every constructor type and one for every type variable.
@@ -218,26 +217,22 @@ deriveTypeScript' options name extraOptions = do
   typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName (datatypeName dti))
                                           $(genericVariablesListExpr True genericVariablesAndSuffixes)
                                           $(listE $ fmap return types)|]
-  let extraDecls = [x | ExtraDecl x <- extraDeclsOrGenericInfos]
-  let extraTopLevelDecls = mconcat [x | ExtraTopLevelDecs x <- extraDeclsOrGenericInfos]
-  let predicates = L.nub (constructorPreds <> constructorPreds' <> typeVariablePreds <> [x | ExtraConstraint x <- extraDeclsOrGenericInfos])
 
-  declarationsFunctionBody <- [| $(return typeDeclaration) : $(listE (fmap return $ extraDecls)) |]
-
-  let extraParentTypes = [x | ExtraParentType x <- extraDeclsOrGenericInfos]
+  declarationsFunctionBody <- [| $(return typeDeclaration) : $(listE (fmap return [x | ExtraDecl x <- extraDeclsOrGenericInfos])) |]
 
   -- Couldn't figure out how to put the constraints for "instance TypeScript..." in the quasiquote above without
   -- introducing () when the constraints are empty, which causes "illegal tuple constraint" unless the user enables ConstraintKinds.
   -- So, just use our mkInstance function
   getTypeScriptTypeExp <- [|$(TH.stringE $ getTypeName (datatypeName dti)) <> $(getBracketsExpressionAllTypesNoSuffix genericVariablesAndSuffixes)|]
   getParentTypesExp <- listE [ [|TSType (Proxy :: Proxy $(return t))|]
-                             | t <- (mconcat $ fmap constructorFields (datatypeCons datatypeInfo')) <> extraParentTypes]
+                             | t <- (mconcat $ fmap constructorFields (datatypeCons datatypeInfo')) <> [x | ExtraParentType x <- extraDeclsOrGenericInfos]]
+  let predicates = L.nub (constructorPreds <> constructorPreds' <> typeVariablePreds <> [x | ExtraConstraint x <- extraDeclsOrGenericInfos])
   let inst = [mkInstance predicates (AppT (ConT ''TypeScript) (foldl AppT (ConT name) (getDataTypeVars dti))) [
                  FunD 'getTypeScriptType [Clause [WildP] (NormalB getTypeScriptTypeExp) []]
                  , FunD 'getTypeScriptDeclarations [Clause [WildP] (NormalB declarationsFunctionBody) []]
                  , FunD 'getParentTypes [Clause [WildP] (NormalB getParentTypesExp) []]
                  ]]
-  return (extraTopLevelDecls <> inst)
+  return (mconcat [x | ExtraTopLevelDecs x <- extraDeclsOrGenericInfos] <> inst)
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
 handleConstructor :: Options -> DatatypeInfo -> [(Name, (Suffix, Var))] -> ConstructorInfo -> WriterT [ExtraDeclOrGenericInfo] Q Exp
