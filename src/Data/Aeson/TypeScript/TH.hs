@@ -241,7 +241,7 @@ deriveTypeScript' options name extraOptions = do
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
 handleConstructor :: Options -> ExtraTypeScriptOptions -> DatatypeInfo -> [(Name, (Suffix, Var))] -> ConstructorInfo -> WriterT [ExtraDeclOrGenericInfo] Q Exp
-handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables  ci@(ConstructorInfo {}) = do
+handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables ci = do
   if | (length datatypeCons == 1) && not (getTagSingleConstructors options) -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
@@ -303,9 +303,6 @@ handleConstructor options extraOptions (DatatypeInfo {..}) genericVariables  ci@
     getTSFields :: WriterT [ExtraDeclOrGenericInfo] Q [Exp]
     getTSFields = forM (namesAndTypes options genericVariables ci) $ \(nameString, typ') -> do
       typ <- transformTypeFamilies extraOptions typ'
-      when (typ /= typ') $ do
-        let constraint = AppT (ConT ''TypeScript) typ
-        tell [ExtraConstraint constraint]
 
       (fieldTyp, optAsBool) <- lift $ case typ of
         (AppT (ConT name) (mapType genericVariables -> t)) | name == ''Maybe && not (omitNothingFields options) ->
@@ -317,7 +314,6 @@ transformTypeFamilies :: ExtraTypeScriptOptions -> Type -> WriterT [ExtraDeclOrG
 transformTypeFamilies eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ)
   | name `L.elem` typeFamiliesToMapToTypeScript = lift (reify name) >>= \case
       FamilyI (ClosedTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _) eqns) _ -> handle typeFamilyName eqns
-
 
 #if MIN_VERSION_template_haskell(2,15,0)
       FamilyI (OpenTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _)) decs -> handle typeFamilyName [eqn | TySynInstD eqn <- decs]
@@ -350,8 +346,9 @@ transformTypeFamilies eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ)
 
             tell [ExtraParentType (AppT (ConT name') (ConT ''T))]
 
-            transformTypeFamilies eo (AppT (ConT name') typ)
-
+            ret <- transformTypeFamilies eo (AppT (ConT name') typ)
+            tell [ExtraConstraint (AppT (ConT ''TypeScript) ret)]
+            return ret
 transformTypeFamilies eo (AppT typ1 typ2) = AppT <$> transformTypeFamilies eo typ1 <*> transformTypeFamilies eo typ2
 transformTypeFamilies eo (SigT typ kind) = flip SigT kind <$> transformTypeFamilies eo typ
 transformTypeFamilies eo (InfixT typ1 n typ2) = InfixT <$> transformTypeFamilies eo typ1 <*> pure n <*> transformTypeFamilies eo typ2
