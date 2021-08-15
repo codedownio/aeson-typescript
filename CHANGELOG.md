@@ -8,6 +8,7 @@
 * Encode maps as mapped types (allows you to have unions as keys)
 * Support mapping open type families to lookup types (+ progress on handling promoted types)
 * Improve propagation of T variables in declarations
+* Add support for "key types", in case you have custom implementations of FromJSONKey/ToJSONKey
 
 ## 0.3.0.1
 
