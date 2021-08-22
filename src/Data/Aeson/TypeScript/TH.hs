@@ -284,6 +284,12 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci = do
       | constructorVariant ci == NormalConstructor -> do
           encoding <- tupleEncoding
           tell [ExtraDecl encoding]
+
+#if MIN_VERSION_aeson(0,10,0)
+      | unwrapUnaryRecords options && (isSingleRecordConstructor ci) -> do
+          undefined
+#endif
+
       | otherwise -> do
           tsFields <- getTSFields
           decl <- lift $ assembleInterfaceDeclaration (ListE tsFields)
@@ -309,6 +315,8 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci = do
         _ -> ( , ) <$> getTypeAsStringExp typ <*> getOptionalAsBoolExp typ
       lift $ [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) |]
 
+    isSingleRecordConstructor (constructorVariant -> RecordConstructor [x]) = True
+    isSingleRecordConstructor _ = False
 
 -- * Convenience functions
 

@@ -18,6 +18,7 @@ import qualified UntaggedNoTagSingleConstructors
 import qualified UntaggedTagSingleConstructors
 import qualified OmitNothingFields
 import qualified NoOmitNothingFields
+import qualified UnwrapUnaryRecords
 
 
 main :: IO ()
@@ -36,4 +37,5 @@ main = hspec $ do
   UntaggedTagSingleConstructors.tests
   UntaggedNoTagSingleConstructors.tests
   OmitNothingFields.tests
-  NoOmitNothingFields.tests
+  NoOmitNothingFields.allTests
+  UnwrapUnaryRecords.allTests

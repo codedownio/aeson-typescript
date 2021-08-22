@@ -68,7 +68,6 @@ test-suite aeson-typescript-tests
       Formatting
       Generic
       HigherKind
-      LiveLogging
       NoOmitNothingFields
       ObjectWithSingleFieldNoTagSingleConstructors
       ObjectWithSingleFieldTagSingleConstructors
@@ -81,6 +80,7 @@ test-suite aeson-typescript-tests
       TwoElemArrayTagSingleConstructors
       UntaggedNoTagSingleConstructors
       UntaggedTagSingleConstructors
+      UnwrapUnaryRecords
       Util
       Data.Aeson.TypeScript.Formatting
       Data.Aeson.TypeScript.Instances

@@ -1,17 +1,17 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MonoLocalBinds #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE MonoLocalBinds #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module NoOmitNothingFields (main, tests) where
+module NoOmitNothingFields (allTests) where
 
 import Data.Aeson as A
 import Data.Aeson.TypeScript.TH
@@ -20,21 +20,24 @@ import Data.Proxy
 import Test.Hspec
 import TestBoilerplate
 
-$(testDeclarations "NoOmitNothingFields" (A.defaultOptions {omitNothingFields=False}))
+$(testDeclarations "NoOmitNothingFields" (A.defaultOptions {omitNothingFields = False}))
 
-main :: IO ()
-main = hspec $ describe "NoOmitNothingFields" $ do
+allTests :: SpecWith ()
+allTests = describe "NoOmitNothingFields" $ do
   it "encodes as expected" $ do
     let decls = getTypeScriptDeclarations (Proxy :: Proxy Optional)
 
-    decls `shouldBe` [TSInterfaceDeclaration {
-                         interfaceName = "Optional"
+    decls `shouldBe` [TSTypeAlternatives {
+                         typeName = "Optional"
+                         , typeGenericVariables = []
+                         , alternativeTypes = ["IOptional"]
+                         }
+                     , TSInterfaceDeclaration {
+                         interfaceName = "IOptional"
                          , interfaceGenericVariables = []
-                         , interfaceMembers = [
-                             TSField {fieldOptional = False
-                                     , fieldName = "optionalInt"
-                                     , fieldType = "number | null"}
-                             ]
+                         , interfaceMembers = [TSField {fieldOptional = False
+                                                       , fieldName = "optionalInt"
+                                                       , fieldType = "number | null"}]
                          }]
 
   tests
