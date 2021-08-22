@@ -15,25 +15,26 @@ module UnwrapUnaryRecords (allTests) where
 
 import Data.Aeson as A
 import Data.Aeson.TypeScript.TH
+import Data.Aeson.TypeScript.Types
 import Data.Proxy
 import Test.Hspec
 import TestBoilerplate
-import Util
 
--- Between Aeson 0.11.3.0 and 1.0.0.0, UntaggedValue was added
--- Disable these tests if it's not present
+
 #if MIN_VERSION_aeson(0,10,0)
-$(testDeclarations "UnwrapUnaryRecords" (setTagSingleConstructors $ A.defaultOptions {unwrapUnaryRecords = True}))
+$(testDeclarations "UnwrapUnaryRecords" (A.defaultOptions {unwrapUnaryRecords = True}))
 
-allTests = describe "NoOmitNothingFields" $ do
+allTests :: SpecWith ()
+allTests = describe "UnwrapUnaryRecords" $ do
   it "encodes as expected" $ do
     let decls = getTypeScriptDeclarations (Proxy :: Proxy OneField)
 
-    decls `shouldBe` []
+    decls `shouldBe` [
+      TSTypeAlternatives {typeName = "OneField", typeGenericVariables = [], alternativeTypes = ["IOneField"]}
+      ,TSTypeAlternatives {typeName = "IOneField", typeGenericVariables = [], alternativeTypes = ["string"]}
+      ]
 
   tests
-
-
 #else
 tests :: SpecWith ()
 tests = describe "UnwrapUnaryRecords" $ it "tests are disabled for this Aeson version" $ 2 `shouldBe` 2
@@ -41,5 +42,5 @@ tests = describe "UnwrapUnaryRecords" $ it "tests are disabled for this Aeson ve
 allTests = tests
 #endif
 
-main :: IO ()
-main = hspec allTests
+-- main :: IO ()
+-- main = hspec allTests

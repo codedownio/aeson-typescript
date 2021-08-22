@@ -287,7 +287,14 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci = do
 
 #if MIN_VERSION_aeson(0,10,0)
       | unwrapUnaryRecords options && (isSingleRecordConstructor ci) -> do
-          undefined
+          let [typ] = constructorFields ci
+          stringExp <- lift $ case typ of
+            (AppT (ConT name) t) | name == ''Maybe && not (omitNothingFields options) -> [|$(getTypeAsStringExp t) <> " | null"|]
+            _ -> getTypeAsStringExp typ
+          alternatives <- lift [|TSTypeAlternatives $(TH.stringE interfaceName)
+                                                    $(genericVariablesListExpr True genericVariables)
+                                                    [$(return stringExp)]|]
+          tell [ExtraDecl alternatives]
 #endif
 
       | otherwise -> do
