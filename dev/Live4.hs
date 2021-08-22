@@ -25,7 +25,7 @@ type instance DeployEnvironment2 SingleNodeEnvironment = SingleDE
 type instance DeployEnvironment2 K8SEnvironment = K8SDE
 type instance DeployEnvironment2 T = ()
 newtype Simple env = Simple (DeployEnvironment2 env)
-$(deriveTypeScript' A.defaultOptions ''Simple (ExtraTypeScriptOptions [''DeployEnvironment2]))
+$(deriveTypeScript' A.defaultOptions ''Simple (defaultExtraTypeScriptOptions { typeFamiliesToMapToTypeScript = [''DeployEnvironment2] }))
 
 main :: IO ()
 main = getTypeScriptDeclarationsRecursively (Proxy @(Simple T))

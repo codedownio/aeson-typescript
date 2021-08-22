@@ -69,7 +69,7 @@ data Complex3 k = Complex3 {
   } deriving (Show)
 
 
-deriveTypeScript' A.defaultOptions ''UserT (ExtraTypeScriptOptions [''DeployEnvironment])
+deriveTypeScript' A.defaultOptions ''UserT (defaultExtraTypeScriptOptions { typeFamiliesToMapToTypeScript = [''DeployEnvironment] })
 
 main :: IO ()
 main = getTypeScriptDeclarationsRecursively (Proxy :: Proxy (UserT T Identity))

@@ -38,14 +38,14 @@ data UserT env f = User {
   , _userCreatedAt  :: Columnar f Int
   , _userDeployEnvironment  :: Columnar f (DeployEnvironment env)
   }
-$(deriveTypeScript' A.defaultOptions ''UserT (ExtraTypeScriptOptions [''DeployEnvironment]))
+$(deriveTypeScript' A.defaultOptions ''UserT (defaultExtraTypeScriptOptions { typeFamiliesToMapToTypeScript = [''DeployEnvironment] }))
 
 type family DeployEnvironment2 env = result | result -> env where
   DeployEnvironment2 SingleNodeEnvironment = SingleDE
   DeployEnvironment2 K8SEnvironment = K8SDE
   DeployEnvironment2 T = ()
 newtype Simple env = Simple (DeployEnvironment2 env)
-$(deriveTypeScript' A.defaultOptions ''Simple (ExtraTypeScriptOptions [''DeployEnvironment2]))
+$(deriveTypeScript' A.defaultOptions ''Simple (defaultExtraTypeScriptOptions { typeFamiliesToMapToTypeScript = [''DeployEnvironment2] }))
 
 tests :: SpecWith ()
 tests = describe "Type families" $ do
