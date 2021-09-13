@@ -1,6 +1,6 @@
 # Change log
 
-## 0.4.0.0
+## 0.4.0.0 (unreleased)
 
 * Add new built-in instances (Word8, Int32, Int64, Map, HashSet)
 * Export TSField in the Internal module
@@ -9,6 +9,7 @@
 * Support mapping open type families to lookup types (+ progress on handling promoted types)
 * Improve propagation of T variables in declarations
 * Add support for "key types", in case you have custom implementations of FromJSONKey/ToJSONKey
+* Add ability to recursively derive missing instances (fragile)
 
 ## 0.3.0.1
 
