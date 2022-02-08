@@ -48,7 +48,7 @@ newtype Simple env = Simple (DeployEnvironment2 env)
 $(deriveTypeScript' A.defaultOptions ''Simple (defaultExtraTypeScriptOptions { typeFamiliesToMapToTypeScript = [''DeployEnvironment2] }))
 
 tests :: SpecWith ()
-tests = describe "Type families" $ do
+tests = describe "Open type families" $ do
   describe "simple newtype" $ do
     it [i|makes the declaration and types correctly|] $ do
       (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (Simple T))) `shouldBe` ([

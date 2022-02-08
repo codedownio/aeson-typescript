@@ -1,6 +1,5 @@
 
-resolver: lts-18.3
-compiler: ghc-8.10.5
+resolver: nightly-2022-01-15
 
 packages:
 - .

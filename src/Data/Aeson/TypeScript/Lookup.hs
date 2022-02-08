@@ -18,6 +18,8 @@ module Data.Aeson.TypeScript.Lookup where
 import Control.Monad
 import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Types
+import Data.Function
+import qualified Data.List as L
 import Data.Proxy
 import Data.String.Interpolate
 import Language.Haskell.TH hiding (stringE)
@@ -53,7 +55,7 @@ getClosedTypeFamilyInterfaceDecl name eqns = do
 #endif
     x -> fail [i|aeson-typescript doesn't know yet how to handle this type family equation: '#{x}'|]
 
-  [| TSInterfaceDeclaration $(TH.stringE $ nameBase name) [] $(listE $ fmap return fields) |]
+  [| TSInterfaceDeclaration $(TH.stringE $ nameBase name) [] (L.sortBy (compare `on` fieldName) $(listE $ fmap return fields)) |]
 
 getClosedTypeFamilyImage :: [TySynEqn] -> Q [Type]
 getClosedTypeFamilyImage eqns = do

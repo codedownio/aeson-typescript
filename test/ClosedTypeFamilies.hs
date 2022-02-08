@@ -48,13 +48,13 @@ newtype Simple env = Simple (DeployEnvironment2 env)
 $(deriveTypeScript' A.defaultOptions ''Simple (defaultExtraTypeScriptOptions { typeFamiliesToMapToTypeScript = [''DeployEnvironment2] }))
 
 tests :: SpecWith ()
-tests = describe "Type families" $ do
+tests = describe "Closed type families" $ do
   describe "simple newtype" $ do
     it [i|makes the declaration and types correctly|] $ do
       (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (Simple T))) `shouldBe` ([
         TSInterfaceDeclaration "DeployEnvironment2" [] [
-          TSField False "\"single_node_env\"" "\"single\""
-          , TSField False "\"k8s_env\"" "\"k8s\""
+          TSField False "\"k8s_env\"" "\"k8s\""
+          , TSField False "\"single_node_env\"" "\"single\""
           , TSField False "T" "void"
           ]
         , TSTypeAlternatives "ISimple" ["T extends keyof DeployEnvironment2"] ["DeployEnvironment2[T]"]
@@ -75,8 +75,8 @@ tests = describe "Type families" $ do
     it [i|get the declarations recursively|] $ do
       (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (UserT T Identity))) `shouldBe` ([
         TSInterfaceDeclaration "DeployEnvironment" [] [
-          TSField False "\"single_node_env\"" "\"single\""
-          , TSField False "\"k8s_env\"" "\"k8s\""
+          TSField False "\"k8s_env\"" "\"k8s\""
+          , TSField False "\"single_node_env\"" "\"single\""
           , TSField False "T" "void"
           ]
         , TSInterfaceDeclaration "IUser" ["T extends keyof DeployEnvironment"] [
