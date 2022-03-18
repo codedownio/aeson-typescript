@@ -5,7 +5,7 @@ license:             BSD3
 category:            Text, Web, JSON
 author:              "Tom McLaughlin"
 maintainer:          "tom@codedown.io"
-copyright:           "2021 CodeDown"
+copyright:           "2022 CodeDown"
 
 extra-source-files:
 - README.md

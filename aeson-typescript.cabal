@@ -13,7 +13,7 @@ homepage:       https://github.com/codedownio/aeson-typescript#readme
 bug-reports:    https://github.com/codedownio/aeson-typescript/issues
 author:         Tom McLaughlin
 maintainer:     tom@codedown.io
-copyright:      2021 CodeDown
+copyright:      2022 CodeDown
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple

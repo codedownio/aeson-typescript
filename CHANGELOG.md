@@ -1,6 +1,6 @@
 # Change log
 
-## 0.4.0.0 (unreleased)
+## 0.4.0.0
 
 * Add new built-in instances (Word8, Int32, Int64, Map, HashSet)
 * Export TSField in the Internal module
