@@ -53,6 +53,9 @@ instance TypeScript Bool where
 instance TypeScript Int where
   getTypeScriptType _ = "number"
 
+instance TypeScript Int16 where
+  getTypeScriptType _ = "number"
+
 instance TypeScript Int32 where
   getTypeScriptType _ = "number"
 
