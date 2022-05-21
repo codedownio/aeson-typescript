@@ -1,4 +1,12 @@
-{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, ExistentialQuantification, FlexibleInstances, OverlappingInstances, CPP #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverlappingInstances #-}
+{-# LANGUAGE CPP #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- Note: the OverlappingInstances pragma is only here so the overlapping instances in this file
@@ -23,6 +31,10 @@ import GHC.Int
 
 #if !MIN_VERSION_base(4,11,0)
 import Data.Monoid
+#endif
+
+#if MIN_VERSION_aeson(2,0,0)
+import qualified Data.Aeson.KeyMap as A
 #endif
 
 
@@ -121,6 +133,12 @@ instance (TypeScript a, TypeScript b) => TypeScript (Map a b) where
 instance (TypeScript a, TypeScript b) => TypeScript (HashMap a b) where
   getTypeScriptType _ = [i|{[k in #{getTypeScriptKeyType (Proxy :: Proxy a)}]?: #{getTypeScriptType (Proxy :: Proxy b)}}|]
   getParentTypes _ = L.nub [TSType (Proxy :: Proxy a), TSType (Proxy :: Proxy b)]
+
+#if MIN_VERSION_aeson(2,0,0)
+instance (TypeScript a) => TypeScript (A.KeyMap a) where
+  getTypeScriptType _ = [i|{[k]?: #{getTypeScriptType (Proxy :: Proxy a)}}|]
+  getParentTypes _ = L.nub [TSType (Proxy :: Proxy a)]
+#endif
 
 instance (TypeScript a) => TypeScript (Set a) where
   getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a) <> "[]";

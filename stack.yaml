@@ -1,5 +1,7 @@
 
-resolver: nightly-2022-01-15
+resolver: lts-19.7
+# resolver: nightly-2022-02-07
+# resolver: nightly-2022-01-15
 
 packages:
 - .
