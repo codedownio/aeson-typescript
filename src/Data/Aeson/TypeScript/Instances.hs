@@ -17,9 +17,14 @@ module Data.Aeson.TypeScript.Instances where
 import qualified Data.Aeson as A
 import Data.Aeson.TypeScript.Types
 import Data.Data
+import Data.Functor.Compose (Compose)
+import Data.Functor.Const (Const)
+import Data.Functor.Identity (Identity)
+import Data.Functor.Product (Product)
 import Data.HashMap.Strict
 import Data.HashSet
 import qualified Data.List as L
+import Data.List.NonEmpty (NonEmpty)
 import Data.Map.Strict
 import Data.Set
 import Data.String.Interpolate
@@ -27,6 +32,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Data.Void
 import Data.Word
+import Numeric.Natural (Natural)
 import GHC.Int
 
 #if !MIN_VERSION_base(4,11,0)
@@ -53,6 +59,9 @@ instance TypeScript TL.Text where
 instance TypeScript Integer where
   getTypeScriptType _ = "number"
 
+instance TypeScript Natural where
+  getTypeScriptType _ = "number"
+
 instance TypeScript Float where
   getTypeScriptType _ = "number"
 
@@ -77,11 +86,27 @@ instance TypeScript Int64 where
 instance TypeScript Char where
   getTypeScriptType _ = "string"
 
+instance TypeScript Word where
+  getTypeScriptType _ = "number"
+
 instance TypeScript Word8 where
+  getTypeScriptType _ = "number"
+
+instance TypeScript Word16 where
+  getTypeScriptType _ = "number"
+
+instance TypeScript Word32 where
+  getTypeScriptType _ = "number"
+
+instance TypeScript Word64 where
   getTypeScriptType _ = "number"
 
 instance {-# OVERLAPPABLE #-} (TypeScript a) => TypeScript [a] where
   getTypeScriptType _ = (getTypeScriptType (Proxy :: Proxy a)) ++ "[]"
+  getParentTypes _ = [TSType (Proxy :: Proxy a)]
+
+instance (TypeScript a) => TypeScript (NonEmpty a) where
+  getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy [a])
   getParentTypes _ = [TSType (Proxy :: Proxy a)]
 
 instance {-# OVERLAPPING #-} TypeScript [Char] where
@@ -116,6 +141,24 @@ instance (TypeScript a, TypeScript b, TypeScript c, TypeScript d) => TypeScript 
                            , (TSType (Proxy :: Proxy b))
                            , (TSType (Proxy :: Proxy c))
                            , (TSType (Proxy :: Proxy d))
+                           ]
+
+instance (TypeScript a) => TypeScript (Const a) where
+  getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
+  getParentTypes _ = [TSType (Proxy :: Proxy a)]
+
+instance (TypeScript a) => TypeScript (Identity a) where
+  getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
+  getParentTypes _ = [TSType (Proxy :: Proxy a)]
+
+instance (Typeable f, Typeable g, Typeable a, TypeScript (f (g a)), TypeScript a) => TypeScript (Compose f g a) where
+  getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy (f (g a)))
+  getParentTypes _ = getParentTypes (Proxy :: Proxy (f (g a)))
+
+instance (Typeable f, Typeable g, Typeable a, TypeScript (f a), TypeScript (g a)) => TypeScript (Product f g a) where
+  getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy (f a, g a))
+  getParentTypes _ = L.nub [ (TSType (Proxy :: Proxy (f a)))
+                           , (TSType (Proxy :: Proxy (g a)))
                            ]
 
 instance (TypeScript a) => TypeScript (Maybe a) where
