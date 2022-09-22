@@ -133,6 +133,7 @@ module Data.Aeson.TypeScript.TH (
   -- * Advanced options
   , defaultExtraTypeScriptOptions
   , keyType
+  , omitFields
   , typeFamiliesToMapToTypeScript
   , ExtraTypeScriptOptions
 
