@@ -179,10 +179,11 @@ allStarConstructors'' = ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "
 data ExtraTypeScriptOptions = ExtraTypeScriptOptions {
   typeFamiliesToMapToTypeScript :: [Name]
   , keyType :: Maybe String
+  , omitFields :: [String]
   }
 
 defaultExtraTypeScriptOptions :: ExtraTypeScriptOptions
-defaultExtraTypeScriptOptions = ExtraTypeScriptOptions [] Nothing
+defaultExtraTypeScriptOptions = ExtraTypeScriptOptions [] Nothing []
 
 data ExtraDeclOrGenericInfo = ExtraDecl Exp
                             | ExtraGeneric GenericInfo

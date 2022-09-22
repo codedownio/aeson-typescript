@@ -194,7 +194,7 @@ deriveTypeScript' options name extraOptions = do
         xs -> zip xs allStarConstructors''
   genericVariablesAndSuffixes <- forM varsAndTVars $ \(var, tvar) -> do
     (_, genericInfos) <- runWriterT $ forM_ (datatypeCons datatypeInfo') $ \ci ->
-      forM_ (namesAndTypes options [] ci) $ \(_, typ) -> do
+      forM_ (namesAndTypes extraOptions options [] ci) $ \(_, typ) -> do
         searchForConstraints extraOptions typ var
     return (var, (unifyGenericVariable genericInfos, tvar))
 
@@ -216,7 +216,7 @@ deriveTypeScript' options name extraOptions = do
   let typeVariablePreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- getDataTypeVars dti]
 
   -- Build the declarations
-  (types, (extraDeclsOrGenericInfosInitial <>) -> extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor options dti genericVariablesAndSuffixes) (datatypeCons dti)
+  (types, (extraDeclsOrGenericInfosInitial <>) -> extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor extraOptions options dti genericVariablesAndSuffixes) (datatypeCons dti)
   typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName (datatypeName dti))
                                           $(genericVariablesListExpr True genericVariablesAndSuffixes)
                                           $(listE $ fmap return types)|]
@@ -243,8 +243,8 @@ deriveTypeScript' options name extraOptions = do
   return (mconcat [x | ExtraTopLevelDecs x <- extraDeclsOrGenericInfos] <> inst)
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
-handleConstructor :: Options -> DatatypeInfo -> [(Name, (Suffix, Var))] -> ConstructorInfo -> WriterT [ExtraDeclOrGenericInfo] Q Exp
-handleConstructor options (DatatypeInfo {..}) genericVariables ci = do
+handleConstructor :: ExtraTypeScriptOptions -> Options -> DatatypeInfo -> [(Name, (Suffix, Var))] -> ConstructorInfo -> WriterT [ExtraDeclOrGenericInfo] Q Exp
+handleConstructor extraOptions options (DatatypeInfo {..}) genericVariables ci = do
   if | (length datatypeCons == 1) && not (getTagSingleConstructors options) -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
@@ -316,7 +316,7 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci = do
                                                                     $(return members)|]
 
     getTSFields :: WriterT [ExtraDeclOrGenericInfo] Q [Exp]
-    getTSFields = forM (namesAndTypes options genericVariables ci) $ \(nameString, typ) -> do
+    getTSFields = forM (namesAndTypes extraOptions options genericVariables ci) $ \(nameString, typ) -> do
       (fieldTyp, optAsBool) <- lift $ case typ of
         (AppT (ConT name) t) | name == ''Maybe && not (omitNothingFields options) ->
           ( , ) <$> [|$(getTypeAsStringExp t) <> " | null"|] <*> getOptionalAsBoolExp t

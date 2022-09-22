@@ -16,6 +16,7 @@ import qualified TwoElemArrayNoTagSingleConstructors
 import qualified TwoElemArrayTagSingleConstructors
 import qualified UntaggedNoTagSingleConstructors
 import qualified UntaggedTagSingleConstructors
+import qualified OmitFields
 import qualified OmitNothingFields
 import qualified NoOmitNothingFields
 import qualified UnwrapUnaryRecords
@@ -36,6 +37,7 @@ main = hspec $ do
   TwoElemArrayNoTagSingleConstructors.tests
   UntaggedTagSingleConstructors.tests
   UntaggedNoTagSingleConstructors.tests
+  OmitFields.allTests
   OmitNothingFields.tests
   NoOmitNothingFields.allTests
   UnwrapUnaryRecords.allTests
