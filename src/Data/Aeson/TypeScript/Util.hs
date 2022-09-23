@@ -150,8 +150,9 @@ mkInstance = InstanceD
 
 namesAndTypes :: ExtraTypeScriptOptions -> Options -> [(Name, (Suffix, Var))] -> ConstructorInfo -> [(String, Type)]
 namesAndTypes extraOptions options genericVariables ci = case constructorVariant ci of
-  RecordConstructor names -> let indiciesToDrop = foldr (\(i, recordFieldName) skipped -> if recordFieldName `elem` omitFields extraOptions then i:skipped else skipped) [] $ zip [(0 :: Int)..] $ fmap lastNameComponent' names
-                             in dropIndicies indiciesToDrop $ zip (fmap ((fieldLabelModifier options) . lastNameComponent') names) (constructorFields ci)
+  RecordConstructor names -> fmap (\(recordFieldName, t) -> (fieldLabelModifier options recordFieldName, t)) 
+                               $ filter (\(recordFieldName, _) -> recordFieldName `notElem` omitFields extraOptions) 
+                               $ zip (fmap lastNameComponent' names) (constructorFields ci)                         
   _ -> case sumEncoding options of
     TaggedObject _ contentsFieldName
       | isConstructorNullary ci -> []
