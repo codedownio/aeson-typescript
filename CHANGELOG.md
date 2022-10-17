@@ -1,5 +1,10 @@
 # Change log
 
+## 0.4.1.0
+
+* Add TypeScript Int16
+* Add TypeScript (A.KeyMap a) instance for aeson 2
+
 ## 0.4.0.0
 
 * Add new built-in instances (Word8, Int32, Int64, Map, HashSet)
