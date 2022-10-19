@@ -22,9 +22,11 @@ import Data.Functor.Identity
 import Data.Kind
 import Data.Proxy
 import Data.String.Interpolate
+import qualified Data.Vector as V
 import Language.Haskell.TH hiding (Type)
 import Test.Hspec
 import Util
+import Util.Aeson
 
 data Unit = Unit
 data OneFieldRecordless = OneFieldRecordless Int
@@ -35,6 +37,7 @@ data Hybrid = HybridSimple Int | HybridRecord { hybridString :: String }
 data TwoConstructor = Con1 { con1String :: String } | Con2 { con2String :: String, con2Int :: Int }
 data Complex a = Nullary | Unary Int | Product String Char a | Record { testOne :: Int, testTwo :: Bool, testThree :: Complex a} deriving Eq
 data Optional = Optional {optionalInt :: Maybe Int}
+data AesonTypes = AesonTypes { aesonValue :: A.Value, aesonObject :: A.Object }
 
 -- * For testing type families
 
@@ -74,6 +77,7 @@ testDeclarations testName aesonOptions = do
     deriveInstances ''TwoConstructor
     deriveInstances ''Complex
     deriveInstances ''Optional
+    deriveInstances ''AesonTypes
 
   typesAndValues :: Exp <- [e|[(getTypeScriptType (Proxy :: Proxy Unit), A.encode Unit)
 
@@ -95,9 +99,15 @@ testDeclarations testName aesonOptions = do
                               , (getTypeScriptType (Proxy :: Proxy (Complex Int)), A.encode (Unary 42 :: Complex Int))
                               , (getTypeScriptType (Proxy :: Proxy (Complex Int)), A.encode (Product "asdf" 'g' 42 :: Complex Int))
                               , (getTypeScriptType (Proxy :: Proxy (Complex Int)), A.encode ((Record { testOne = 3, testTwo = True, testThree = Product "test" 'A' 123}) :: Complex Int))
+
                               , (getTypeScriptType (Proxy :: Proxy Optional), A.encode (Optional { optionalInt = Nothing }))
-                              , (getTypeScriptType (Proxy :: Proxy Optional), A.encode (Optional { optionalInt = Just 1 }))]
-                           |]
+                              , (getTypeScriptType (Proxy :: Proxy Optional), A.encode (Optional { optionalInt = Just 1 }))
+
+                              , (getTypeScriptType (Proxy :: Proxy Optional), A.encode (AesonTypes {
+                                                                                           aesonValue = A.object [("foo" :: A.Key, A.Number 42)]
+                                                                                           , aesonObject = aesonFromList [("foo", A.Number 42)]
+                                                                                           }))
+                              ]|]
 
   declarations :: Exp <- [e|getTypeScriptDeclarations (Proxy :: Proxy Unit)
                          <> getTypeScriptDeclarations (Proxy :: Proxy OneFieldRecordless)
@@ -108,6 +118,7 @@ testDeclarations testName aesonOptions = do
                          <> getTypeScriptDeclarations (Proxy :: Proxy TwoConstructor)
                          <> getTypeScriptDeclarations (Proxy :: Proxy (Complex T))
                          <> getTypeScriptDeclarations (Proxy :: Proxy Optional)
+                         <> getTypeScriptDeclarations (Proxy :: Proxy AesonTypes)
                          |]
 
   tests <- [d|tests :: SpecWith ()

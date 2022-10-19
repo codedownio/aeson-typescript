@@ -83,6 +83,7 @@ test-suite aeson-typescript-tests
       UntaggedTagSingleConstructors
       UnwrapUnaryRecords
       Util
+      Util.Aeson
       Data.Aeson.TypeScript.Formatting
       Data.Aeson.TypeScript.Instances
       Data.Aeson.TypeScript.Internal
@@ -123,4 +124,5 @@ test-suite aeson-typescript-tests
     , th-abstraction
     , transformers
     , unordered-containers
+    , vector
   default-language: Haskell2010
