@@ -136,7 +136,7 @@ instance (TypeScript a, TypeScript b) => TypeScript (HashMap a b) where
 
 #if MIN_VERSION_aeson(2,0,0)
 instance (TypeScript a) => TypeScript (A.KeyMap a) where
-  getTypeScriptType _ = [i|{[k]?: #{getTypeScriptType (Proxy :: Proxy a)}}|]
+  getTypeScriptType _ = [i|{[k: string]: #{getTypeScriptType (Proxy :: Proxy a)}}|]
   getParentTypes _ = L.nub [TSType (Proxy :: Proxy a)]
 #endif
 
