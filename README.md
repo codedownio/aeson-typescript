@@ -29,7 +29,7 @@ $(deriveTypeScript (defaultOptions {fieldLabelModifier = drop 4, constructorTagM
 Now we can use the newly created instances.
 
 ```haskell
->>> putStrLn $ formatTSDeclarations $ getTypeScriptDeclaration (Proxy :: Proxy (D T))
+>>> putStrLn $ formatTSDeclarations $ getTypeScriptDeclarations (Proxy :: Proxy (D T))
 
 type D<T> = "nullary" | IUnary<T> | IProduct<T> | IRecord<T>;
 
