@@ -94,17 +94,10 @@ test-suite aeson-typescript-tests
       Data.Aeson.TypeScript.TypeManipulation
       Data.Aeson.TypeScript.Types
       Data.Aeson.TypeScript.Util
-      Live
-      Live2
-      Live3
-      Live4
-      Live5
-      Live6
       Paths_aeson_typescript
   hs-source-dirs:
       test
       src
-      dev
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
