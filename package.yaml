@@ -64,4 +64,3 @@ tests:
     - hspec
     - process
     - temporary
-    - vector

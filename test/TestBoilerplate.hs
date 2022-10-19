@@ -22,7 +22,6 @@ import Data.Functor.Identity
 import Data.Kind
 import Data.Proxy
 import Data.String.Interpolate
-import qualified Data.Vector as V
 import Language.Haskell.TH hiding (Type)
 import Test.Hspec
 import Util
@@ -103,10 +102,10 @@ testDeclarations testName aesonOptions = do
                               , (getTypeScriptType (Proxy :: Proxy Optional), A.encode (Optional { optionalInt = Nothing }))
                               , (getTypeScriptType (Proxy :: Proxy Optional), A.encode (Optional { optionalInt = Just 1 }))
 
-                              , (getTypeScriptType (Proxy :: Proxy Optional), A.encode (AesonTypes {
-                                                                                           aesonValue = A.object [("foo" :: A.Key, A.Number 42)]
-                                                                                           , aesonObject = aesonFromList [("foo", A.Number 42)]
-                                                                                           }))
+                              , (getTypeScriptType (Proxy :: Proxy AesonTypes), A.encode (AesonTypes {
+                                                                                             aesonValue = A.object [("foo" :: A.Key, A.Number 42)]
+                                                                                             , aesonObject = aesonFromList [("foo", A.Number 42)]
+                                                                                             }))
                               ]|]
 
   declarations :: Exp <- [e|getTypeScriptDeclarations (Proxy :: Proxy Unit)
