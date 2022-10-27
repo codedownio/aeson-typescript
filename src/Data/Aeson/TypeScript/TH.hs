@@ -172,6 +172,51 @@ import qualified Language.Haskell.TH.Lib as TH
 import Data.Monoid
 #endif
 
+-- according to https://stackoverflow.com/questions/1661197/what-characters-are-valid-for-javascript-variable-names
+checkIllegalName :: Name -> Q ()
+checkIllegalName name = do
+  let
+    nameStr =
+      show name
+    legalFirstCategories =
+      Set.fromList
+        [ UppercaseLetter
+        , LowercaseLetter
+        , TitlecaseLetter
+        , ModifierLetter
+        , OtherLetter
+        , LetterNumber
+        ]
+    legalRestCategories =
+      Set.fromList
+        [ NonSpacingMark
+        , SpaceCombiningMark
+        , DecimalNumber
+        , ConnectorPunctation
+        ]
+        `Set.union` legalFirstCategories
+    isLegalFirstChar c =
+      c `elem` ['$', '_'] || generalCategory c `Set.elem` legalFirstCategories
+    isLegalRestChar c =
+      generalCategory c `Set.elem` legalRestCategories
+  (firstChar, restChars) <-
+    case uncons nameStr of
+      Just a -> pure a
+      Nothing -> fail "Somehow got an empty name while deriving typescript"
+
+  unless (isLegalFirstChar firstChar) $ do
+    reportError $ mconcat
+      [ "The name ", show name, "has an illegal character: ", show char
+      ]
+
+
+  for restChars $ \char -> do
+    unless (isLegalRestChar char) $ do
+      reportError $ mconcat
+        [ "The name ", show name, "has an illegal character: ", show char
+        ]
+
+
 -- | Generates a 'TypeScript' instance declaration for the given data type.
 deriveTypeScript' :: Options
                   -- ^ Encoding options.
@@ -182,6 +227,7 @@ deriveTypeScript' :: Options
                   -> Q [Dec]
 deriveTypeScript' options name extraOptions = do
   datatypeInfo' <- reifyDatatype name
+
   assertExtensionsTurnedOn datatypeInfo'
 
   -- Figure out what the generic variables are
