@@ -36,6 +36,7 @@ library
       Data.Aeson.TypeScript.TH
       Data.Aeson.TypeScript.Internal
       Data.Aeson.TypeScript.Recursive
+      Data.Aeson.TypeScript.LegalName
   other-modules:
       Data.Aeson.TypeScript.Formatting
       Data.Aeson.TypeScript.Instances
@@ -66,6 +67,7 @@ test-suite aeson-typescript-tests
   other-modules:
       Basic
       ClosedTypeFamilies
+      Data.Aeson.TypeScript.LegalNameSpec
       Formatting
       Generic
       HigherKind
@@ -87,6 +89,7 @@ test-suite aeson-typescript-tests
       Data.Aeson.TypeScript.Formatting
       Data.Aeson.TypeScript.Instances
       Data.Aeson.TypeScript.Internal
+      Data.Aeson.TypeScript.LegalName
       Data.Aeson.TypeScript.Lookup
       Data.Aeson.TypeScript.Recursive
       Data.Aeson.TypeScript.TH

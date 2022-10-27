@@ -19,14 +19,16 @@ import qualified UntaggedTagSingleConstructors
 import qualified OmitNothingFields
 import qualified NoOmitNothingFields
 import qualified UnwrapUnaryRecords
+import qualified Data.Aeson.TypeScript.LegalNameSpec as LegalNameSpec
 
 
 main :: IO ()
-main = hspec $ do
+main = hspec $ parallel $ do
   Formatting.tests
   Generic.tests
   HigherKind.tests
   ClosedTypeFamilies.tests
+  LegalNameSpec.tests
 
   ObjectWithSingleFieldTagSingleConstructors.tests
   ObjectWithSingleFieldNoTagSingleConstructors.tests

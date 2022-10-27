@@ -9,11 +9,13 @@
 
 module Data.Aeson.TypeScript.Types where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Aeson as A
 import Data.Proxy
 import Data.String
 import Data.Typeable
 import Language.Haskell.TH
+import Data.Aeson.TypeScript.LegalName
 
 -- | The typeclass that defines how a type is turned into TypeScript.
 --
@@ -131,11 +133,29 @@ data SumTypeFormat =
 defaultFormattingOptions :: FormattingOptions
 defaultFormattingOptions = FormattingOptions
   { numIndentSpaces = 2
-  , interfaceNameModifier = id
-  , typeNameModifier = id
+  , interfaceNameModifier = defaultNameFormatter
+  , typeNameModifier = defaultNameFormatter
   , exportMode = ExportNone
   , typeAlternativesFormat = TypeAlias
   }
+
+-- | The 'defaultNameFormatter' in the 'FormattingOptions' checks to see if
+-- the name is a legal TypeScript name. If it is not, then it throws
+-- a runtime error.
+defaultNameFormatter :: String -> String
+defaultNameFormatter str =
+  case NonEmpty.nonEmpty str of
+    Nothing ->
+      error "Name cannot be empty"
+    Just nameChars ->
+      case checkIllegalNameChars nameChars of
+        Just badChars ->
+          error $ concat
+            [ "The name ", str, " contains illegal characters: ", NonEmpty.toList badChars
+            , "\nConsider setting a default name formatter that replaces these characters, or renaming the type."
+            ]
+        Nothing ->
+          str
 
 -- | Convenience typeclass class you can use to "attach" a set of Aeson encoding options to a type.
 class HasJSONOptions a where

@@ -43,6 +43,7 @@ library:
     - Data.Aeson.TypeScript.TH
     - Data.Aeson.TypeScript.Internal
     - Data.Aeson.TypeScript.Recursive
+    - Data.Aeson.TypeScript.LegalName
 
 tests:
   aeson-typescript-tests:

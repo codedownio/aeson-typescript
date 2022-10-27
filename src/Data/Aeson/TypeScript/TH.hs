@@ -127,6 +127,7 @@ module Data.Aeson.TypeScript.TH (
   , formatTSDeclaration
   , FormattingOptions(..)
   , defaultFormattingOptions
+  , defaultNameFormatter
   , SumTypeFormat(..)
   , ExportMode(..)
 
