@@ -167,6 +167,8 @@ import Data.String.Interpolate
 import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
 import qualified Language.Haskell.TH.Lib as TH
+import qualified Data.Set as Set
+import Data.Char (GeneralCategory(..), generalCategory)
 
 #if !MIN_VERSION_base(4,11,0)
 import Data.Monoid
@@ -190,27 +192,26 @@ checkIllegalName name = do
     legalRestCategories =
       Set.fromList
         [ NonSpacingMark
-        , SpaceCombiningMark
+        , SpacingCombiningMark
         , DecimalNumber
-        , ConnectorPunctation
+        , ConnectorPunctuation
         ]
         `Set.union` legalFirstCategories
     isLegalFirstChar c =
-      c `elem` ['$', '_'] || generalCategory c `Set.elem` legalFirstCategories
+      c `elem` ['$', '_'] || generalCategory c `Set.member` legalFirstCategories
     isLegalRestChar c =
-      generalCategory c `Set.elem` legalRestCategories
+      generalCategory c `Set.member` legalRestCategories
   (firstChar, restChars) <-
-    case uncons nameStr of
+    case L.uncons nameStr of
       Just a -> pure a
       Nothing -> fail "Somehow got an empty name while deriving typescript"
 
   unless (isLegalFirstChar firstChar) $ do
     reportError $ mconcat
-      [ "The name ", show name, "has an illegal character: ", show char
+      [ "The name ", show name, "has an illegal character: ", show firstChar
       ]
 
-
-  for restChars $ \char -> do
+  forM_ restChars $ \char -> do
     unless (isLegalRestChar char) $ do
       reportError $ mconcat
         [ "The name ", show name, "has an illegal character: ", show char
