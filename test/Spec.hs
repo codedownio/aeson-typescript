@@ -19,10 +19,12 @@ import qualified UntaggedTagSingleConstructors
 import qualified OmitNothingFields
 import qualified NoOmitNothingFields
 import qualified UnwrapUnaryRecords
+import qualified Util
 
 
 main :: IO ()
 main = hspec $ do
+  Util.utilTests
   Formatting.tests
   Generic.tests
   HigherKind.tests

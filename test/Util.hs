@@ -15,6 +15,27 @@ import System.Exit
 import System.FilePath
 import System.IO.Temp
 import System.Process
+import Test.Hspec
+import Data.List.NonEmpty (NonEmpty (..))
+import Data.Aeson.TypeScript.Util
+
+utilTests :: Spec
+utilTests = describe "Data.Aeson.TypeScript.Util" $ do
+  describe "checkIllegalNameString" $ do
+    describe "legal Haskell names" $ do
+      it "allows an uppercase letter" $ do
+        checkIllegalNameString ('A' :| [])
+          `shouldBe` Nothing
+      it "allows an underscore" $ do
+        checkIllegalNameString ('_' :| "asdf")
+          `shouldBe` Nothing
+      it "reports that ' is illegal" $ do
+        checkIllegalNameString ('F' :| "oo'")
+          `shouldBe` Just ('\'' :| [])
+    describe "illegal Haskell names" $ do
+      it "allows a $" $ do
+        checkIllegalNameString ('$' :| "asdf")
+          `shouldBe` Nothing
 
 npmInstallScript, yarnInstallScript, localTSC :: String
 npmInstallScript = "test/assets/npm_install.sh"

@@ -167,56 +167,10 @@ import Data.String.Interpolate
 import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
 import qualified Language.Haskell.TH.Lib as TH
-import qualified Data.Set as Set
-import Data.Char (GeneralCategory(..), generalCategory)
 
 #if !MIN_VERSION_base(4,11,0)
 import Data.Monoid
 #endif
-
--- according to https://stackoverflow.com/questions/1661197/what-characters-are-valid-for-javascript-variable-names
-checkIllegalName :: Name -> Q ()
-checkIllegalName name = do
-  let
-    nameStr =
-      show name
-    legalFirstCategories =
-      Set.fromList
-        [ UppercaseLetter
-        , LowercaseLetter
-        , TitlecaseLetter
-        , ModifierLetter
-        , OtherLetter
-        , LetterNumber
-        ]
-    legalRestCategories =
-      Set.fromList
-        [ NonSpacingMark
-        , SpacingCombiningMark
-        , DecimalNumber
-        , ConnectorPunctuation
-        ]
-        `Set.union` legalFirstCategories
-    isLegalFirstChar c =
-      c `elem` ['$', '_'] || generalCategory c `Set.member` legalFirstCategories
-    isLegalRestChar c =
-      generalCategory c `Set.member` legalRestCategories
-  (firstChar, restChars) <-
-    case L.uncons nameStr of
-      Just a -> pure a
-      Nothing -> fail "Somehow got an empty name while deriving typescript"
-
-  unless (isLegalFirstChar firstChar) $ do
-    reportError $ mconcat
-      [ "The name ", show name, "has an illegal character: ", show firstChar
-      ]
-
-  forM_ restChars $ \char -> do
-    unless (isLegalRestChar char) $ do
-      reportError $ mconcat
-        [ "The name ", show name, "has an illegal character: ", show char
-        ]
-
 
 -- | Generates a 'TypeScript' instance declaration for the given data type.
 deriveTypeScript' :: Options
