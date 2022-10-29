@@ -227,6 +227,7 @@ deriveTypeScript' :: Options
                   -- ^ Extra options to control advanced features.
                   -> Q [Dec]
 deriveTypeScript' options name extraOptions = do
+  checkIllegalName name
   datatypeInfo' <- reifyDatatype name
 
   assertExtensionsTurnedOn datatypeInfo'
