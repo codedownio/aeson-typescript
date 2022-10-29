@@ -1,5 +1,9 @@
 # Change log
 
+## 0.4.2.0
+
+* Fix TypeScript (A.KeyMap a) instance
+
 ## 0.4.1.0
 
 * Add TypeScript Int16
