@@ -231,20 +231,22 @@ isStarType _ = Nothing
 
 -- according to https://stackoverflow.com/questions/1661197/what-characters-are-valid-for-javascript-variable-names
 checkIllegalName :: Name -> Q ()
-checkIllegalName name = do
+checkIllegalName =
+  checkIllegalNameString . nameBase
+
+checkIllegalNameString :: String -> Q ()
+checkIllegalNameString nameStr =
   case NonEmpty.nonEmpty nameStr of
     Just nameChars ->
-      void . traverse (traverse (reportError . message)) . checkIllegalNameString $ nameChars
+      void . traverse (traverse (reportError . message)) . checkIllegalNameChars $ nameChars
     Nothing ->
       reportError "checkIllegalName called with an empty name somehow??"
   where
-    nameStr =
-      nameBase name
     message c =
-      concat ["The name ", nameStr, "has an illegal character: ", show c]
+      concat ["The name ", nameStr, " has an illegal character: ", show c]
 
-checkIllegalNameString :: NonEmpty Char -> Maybe (NonEmpty Char)
-checkIllegalNameString nameStr = NonEmpty.nonEmpty $
+checkIllegalNameChars :: NonEmpty Char -> Maybe (NonEmpty Char)
+checkIllegalNameChars nameStr = NonEmpty.nonEmpty $
   let
     legalFirstCategories =
       Set.fromList

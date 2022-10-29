@@ -21,20 +21,20 @@ import Data.Aeson.TypeScript.Util
 
 utilTests :: Spec
 utilTests = describe "Data.Aeson.TypeScript.Util" $ do
-  describe "checkIllegalNameString" $ do
+  describe "checkIllegalNameChars" $ do
     describe "legal Haskell names" $ do
       it "allows an uppercase letter" $ do
-        checkIllegalNameString ('A' :| [])
+        checkIllegalNameChars ('A' :| [])
           `shouldBe` Nothing
       it "allows an underscore" $ do
-        checkIllegalNameString ('_' :| "asdf")
+        checkIllegalNameChars ('_' :| "asdf")
           `shouldBe` Nothing
       it "reports that ' is illegal" $ do
-        checkIllegalNameString ('F' :| "oo'")
+        checkIllegalNameChars ('F' :| "oo'")
           `shouldBe` Just ('\'' :| [])
     describe "illegal Haskell names" $ do
       it "allows a $" $ do
-        checkIllegalNameString ('$' :| "asdf")
+        checkIllegalNameChars ('$' :| "asdf")
           `shouldBe` Nothing
 
 npmInstallScript, yarnInstallScript, localTSC :: String
