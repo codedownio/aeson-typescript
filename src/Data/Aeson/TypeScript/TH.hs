@@ -182,7 +182,6 @@ deriveTypeScript' :: Options
                   -> Q [Dec]
 deriveTypeScript' options name extraOptions = do
   datatypeInfo' <- reifyDatatype name
-
   assertExtensionsTurnedOn datatypeInfo'
 
   -- Figure out what the generic variables are

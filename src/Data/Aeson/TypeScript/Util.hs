@@ -13,9 +13,6 @@
 
 module Data.Aeson.TypeScript.Util where
 
-import Data.Char (GeneralCategory(..), generalCategory)
-import Data.List.NonEmpty (NonEmpty(..))
-import qualified Data.List.NonEmpty as NonEmpty
 import Control.Monad
 import Data.Aeson as A
 import Data.Aeson.TypeScript.Instances ()
@@ -27,7 +24,6 @@ import qualified Data.Text as T
 import Language.Haskell.TH hiding (stringE)
 import Language.Haskell.TH.Datatype
 import qualified Language.Haskell.TH.Lib as TH
-import qualified Data.Set as Set
 
 #if !MIN_VERSION_base(4,11,0)
 import Data.Monoid
