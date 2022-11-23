@@ -181,7 +181,6 @@ deriveTypeScript' :: Options
                   -- ^ Extra options to control advanced features.
                   -> Q [Dec]
 deriveTypeScript' options name extraOptions = do
-  checkIllegalName name
   datatypeInfo' <- reifyDatatype name
 
   assertExtensionsTurnedOn datatypeInfo'
@@ -247,7 +246,6 @@ deriveTypeScript' options name extraOptions = do
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
 handleConstructor :: Options -> DatatypeInfo -> [(Name, (Suffix, Var))] -> ConstructorInfo -> WriterT [ExtraDeclOrGenericInfo] Q Exp
 handleConstructor options (DatatypeInfo {..}) genericVariables ci = do
-  lift $ checkIllegalNameString interfaceName
   if | (length datatypeCons == 1) && not (getTagSingleConstructors options) -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
