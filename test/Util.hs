@@ -15,7 +15,6 @@ import System.Exit
 import System.FilePath
 import System.IO.Temp
 import System.Process
-import Test.Hspec
 
 npmInstallScript, yarnInstallScript, localTSC :: String
 npmInstallScript = "test/assets/npm_install.sh"
