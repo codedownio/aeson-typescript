@@ -67,10 +67,10 @@ test-suite aeson-typescript-tests
   other-modules:
       Basic
       ClosedTypeFamilies
-      Data.Aeson.TypeScript.LegalNameSpec
       Formatting
       Generic
       HigherKind
+      LegalNameSpec
       NoOmitNothingFields
       ObjectWithSingleFieldNoTagSingleConstructors
       ObjectWithSingleFieldTagSingleConstructors

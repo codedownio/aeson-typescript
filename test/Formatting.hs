@@ -8,21 +8,18 @@ module Formatting (tests) where
 import Control.Exception
 import Data.Aeson (defaultOptions)
 import Data.Aeson.TypeScript.TH
-import Data.Aeson.TypeScript.Types
 import Data.Proxy
 import Data.String.Interpolate
 import Test.Hspec
 
-data D = S | F deriving (Eq, Show)
 
+data D = S | F deriving (Eq, Show)
 $(deriveTypeScript defaultOptions ''D)
 
 data PrimeInType' = PrimeInType
-
 $(deriveTypeScript defaultOptions ''PrimeInType')
 
 data PrimeInConstr = PrimeInConstr'
-
 $(deriveTypeScript defaultOptions ''PrimeInConstr)
 
 tests :: Spec
@@ -52,4 +49,3 @@ tests = do
           evaluate (formatTSDeclarations' defaultFormattingOptions (getTypeScriptDeclarations @PrimeInConstr Proxy))
             `shouldThrow`
               anyErrorCall
-

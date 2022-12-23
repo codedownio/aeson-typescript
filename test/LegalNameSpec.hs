@@ -1,8 +1,8 @@
-module Data.Aeson.TypeScript.LegalNameSpec where
+module LegalNameSpec where
 
-import Test.Hspec
-import Data.List.NonEmpty (NonEmpty (..))
 import Data.Aeson.TypeScript.LegalName
+import Data.List.NonEmpty (NonEmpty (..))
+import Test.Hspec
 
 tests :: Spec
 tests = describe "Data.Aeson.TypeScript.LegalName" $ do

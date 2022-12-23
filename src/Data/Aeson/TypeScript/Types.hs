@@ -9,13 +9,13 @@
 
 module Data.Aeson.TypeScript.Types where
 
-import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Aeson as A
+import Data.Aeson.TypeScript.LegalName
+import qualified Data.List.NonEmpty as NonEmpty
 import Data.Proxy
 import Data.String
 import Data.Typeable
 import Language.Haskell.TH
-import Data.Aeson.TypeScript.LegalName
 
 -- | The typeclass that defines how a type is turned into TypeScript.
 --
