@@ -195,7 +195,7 @@ deriveTypeScript' options name extraOptions = do
         xs -> zip xs allStarConstructors''
   genericVariablesAndSuffixes <- forM varsAndTVars $ \(var, tvar) -> do
     (_, genericInfos) <- runWriterT $ forM_ (datatypeCons datatypeInfo') $ \ci ->
-      forM_ (namesAndTypes options [] ci) $ \(_, typ) -> do
+      forM_ (namesAndTypes options [] ci) $ \(_, _, typ) -> do
         searchForConstraints extraOptions typ var
     return (var, (unifyGenericVariable genericInfos, tvar))
 
@@ -317,14 +317,14 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci = do
                                                                     $(return members)|]
 
     getTSFields :: WriterT [ExtraDeclOrGenericInfo] Q [Exp]
-    getTSFields = forM (namesAndTypes options genericVariables ci) $ \(nameString, typ) -> do
+    getTSFields = forM (namesAndTypes options genericVariables ci) $ \(name, nameString, typ) -> do
       (fieldTyp, optAsBool) <- lift $ case typ of
         (AppT (ConT name) t) | name == ''Maybe && not (omitNothingFields options) ->
           ( , ) <$> [|$(getTypeAsStringExp t) <> " | null"|] <*> getOptionalAsBoolExp t
         _ -> ( , ) <$> getTypeAsStringExp typ <*> getOptionalAsBoolExp typ
 
 #if MIN_VERSION_template_haskell(2,18,0)
-      maybeDoc <- lift $ nothingOnFail $ getDoc (DeclDoc (mkName nameString))
+      maybeDoc <- lift $ nothingOnFail $ getDoc (DeclDoc name)
 #else
       let maybeDoc = Nothing
 #endif

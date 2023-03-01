@@ -148,14 +148,14 @@ mkInstance = InstanceD Nothing
 mkInstance = InstanceD
 #endif
 
-namesAndTypes :: Options -> [(Name, (Suffix, Var))] -> ConstructorInfo -> [(String, Type)]
+namesAndTypes :: Options -> [(Name, (Suffix, Var))] -> ConstructorInfo -> [(Name, String, Type)]
 namesAndTypes options genericVariables ci = case constructorVariant ci of
-  RecordConstructor names -> zip (fmap ((fieldLabelModifier options) . lastNameComponent') names) (constructorFields ci)
+  RecordConstructor names -> zip3 names (fmap ((fieldLabelModifier options) . lastNameComponent') names) (constructorFields ci)
   _ -> case sumEncoding options of
     TaggedObject _ contentsFieldName
       | isConstructorNullary ci -> []
-      | otherwise -> [(contentsFieldName, contentsTupleTypeSubstituted genericVariables ci)]
-    _ -> [(constructorNameToUse options ci, contentsTupleTypeSubstituted genericVariables ci)]
+      | otherwise -> [(mkName "", contentsFieldName, contentsTupleTypeSubstituted genericVariables ci)]
+    _ -> [(constructorName ci, constructorNameToUse options ci, contentsTupleTypeSubstituted genericVariables ci)]
 
 constructorNameToUse :: Options -> ConstructorInfo -> String
 constructorNameToUse options ci = (constructorTagModifier options) $ lastNameComponent' (constructorName ci)
