@@ -12,7 +12,6 @@
 {-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
 
 module Generic (tests) where
 

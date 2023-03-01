@@ -1,14 +1,9 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE MonoLocalBinds #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module UnwrapUnaryRecords (allTests) where
@@ -42,5 +37,5 @@ tests = describe "UnwrapUnaryRecords" $ it "tests are disabled for this Aeson ve
 allTests = tests
 #endif
 
--- main :: IO ()
--- main = hspec allTests
+main :: IO ()
+main = hspec allTests

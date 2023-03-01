@@ -1,17 +1,6 @@
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
 
 module GetDoc (tests) where
 
@@ -26,16 +15,20 @@ import Test.Hspec
 
 -- | OneField is a type with a single field
 data OneField = OneField {
+  -- | This is a simple string
   simpleString :: String
-  -- ^ This is a simple string.
   }
 $(deriveTypeScript A.defaultOptions ''OneField)
 
 tests :: SpecWith ()
 tests = describe "getDoc tests" $ do
   it [i|Works with a simple record type|] $ do
-    (getTypeScriptDeclarations (Proxy :: Proxy OneField)) `shouldBe` ([])
-
+    (getTypeScriptDeclarations (Proxy :: Proxy OneField)) `shouldBe` ([
+      TSTypeAlternatives "OneField" [] ["IOneField"]
+      , TSInterfaceDeclaration "IOneField" [] [
+          TSField False "simpleString" "string" (Just " This is a simple string")
+          ]
+      ])
 
 main :: IO ()
 main = hspec tests
