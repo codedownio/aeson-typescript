@@ -19,30 +19,58 @@ $(deriveTypeScript defaultOptions ''PrimeInType')
 data PrimeInConstr = PrimeInConstr'
 $(deriveTypeScript defaultOptions ''PrimeInConstr)
 
+data FooBar =
+  Foo {
+    -- | @no-emit-typescript
+    recordString :: String
+    , recordInt :: Int
+    }
+  |
+  -- | @no-emit-typescript
+  Bar {
+      barInt :: Int
+  }
+$(deriveTypeScript defaultOptions ''FooBar)
+
+data NormalConstructors =
+  -- | @no-emit-typescript
+  Con1 String
+  | Con2 Int
+$(deriveTypeScript defaultOptions ''NormalConstructors)
+
 tests :: Spec
-tests = do
-  describe "Formatting" $ do
-    describe "when given a Sum Type" $ do
-      describe "and the TypeAlias format option is set" $
-        it "should generate a TS string literal type" $
-          formatTSDeclarations' defaultFormattingOptions (getTypeScriptDeclarations @D Proxy) `shouldBe`
-            [i|type D = "S" | "F";|]
-      describe "and the Enum format option is set" $
-        it "should generate a TS Enum" $
-          formatTSDeclarations' (defaultFormattingOptions { typeAlternativesFormat = Enum }) (getTypeScriptDeclarations @D Proxy) `shouldBe`
-            [i|enum D { S, F }|]
-      describe "and the EnumWithType format option is set" $
-        it "should generate a TS Enum with a type declaration" $
-          formatTSDeclarations' (defaultFormattingOptions { typeAlternativesFormat = EnumWithType }) (getTypeScriptDeclarations @D Proxy) `shouldBe`
-            [i|enum DEnum { S="S", F="F" }\n\ntype D = keyof typeof DEnum;|]
-    describe "when the name has an apostrophe" $ do
-      describe "in the type" $ do
-        it "throws an error" $ do
-          evaluate (formatTSDeclarations' defaultFormattingOptions (getTypeScriptDeclarations @PrimeInType' Proxy))
-            `shouldThrow`
-              anyErrorCall
-      describe "in the constructor" $ do
-        it "throws an error" $ do
-          evaluate (formatTSDeclarations' defaultFormattingOptions (getTypeScriptDeclarations @PrimeInConstr Proxy))
-            `shouldThrow`
-              anyErrorCall
+tests = describe "Formatting" $ do
+  describe "when given a Sum Type" $ do
+    describe "and the TypeAlias format option is set" $
+      it "should generate a TS string literal type" $
+        formatTSDeclarations' defaultFormattingOptions (getTypeScriptDeclarations @D Proxy) `shouldBe`
+          [i|type D = "S" | "F";|]
+
+    describe "and the Enum format option is set" $
+      it "should generate a TS Enum" $
+        formatTSDeclarations' (defaultFormattingOptions { typeAlternativesFormat = Enum }) (getTypeScriptDeclarations @D Proxy) `shouldBe`
+          [i|enum D { S, F }|]
+
+    describe "and the EnumWithType format option is set" $
+      it "should generate a TS Enum with a type declaration" $
+        formatTSDeclarations' (defaultFormattingOptions { typeAlternativesFormat = EnumWithType }) (getTypeScriptDeclarations @D Proxy) `shouldBe`
+          [i|enum DEnum { S="S", F="F" }\n\ntype D = keyof typeof DEnum;|]
+
+  describe "when the name has an apostrophe" $ do
+    describe "in the type" $ do
+      it "throws an error" $ do
+        evaluate (formatTSDeclarations' defaultFormattingOptions (getTypeScriptDeclarations @PrimeInType' Proxy)) `shouldThrow` anyErrorCall
+
+    describe "in the constructor" $ do
+      it "throws an error" $ do
+        evaluate (formatTSDeclarations' defaultFormattingOptions (getTypeScriptDeclarations @PrimeInConstr Proxy)) `shouldThrow` anyErrorCall
+
+  describe "when @no-emit-typescript is present" $ do
+    it [i|works on records and constructors of record types|] $ do
+      formatTSDeclarations' defaultFormattingOptions (getTypeScriptDeclarations @FooBar Proxy) `shouldBe` [i|type FooBar = IFoo;\n\ninterface IFoo {\n  tag: "Foo";\n  recordInt: number;\n}|]
+
+    it [i|works on normal constructors|] $ do
+      formatTSDeclarations' defaultFormattingOptions (getTypeScriptDeclarations @NormalConstructors Proxy) `shouldBe` [i|type NormalConstructors = ICon2;\n\ninterface ICon2 {\n  tag: "Con2";\n  contents: number;\n}|]
+
+main :: IO ()
+main = hspec tests

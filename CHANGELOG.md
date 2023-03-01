@@ -6,6 +6,7 @@
 * [#35](https://github.com/codedownio/aeson-typescript/pull/35)
     * Add `Data.Aeson.TypeScript.LegalName` module for checking whether a name is a legal JavaScript name or not.
     * The `defaultFormatter` will `error` if the name contains illegal characters.
+* Add support for @no-emit-typescript in Haddocks for constructors and record fields (requires GHC >= 9.2)
 
 ## 0.4.2.0
 

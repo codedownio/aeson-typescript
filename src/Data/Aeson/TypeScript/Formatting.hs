@@ -1,10 +1,11 @@
-{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns, CPP #-}
+{-# LANGUAGE CPP #-}
 
 module Data.Aeson.TypeScript.Formatting where
 
 import Data.Aeson.TypeScript.Types
 import Data.Function ((&))
 import qualified Data.List as L
+import Data.Maybe
 import Data.String.Interpolate
 import qualified Data.Text as T
 
@@ -33,7 +34,7 @@ formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVar
     enumType = [i|\n\ntype #{name} = keyof typeof #{typeNameModifier name};|] :: T.Text
     toEnumName = T.replace "\"" ""
 
-formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceName genericVariables members maybeDoc) =
+formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceName genericVariables (filter (not . isNoEmitTypeScriptField) -> members) maybeDoc) =
   makeDocPrefix maybeDoc <> [i|#{exportPrefix exportMode}interface #{modifiedInterfaceName}#{getGenericBrackets genericVariables} {
 #{ls}
 }|] where
@@ -52,7 +53,27 @@ exportPrefix ExportNone = ""
 
 -- | Format a list of TypeScript declarations into a string, suitable for putting directly into a @.d.ts@ file.
 formatTSDeclarations' :: FormattingOptions -> [TSDeclaration] -> String
-formatTSDeclarations' options declarations = T.unpack $ T.intercalate "\n\n" (fmap (T.pack . formatTSDeclaration (validateFormattingOptions options declarations)) declarations)
+formatTSDeclarations' options allDeclarations =
+  declarations & fmap (T.pack . formatTSDeclaration (validateFormattingOptions options declarations))
+               & T.intercalate "\n\n"
+               & T.unpack
+  where
+    removedDeclarations = filter isNoEmitTypeScriptDeclaration allDeclarations
+
+    getDeclarationName :: TSDeclaration -> Maybe String
+    getDeclarationName (TSInterfaceDeclaration {..}) = Just interfaceName
+    getDeclarationName (TSTypeAlternatives {..}) = Just typeName
+    _ = Nothing
+
+    removedDeclarationNames = mapMaybe getDeclarationName removedDeclarations
+
+    removeReferencesToRemovedNames :: [String] -> TSDeclaration -> TSDeclaration
+    removeReferencesToRemovedNames removedNames decl@(TSTypeAlternatives {..}) = decl { alternativeTypes = [x | x <- alternativeTypes, not (x `L.elem` removedNames)] }
+    removeReferencesToRemovedNames _ x = x
+
+    declarations = allDeclarations
+                 & filter (not . isNoEmitTypeScriptDeclaration)
+                 & fmap (removeReferencesToRemovedNames removedDeclarationNames)
 
 validateFormattingOptions :: FormattingOptions -> [TSDeclaration] -> FormattingOptions
 validateFormattingOptions options@FormattingOptions{..} decls
@@ -82,3 +103,15 @@ makeDocPrefix maybeDoc = case maybeDoc of
 getGenericBrackets :: [String] -> String
 getGenericBrackets [] = ""
 getGenericBrackets xs = [i|<#{T.intercalate ", " (fmap T.pack xs)}>|]
+
+-- * Support for @no-emit-typescript
+
+noEmitTypeScriptAnnotation :: String
+noEmitTypeScriptAnnotation = "@no-emit-typescript"
+
+isNoEmitTypeScriptField (TSField {fieldDoc=(Just doc)}) = noEmitTypeScriptAnnotation `L.isInfixOf` doc
+isNoEmitTypeScriptField _ = False
+
+isNoEmitTypeScriptDeclaration (TSInterfaceDeclaration {interfaceDoc=(Just doc)}) = noEmitTypeScriptAnnotation `L.isInfixOf` doc
+isNoEmitTypeScriptDeclaration (TSTypeAlternatives {typeDoc=(Just doc)}) = noEmitTypeScriptAnnotation `L.isInfixOf` doc
+isNoEmitTypeScriptDeclaration _ = False
