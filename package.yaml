@@ -63,6 +63,8 @@ tests:
     - ScopedTypeVariables
     - KindSignatures
     - FlexibleContexts
+    - QuasiQuotes
+    - TemplateHaskell
     dependencies:
     - aeson-typescript
     - bytestring
