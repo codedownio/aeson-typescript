@@ -7,10 +7,11 @@ module Data.Aeson.TypeScript.Types where
 
 import qualified Data.Aeson as A
 import Data.Aeson.TypeScript.LegalName
-import qualified Data.List as L
+import Data.Function ((&))
 import qualified Data.List.NonEmpty as NonEmpty
 import Data.Proxy
 import Data.String
+import qualified Data.Text as T
 import Data.Typeable
 import Language.Haskell.TH
 
@@ -205,15 +206,20 @@ data ExtraTypeScriptOptions = ExtraTypeScriptOptions {
   , keyType :: Maybe String
 
   -- | Function which is applied to all Haddocks we read in.
-  -- By default, just drops leading whitespace.
+  -- By default, just drops leading whitespace from each line.
   , haddockModifier :: String -> String
   }
 
 defaultExtraTypeScriptOptions :: ExtraTypeScriptOptions
-defaultExtraTypeScriptOptions = ExtraTypeScriptOptions [] Nothing deleteLeadingWhitespace
+defaultExtraTypeScriptOptions = ExtraTypeScriptOptions [] Nothing stripStartEachLine
   where
-    deleteLeadingWhitespace :: String -> String
-    deleteLeadingWhitespace = L.dropWhile (== ' ')
+    stripStartEachLine :: String -> String
+    stripStartEachLine s = s
+                         & T.pack
+                         & T.splitOn "\n"
+                         & fmap T.stripStart
+                         & T.intercalate "\n"
+                         & T.unpack
 
 data ExtraDeclOrGenericInfo = ExtraDecl Exp
                             | ExtraGeneric GenericInfo
