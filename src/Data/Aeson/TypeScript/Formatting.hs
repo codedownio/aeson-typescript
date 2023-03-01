@@ -3,6 +3,7 @@
 module Data.Aeson.TypeScript.Formatting where
 
 import Data.Aeson.TypeScript.Types
+import Data.Function ((&))
 import qualified Data.List as L
 import Data.String.Interpolate
 import qualified Data.Text as T
@@ -73,8 +74,10 @@ formatTSField (TSField optional name typ maybeDoc) = makeDocPrefix maybeDoc <> [
 makeDocPrefix :: Maybe String -> String
 makeDocPrefix maybeDoc = case maybeDoc of
   Nothing -> ""
-  Just doc | '\n' `L.elem` doc -> "/* " <> doc <> " */\n"
-  Just doc -> "// " <> doc <> "\n"
+  Just (T.pack -> text) -> ["// " <> line | line <- T.splitOn "\n" text]
+                        & T.intercalate "\n"
+                        & (<> "\n")
+                        & T.unpack
 
 getGenericBrackets :: [String] -> String
 getGenericBrackets [] = ""
