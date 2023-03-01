@@ -3,7 +3,6 @@ name: aeson-typescript
 on:
   pull_request:
   push:
-    branches: [master]
 
 jobs:
   cabal:
