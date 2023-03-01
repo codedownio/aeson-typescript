@@ -66,6 +66,7 @@ tests:
     - QuasiQuotes
     - TemplateHaskell
     - TypeFamilies
+    - LambdaCase
     dependencies:
     - aeson-typescript
     - bytestring

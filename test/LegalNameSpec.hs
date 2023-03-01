@@ -1,3 +1,4 @@
+
 module LegalNameSpec where
 
 import Data.Aeson.TypeScript.LegalName

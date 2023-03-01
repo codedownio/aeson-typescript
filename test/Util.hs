@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, QuasiQuotes, OverloadedStrings, TemplateHaskell, RecordWildCards, ScopedTypeVariables, NamedFieldPuns, LambdaCase #-}
+{-# LANGUAGE CPP #-}
 
 module Util where
 
