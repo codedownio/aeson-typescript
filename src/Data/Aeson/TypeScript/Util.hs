@@ -1,14 +1,7 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE PolyKinds #-}
 
 module Data.Aeson.TypeScript.Util where
@@ -227,3 +220,17 @@ isStarType _ = Nothing
 
 nothingOnFail :: Q a -> Q (Maybe a)
 nothingOnFail action = recover (return Nothing) (Just <$> action)
+
+tryGetDoc :: (String -> String) -> Name -> Q Exp
+tryGetDoc haddockModifier n = do
+#if MIN_VERSION_template_haskell(2,18,0)
+  maybeDoc <- nothingOnFail (getDoc (DeclDoc n)) >>= \case
+    Just (Just doc) -> return $ Just $ Just $ haddockModifier doc
+    x -> return x
+#else
+  let maybeDoc = Nothing
+#endif
+
+  case maybeDoc of
+    Just (Just doc) -> [|Just $(TH.stringE doc)|]
+    _ -> [|Nothing|]

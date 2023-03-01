@@ -39,11 +39,21 @@ dependencies:
 
 library:
   source-dirs: src
+  default-extensions:
+  - LambdaCase
+  - RecordWildCards
+  - NamedFieldPuns
+  - MultiWayIf
+  - TupleSections
+  - QuasiQuotes
+  - OverloadedStrings
+  - ViewPatterns
+  - ScopedTypeVariables
   exposed-modules:
-    - Data.Aeson.TypeScript.TH
-    - Data.Aeson.TypeScript.Internal
-    - Data.Aeson.TypeScript.Recursive
-    - Data.Aeson.TypeScript.LegalName
+  - Data.Aeson.TypeScript.TH
+  - Data.Aeson.TypeScript.Internal
+  - Data.Aeson.TypeScript.Recursive
+  - Data.Aeson.TypeScript.LegalName
 
 tests:
   aeson-typescript-tests:

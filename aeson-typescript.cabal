@@ -48,6 +48,16 @@ library
       Paths_aeson_typescript
   hs-source-dirs:
       src
+  default-extensions:
+      LambdaCase
+      RecordWildCards
+      NamedFieldPuns
+      MultiWayIf
+      TupleSections
+      QuasiQuotes
+      OverloadedStrings
+      ViewPatterns
+      ScopedTypeVariables
   build-depends:
       aeson
     , base >=4.7 && <5

@@ -18,12 +18,14 @@ formatTSDeclarations = formatTSDeclarations' defaultFormattingOptions
 
 -- | Format a single TypeScript declaration. This version accepts a FormattingOptions object in case you want more control over the output.
 formatTSDeclaration :: FormattingOptions -> TSDeclaration -> String
-formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVariables names) =
-  case typeAlternativesFormat of
-    Enum -> [i|#{exportPrefix exportMode}enum #{typeNameModifier name} { #{alternativesEnum} }|]
-    EnumWithType -> [i|#{exportPrefix exportMode}enum #{typeNameModifier name} { #{alternativesEnumWithType} }#{enumType}|]
-    TypeAlias -> [i|#{exportPrefix exportMode}type #{typeNameModifier name}#{getGenericBrackets genericVariables} = #{alternatives};|]
+formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVariables names maybeDoc) =
+  makeDocPrefix maybeDoc <> mainDeclaration
   where
+    mainDeclaration = case typeAlternativesFormat of
+      Enum -> [i|#{exportPrefix exportMode}enum #{typeNameModifier name} { #{alternativesEnum} }|]
+      EnumWithType -> [i|#{exportPrefix exportMode}enum #{typeNameModifier name} { #{alternativesEnumWithType} }#{enumType}|]
+      TypeAlias -> [i|#{exportPrefix exportMode}type #{typeNameModifier name}#{getGenericBrackets genericVariables} = #{alternatives};|]
+
     alternatives = T.intercalate " | " (fmap T.pack names)
     alternativesEnum = T.intercalate ", " $ [toEnumName entry | entry <- T.pack <$> names]
     alternativesEnumWithType = T.intercalate ", " $ [toEnumName entry <> "=" <> entry | entry <- T.pack <$> names]

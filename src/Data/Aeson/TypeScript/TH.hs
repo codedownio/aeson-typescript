@@ -1,17 +1,8 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE LambdaCase #-}
 
 {-|
 Module:      Data.Aeson.TypeScript.TH
@@ -220,7 +211,8 @@ deriveTypeScript' options name extraOptions = do
   (types, (extraDeclsOrGenericInfosInitial <>) -> extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor extraOptions options dti genericVariablesAndSuffixes) (datatypeCons dti)
   typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName (datatypeName dti))
                                           $(genericVariablesListExpr True genericVariablesAndSuffixes)
-                                          $(listE $ fmap return types)|]
+                                          $(listE $ fmap return types)
+                                          $(tryGetDoc (haddockModifier extraOptions) (datatypeName dti))|]
 
   declarationsFunctionBody <- [| $(return typeDeclaration) : $(listE (fmap return [x | ExtraDecl x <- extraDeclsOrGenericInfos])) |]
 
@@ -315,21 +307,7 @@ handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) gene
     assembleInterfaceDeclaration members = [|TSInterfaceDeclaration $(TH.stringE interfaceName)
                                                                     $(genericVariablesListExpr True genericVariables)
                                                                     $(return members)
-                                                                    $(tryGetDoc (constructorName ci))|]
-
-    tryGetDoc :: Name -> Q Exp
-    tryGetDoc n = do
-#if MIN_VERSION_template_haskell(2,18,0)
-      maybeDoc <- nothingOnFail (getDoc (DeclDoc n)) >>= \case
-        Just (Just doc) -> return $ Just $ Just $ haddockModifier doc
-        x -> return x
-#else
-      let maybeDoc = Nothing
-#endif
-
-      case maybeDoc of
-        Just (Just doc) -> [|Just $(TH.stringE doc)|]
-        _ -> [|Nothing|]
+                                                                    $(tryGetDoc haddockModifier (constructorName ci))|]
 
     getTSFields :: WriterT [ExtraDeclOrGenericInfo] Q [Exp]
     getTSFields = forM (namesAndTypes options genericVariables ci) $ \(name, nameString, typ) -> do
@@ -338,7 +316,7 @@ handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) gene
           ( , ) <$> [|$(getTypeAsStringExp t) <> " | null"|] <*> getOptionalAsBoolExp t
         _ -> ( , ) <$> getTypeAsStringExp typ <*> getOptionalAsBoolExp typ
 
-      lift [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) $(tryGetDoc name) |]
+      lift [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) $(tryGetDoc haddockModifier name) |]
 
     isSingleRecordConstructor (constructorVariant -> RecordConstructor [_]) = True
     isSingleRecordConstructor _ = False

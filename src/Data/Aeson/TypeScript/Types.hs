@@ -1,8 +1,4 @@
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -91,7 +87,8 @@ data TSDeclaration = TSInterfaceDeclaration { interfaceName :: String
                                             , interfaceDoc :: Maybe String }
                    | TSTypeAlternatives { typeName :: String
                                         , typeGenericVariables :: [String]
-                                        , alternativeTypes :: [String]}
+                                        , alternativeTypes :: [String]
+                                        , typeDoc :: Maybe String }
                    | TSRawDeclaration { text :: String }
   deriving (Show, Eq, Ord)
 

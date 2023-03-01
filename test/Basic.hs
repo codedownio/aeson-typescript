@@ -22,13 +22,13 @@ tests = describe "Basic tests" $ do
   describe "tagSingleConstructors and constructorTagModifier" $ do
     it [i|Works with a normal unit|] $ do
       (getTypeScriptDeclarations (Proxy :: Proxy Unit1)) `shouldBe` ([
-        TSTypeAlternatives "Unit1" [] ["IUnit1"]
-        , TSTypeAlternatives "IUnit1" [] ["void[]"]
+        TSTypeAlternatives "Unit1" [] ["IUnit1"] Nothing
+        , TSTypeAlternatives "IUnit1" [] ["void[]"] Nothing
         ])
 
     it [i|Works with a unit with constructorTagModifier|] $ do
       (getTypeScriptDeclarations (Proxy :: Proxy Unit2)) `shouldBe` ([
-        TSTypeAlternatives "Unit2" [] ["\"foo\""]
+        TSTypeAlternatives "Unit2" [] ["\"foo\""] Nothing
         ])
 
 

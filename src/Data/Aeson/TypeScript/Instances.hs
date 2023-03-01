@@ -1,8 +1,4 @@
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverlappingInstances #-}
@@ -89,7 +85,7 @@ instance {-# OVERLAPPING #-} TypeScript [Char] where
 
 instance (TypeScript a, TypeScript b) => TypeScript (Either a b) where
   getTypeScriptType _ = [i|Either<#{getTypeScriptType (Proxy :: Proxy a)}, #{getTypeScriptType (Proxy :: Proxy b)}>|]
-  getTypeScriptDeclarations _ = [TSTypeAlternatives "Either" ["T1", "T2"] ["Left<T1>", "Right<T2>"]
+  getTypeScriptDeclarations _ = [TSTypeAlternatives "Either" ["T1", "T2"] ["Left<T1>", "Right<T2>"] Nothing
                                , TSInterfaceDeclaration "Left" ["T"] [TSField False "Left" "T" Nothing] Nothing
                                , TSInterfaceDeclaration "Right" ["T"] [TSField False "Right" "T" Nothing] Nothing
                                ]
