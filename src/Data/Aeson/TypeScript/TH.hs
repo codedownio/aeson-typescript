@@ -324,12 +324,12 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci = do
         _ -> ( , ) <$> getTypeAsStringExp typ <*> getOptionalAsBoolExp typ
 
 #if MIN_VERSION_template_haskell(2,18,0)
-      maybeDoc <- lift $ getDoc (DeclDoc (mkName nameString))
+      maybeDoc <- lift $ nothingOnFail $ getDoc (DeclDoc (mkName nameString))
 #else
       let maybeDoc = Nothing
 #endif
 
-      lift $ [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) Nothing |] -- TODO
+      lift [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) Nothing |] -- TODO
 
     isSingleRecordConstructor (constructorVariant -> RecordConstructor [x]) = True
     isSingleRecordConstructor _ = False

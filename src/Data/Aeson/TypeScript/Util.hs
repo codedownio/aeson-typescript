@@ -224,3 +224,6 @@ genericVariablesListExpr includeSuffix genericVariables = listE (fmap (\((_, (su
 isStarType :: Type -> Maybe Name
 isStarType (SigT (VarT n) StarT) = Just n
 isStarType _ = Nothing
+
+nothingOnFail :: Q a -> Q (Maybe a)
+nothingOnFail action = recover (return Nothing) (Just <$> action)

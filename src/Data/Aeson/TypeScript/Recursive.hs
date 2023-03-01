@@ -29,6 +29,7 @@ import Control.Monad.Trans.Maybe
 import Control.Monad.Writer
 import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.TH
+import Data.Aeson.TypeScript.Util (nothingOnFail)
 import Data.Bifunctor
 import Data.Function
 import qualified Data.List as L
@@ -135,6 +136,3 @@ getAllParentTypes name pruneFn = reverse <$> execStateT (getAllParentTypes' name
     addIfNotPresent :: (Eq a) => a -> [a] -> [a]
     addIfNotPresent x xs | x `L.elem` xs = xs
     addIfNotPresent x xs = x : xs
-
-nothingOnFail :: Q a -> Q (Maybe a)
-nothingOnFail action = recover (return Nothing) (Just <$> action)
