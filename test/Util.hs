@@ -14,7 +14,8 @@ import System.Environment
 import System.Exit
 import System.FilePath
 import System.IO.Temp
-import System.Process
+import System.Process hiding (cwd)
+
 
 npmInstallScript, yarnInstallScript, localTSC :: String
 npmInstallScript = "test/assets/npm_install.sh"
