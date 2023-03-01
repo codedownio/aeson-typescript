@@ -58,6 +58,11 @@ tests:
     - -with-rtsopts=-N
     - -haddock
     - -fno-warn-unused-top-binds
+    default-extensions:
+    - OverloadedStrings
+    - ScopedTypeVariables
+    - KindSignatures
+    - FlexibleContexts
     dependencies:
     - aeson-typescript
     - bytestring

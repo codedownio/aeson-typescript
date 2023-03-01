@@ -102,6 +102,11 @@ test-suite aeson-typescript-tests
   hs-source-dirs:
       test
       src
+  default-extensions:
+      OverloadedStrings
+      ScopedTypeVariables
+      KindSignatures
+      FlexibleContexts
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N -haddock -fno-warn-unused-top-binds
   build-depends:
       aeson
