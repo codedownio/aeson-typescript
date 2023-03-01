@@ -1,5 +1,3 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 module HigherKind (tests) where
 

@@ -1,5 +1,3 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 module Generic (tests) where
 
