@@ -331,7 +331,7 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci = do
 
       lift [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) $(case maybeDoc of Just (Just doc) -> [|Just $(TH.stringE doc)|]; _ -> [|Nothing|]) |]
 
-    isSingleRecordConstructor (constructorVariant -> RecordConstructor [x]) = True
+    isSingleRecordConstructor (constructorVariant -> RecordConstructor [_]) = True
     isSingleRecordConstructor _ = False
 
 -- * Convenience functions
