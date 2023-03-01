@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Formatting (tests) where
@@ -65,12 +66,14 @@ tests = describe "Formatting" $ do
       it "throws an error" $ do
         evaluate (formatTSDeclarations' defaultFormattingOptions (getTypeScriptDeclarations @PrimeInConstr Proxy)) `shouldThrow` anyErrorCall
 
+#if MIN_VERSION_template_haskell(2,18,0)
   describe "when @no-emit-typescript is present" $ do
     it [i|works on records and constructors of record types|] $ do
       formatTSDeclarations' defaultFormattingOptions (getTypeScriptDeclarations @FooBar Proxy) `shouldBe` [i|type FooBar = IFoo;\n\ninterface IFoo {\n  tag: "Foo";\n  recordInt: number;\n}|]
 
     it [i|works on normal constructors|] $ do
       formatTSDeclarations' defaultFormattingOptions (getTypeScriptDeclarations @NormalConstructors Proxy) `shouldBe` [i|type NormalConstructors = ICon2;\n\ninterface ICon2 {\n  tag: "Con2";\n  contents: number;\n}|]
+#endif
 
 main :: IO ()
 main = hspec tests
