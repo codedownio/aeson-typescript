@@ -1,7 +1,5 @@
 
-resolver: nightly-2022-10-18
-# resolver: lts-19.7
-# resolver: nightly-2022-02-07 # End of aeson 1
+resolver: lts-20.12
 
 packages:
 - .
