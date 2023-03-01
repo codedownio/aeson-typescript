@@ -43,7 +43,7 @@ tests = describe "Open type families" $ do
           TSField False "\"single_node_env\"" "\"single\"" Nothing
           , TSField False "\"k8s_env\"" "\"k8s\"" Nothing
           , TSField False "T" "void" Nothing
-          ]
+          ] Nothing
         , TSTypeAlternatives "ISimple" ["T extends keyof DeployEnvironment2"] ["DeployEnvironment2[T]"]
         , TSTypeAlternatives "Simple" ["T extends keyof DeployEnvironment2"] ["ISimple<T>"]
         ])
@@ -56,7 +56,7 @@ tests = describe "Open type families" $ do
             TSField False "_userUsername" "string" Nothing
             , TSField False "_userCreatedAt" "number" Nothing
             , TSField False "_userDeployEnvironment" "DeployEnvironment[T]" Nothing
-            ]
+            ] Nothing
         ])
 
     it [i|get the declarations recursively|] $ do
@@ -65,12 +65,12 @@ tests = describe "Open type families" $ do
           TSField False "\"single_node_env\"" "\"single\"" Nothing
           , TSField False "\"k8s_env\"" "\"k8s\"" Nothing
           , TSField False "T" "void" Nothing
-          ]
+          ] Nothing
         , TSInterfaceDeclaration "IUser" ["T extends keyof DeployEnvironment"] [
             TSField False "_userUsername" "string" Nothing
             , TSField False "_userCreatedAt" "number" Nothing
             , TSField False "_userDeployEnvironment" "DeployEnvironment[T]" Nothing
-            ]
+            ] Nothing
         , TSTypeAlternatives "UserT" ["T extends keyof DeployEnvironment"] ["IUser<T>"]
         ])
 

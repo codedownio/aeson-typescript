@@ -24,6 +24,7 @@ allTests = describe "NoOmitNothingFields" $ do
                          interfaceName = "IOptional"
                          , interfaceGenericVariables = []
                          , interfaceMembers = [TSField False "optionalInt" "number | null" Nothing]
+                         , interfaceDoc = Nothing
                          }]
 
   tests

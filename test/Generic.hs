@@ -29,8 +29,8 @@ tests :: SpecWith ()
 tests = describe "Generic instances" $ do
   it [i|Complex makes the declaration and types correctly|] $ do
     (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (Complex String))) `shouldBe` [
-      TSInterfaceDeclaration {interfaceName = "IProduct", interfaceGenericVariables = ["T"], interfaceMembers = [TSField False "tag" "\"Product\"" Nothing, TSField False "contents" "[number, T]" Nothing]}
-      ,TSInterfaceDeclaration {interfaceName = "IUnary", interfaceGenericVariables = ["T"], interfaceMembers = [TSField False "tag" "\"Unary\"" Nothing, TSField False "contents" "number" Nothing]}
+      TSInterfaceDeclaration "IProduct" ["T"] [TSField False "tag" "\"Product\"" Nothing, TSField False "contents" "[number, T]" Nothing] Nothing
+      ,TSInterfaceDeclaration "IUnary" ["T"] [TSField False "tag" "\"Unary\"" Nothing, TSField False "contents" "number" Nothing] Nothing
       ,TSTypeAlternatives {typeName = "Complex", typeGenericVariables = ["T"], alternativeTypes = ["IProduct<T>","IUnary<T>"]}
       ]
 
@@ -42,24 +42,18 @@ tests = describe "Generic instances" $ do
 
   it [i|Complex3 makes the declaration and types correctly|] $ do
     (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (Complex3 String))) `shouldBe` [
-      TSInterfaceDeclaration {interfaceName = "IProduct3", interfaceGenericVariables = ["T"], interfaceMembers = [
-                                 TSField False "record3" "T[]" Nothing
-                                 ]}
+      TSInterfaceDeclaration "IProduct3" ["T"] [TSField False "record3" "T[]" Nothing] Nothing
       ,TSTypeAlternatives {typeName = "Complex3", typeGenericVariables = ["T"], alternativeTypes = ["IProduct3<T>"]}
       ]
 
     (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (Complex3 Int))) `shouldBe` [
-      TSInterfaceDeclaration {interfaceName = "IProduct3", interfaceGenericVariables = ["T"], interfaceMembers = [
-                                 TSField False "record3" "T[]" Nothing
-                                 ]}
+      TSInterfaceDeclaration "IProduct3" ["T"] [TSField False "record3" "T[]" Nothing] Nothing
       ,TSTypeAlternatives {typeName = "Complex3", typeGenericVariables = ["T"], alternativeTypes = ["IProduct3<T>"]}
       ]
 
   it [i|Complex4 makes the declaration and types correctly|] $ do
     (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (Complex4 String))) `shouldBe` [
-      TSInterfaceDeclaration {interfaceName = "IProduct4", interfaceGenericVariables = ["T"], interfaceMembers = [
-                                 TSField False "record4" "{[k in string]?: T}" Nothing
-                                 ]}
+      TSInterfaceDeclaration "IProduct4" ["T"] [TSField False "record4" "{[k in string]?: T}" Nothing] Nothing
       ,TSTypeAlternatives {typeName = "Complex4", typeGenericVariables = ["T"], alternativeTypes = ["IProduct4<T>"]}
       ]
 

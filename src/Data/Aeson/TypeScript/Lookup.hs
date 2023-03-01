@@ -55,7 +55,7 @@ getClosedTypeFamilyInterfaceDecl name eqns = do
 #endif
     x -> fail [i|aeson-typescript doesn't know yet how to handle this type family equation: '#{x}'|]
 
-  [| TSInterfaceDeclaration $(TH.stringE $ nameBase name) [] (L.sortBy (compare `on` fieldName) $(listE $ fmap return fields)) |]
+  [| TSInterfaceDeclaration $(TH.stringE $ nameBase name) [] (L.sortBy (compare `on` fieldName) $(listE $ fmap return fields)) Nothing |]
 
 getClosedTypeFamilyImage :: [TySynEqn] -> Q [Type]
 getClosedTypeFamilyImage eqns = do

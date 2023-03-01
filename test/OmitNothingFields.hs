@@ -21,6 +21,7 @@ main = hspec $ describe "OmitNothingFields" $ do
                          , interfaceMembers = [
                              TSField True "optionalInt" "number" Nothing
                              ]
+                         , interfaceDoc = Nothing
                          }]
 
   tests

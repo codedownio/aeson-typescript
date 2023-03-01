@@ -37,7 +37,7 @@ tests = describe "Higher kinds" $ do
     it [i|makes the declaration and types correctly|] $ do
       (getTypeScriptDeclarations (Proxy :: Proxy (HigherKind T))) `shouldBe` ([
         TSTypeAlternatives "HigherKind" ["T"] ["IHigherKind<T>"],
-        TSInterfaceDeclaration "IHigherKind" ["T"] [TSField False "higherKindList" "T[]" Nothing]
+        TSInterfaceDeclaration "IHigherKind" ["T"] [TSField False "higherKindList" "T[]" Nothing] Nothing
         ])
 
       (getTypeScriptType (Proxy :: Proxy (HigherKind Int))) `shouldBe` "HigherKind<number>"
@@ -47,7 +47,7 @@ tests = describe "Higher kinds" $ do
       (getTypeScriptDeclarations (Proxy :: Proxy Foo)) `shouldBe` ([
         TSTypeAlternatives "Foo" [] ["IFoo"],
         TSInterfaceDeclaration "IFoo" [] [TSField False "fooString" "string" Nothing
-                                         , TSField False "fooHigherKindReference" "HigherKind<string>" Nothing]
+                                         , TSField False "fooHigherKindReference" "HigherKind<string>" Nothing] Nothing
         ])
 
     it [i|works with an interface inside|] $ do
@@ -61,7 +61,7 @@ tests = describe "Higher kinds" $ do
       (getTypeScriptDeclarations (Proxy :: Proxy (DoubleHigherKind T1 T2))) `shouldBe` ([
         TSTypeAlternatives "DoubleHigherKind" ["T1","T2"] ["IDoubleHigherKind<T1, T2>"],
         TSInterfaceDeclaration "IDoubleHigherKind" ["T1","T2"] [TSField False "someList" "T2[]" Nothing
-                                                               , TSField False "higherKindThing" "HigherKind<T1>" Nothing]
+                                                               , TSField False "higherKindThing" "HigherKind<T1>" Nothing] Nothing
         ])
 
       (getTypeScriptType (Proxy :: Proxy (DoubleHigherKind Int String))) `shouldBe` "DoubleHigherKind<number, string>"
