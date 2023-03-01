@@ -65,6 +65,7 @@ tests:
     - FlexibleContexts
     - QuasiQuotes
     - TemplateHaskell
+    - TypeFamilies
     dependencies:
     - aeson-typescript
     - bytestring

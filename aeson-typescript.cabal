@@ -109,6 +109,7 @@ test-suite aeson-typescript-tests
       FlexibleContexts
       QuasiQuotes
       TemplateHaskell
+      TypeFamilies
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N -haddock -fno-warn-unused-top-binds
   build-depends:
       aeson
