@@ -314,7 +314,20 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci = do
 
     assembleInterfaceDeclaration members = [|TSInterfaceDeclaration $(TH.stringE interfaceName)
                                                                     $(genericVariablesListExpr True genericVariables)
-                                                                    $(return members)|]
+                                                                    $(return members)
+                                                                    $(tryGetDoc (constructorName ci))|]
+
+    tryGetDoc :: Name -> Q Exp
+    tryGetDoc n = do
+#if MIN_VERSION_template_haskell(2,18,0)
+      maybeDoc <- nothingOnFail $ getDoc (DeclDoc n)
+#else
+      let maybeDoc = Nothing
+#endif
+
+      case maybeDoc of
+        Just (Just doc) -> [|Just $(TH.stringE doc)|]
+        _ -> [|Nothing|]
 
     getTSFields :: WriterT [ExtraDeclOrGenericInfo] Q [Exp]
     getTSFields = forM (namesAndTypes options genericVariables ci) $ \(name, nameString, typ) -> do
@@ -323,13 +336,7 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci = do
           ( , ) <$> [|$(getTypeAsStringExp t) <> " | null"|] <*> getOptionalAsBoolExp t
         _ -> ( , ) <$> getTypeAsStringExp typ <*> getOptionalAsBoolExp typ
 
-#if MIN_VERSION_template_haskell(2,18,0)
-      maybeDoc <- lift $ nothingOnFail $ getDoc (DeclDoc name)
-#else
-      let maybeDoc = Nothing
-#endif
-
-      lift [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) $(case maybeDoc of Just (Just doc) -> [|Just $(TH.stringE doc)|]; _ -> [|Nothing|]) |]
+      lift [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) $(tryGetDoc name) |]
 
     isSingleRecordConstructor (constructorVariant -> RecordConstructor [_]) = True
     isSingleRecordConstructor _ = False

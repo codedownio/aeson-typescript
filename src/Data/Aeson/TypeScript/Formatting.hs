@@ -30,10 +30,15 @@ formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVar
     enumType = [i|\n\ntype #{name} = keyof typeof #{typeNameModifier name};|] :: T.Text
     toEnumName = T.replace "\"" ""
 
-formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceName genericVariables members) =
-  [i|#{exportPrefix exportMode}interface #{modifiedInterfaceName}#{getGenericBrackets genericVariables} {
+formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceName genericVariables members maybeDoc) =
+  docPrefix <> [i|#{exportPrefix exportMode}interface #{modifiedInterfaceName}#{getGenericBrackets genericVariables} {
 #{ls}
 }|] where
+      docPrefix = case maybeDoc of
+        Nothing -> ""
+        Just doc | '\n' `L.elem` doc -> "/* " <> (deleteLeadingWhitespace doc) <> " */\n"
+        Just doc -> "// " <> (deleteLeadingWhitespace doc) <> "\n"
+
       ls = T.intercalate "\n" $ [indentTo numIndentSpaces (T.pack (formatTSField member <> ";")) | member <- members]
       modifiedInterfaceName = (\(li, name) -> li <> interfaceNameModifier name) . splitAt 1 $ interfaceName
 
@@ -73,7 +78,8 @@ formatTSField (TSField optional name typ maybeDoc) = docPrefix <> [i|#{name}#{if
       Just doc | '\n' `L.elem` doc -> "/* " <> (deleteLeadingWhitespace doc) <> " */\n"
       Just doc -> "// " <> (deleteLeadingWhitespace doc) <> "\n"
 
-    deleteLeadingWhitespace = L.dropWhile (== ' ')
+deleteLeadingWhitespace :: String -> String
+deleteLeadingWhitespace = L.dropWhile (== ' ')
 
 getGenericBrackets :: [String] -> String
 getGenericBrackets [] = ""

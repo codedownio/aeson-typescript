@@ -86,7 +86,8 @@ instance Show TSType where
 
 data TSDeclaration = TSInterfaceDeclaration { interfaceName :: String
                                             , interfaceGenericVariables :: [String]
-                                            , interfaceMembers :: [TSField] }
+                                            , interfaceMembers :: [TSField]
+                                            , interfaceDoc :: Maybe String }
                    | TSTypeAlternatives { typeName :: String
                                         , typeGenericVariables :: [String]
                                         , alternativeTypes :: [String]}
