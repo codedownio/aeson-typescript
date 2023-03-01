@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module TwoElemArrayTagSingleConstructors (main, tests) where
 

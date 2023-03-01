@@ -58,6 +58,7 @@ tests:
     - -with-rtsopts=-N
     - -haddock
     - -fno-warn-unused-top-binds
+    - -fno-warn-orphans
     default-extensions:
     - OverloadedStrings
     - ScopedTypeVariables

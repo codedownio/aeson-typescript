@@ -111,7 +111,7 @@ test-suite aeson-typescript-tests
       TemplateHaskell
       TypeFamilies
       LambdaCase
-  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N -haddock -fno-warn-unused-top-binds
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N -haddock -fno-warn-unused-top-binds -fno-warn-orphans
   build-depends:
       aeson
     , aeson-typescript

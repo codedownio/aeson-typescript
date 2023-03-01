@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module ObjectWithSingleFieldNoTagSingleConstructors (main, tests) where
 
