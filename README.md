@@ -16,6 +16,7 @@ data D a = Nullary
          | Product String Char a
          | Record { testOne   :: Double
                   , testTwo   :: Bool
+                  -- | This docstring will go into the generated TypeScript!
                   , testThree :: D a
                   } deriving Eq
 ```
@@ -41,6 +42,7 @@ interface IRecord<T> {
   tag: "record";
   One: number;
   Two: boolean;
+  // This docstring will go into the generated TypeScript!
   Three: D<T>;
 }
 ```
