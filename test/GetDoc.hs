@@ -24,9 +24,10 @@ import Prelude hiding (Double)
 import Test.Hspec
 
 
+-- | OneField is a type with a single field
 data OneField = OneField {
-  -- | This is a simple string.
   simpleString :: String
+  -- ^ This is a simple string.
   }
 $(deriveTypeScript A.defaultOptions ''OneField)
 

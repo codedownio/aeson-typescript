@@ -329,7 +329,7 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci = do
       let maybeDoc = Nothing
 #endif
 
-      lift [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) Nothing |] -- TODO
+      lift [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) $(case maybeDoc of Just (Just doc) -> [|Just $(TH.stringE doc)|]; _ -> [|Nothing|]) |]
 
     isSingleRecordConstructor (constructorVariant -> RecordConstructor [x]) = True
     isSingleRecordConstructor _ = False
