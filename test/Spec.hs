@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 
 module Main where
 
@@ -30,7 +31,9 @@ main = hspec $ parallel $ do
   ClosedTypeFamilies.tests
   Formatting.tests
   Generic.tests
+#if MIN_VERSION_template_haskell(2,18,0)
   GetDoc.tests
+#endif
   HigherKind.tests
 
   LegalNameSpec.tests
