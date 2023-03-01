@@ -32,10 +32,15 @@ formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVar
 formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceName genericVariables members) =
   [i|#{exportPrefix exportMode}interface #{modifiedInterfaceName}#{getGenericBrackets genericVariables} {
 #{ls}
-}|] where ls = T.intercalate "\n" $ fmap T.pack [(replicate numIndentSpaces ' ') <> formatTSField member <> ";"| member <- members]
-          modifiedInterfaceName = (\(li, name) -> li <> interfaceNameModifier name) . splitAt 1 $ interfaceName
+}|] where
+      ls = T.intercalate "\n" $ fmap T.pack [indentTo numIndentSpaces (formatTSField member <> ";") | member <- members]
+      modifiedInterfaceName = (\(li, name) -> li <> interfaceNameModifier name) . splitAt 1 $ interfaceName
 
 formatTSDeclaration _ (TSRawDeclaration text) = text
+
+-- | TODO: handle multiple lines
+indentTo :: Int -> String -> String
+indentTo numIndentSpaces s = replicate numIndentSpaces ' ' <> s
 
 exportPrefix :: ExportMode -> String
 exportPrefix ExportEach = "export "
@@ -60,7 +65,11 @@ validateFormattingOptions options@FormattingOptions{..} decls
     isPlainSumType ds = (not . any isInterface $ ds) && length ds == 1
 
 formatTSField :: TSField -> String
-formatTSField (TSField optional name typ) = [i|#{name}#{if optional then ("?" :: String) else ""}: #{typ}|]
+formatTSField (TSField optional name typ maybeDoc) = docPrefix <> [i|#{name}#{if optional then ("?" :: String) else ""}: #{typ}|]
+  where
+    docPrefix = case maybeDoc of
+      Nothing -> ""
+      Just doc -> "/* " <> doc <> " */\n"
 
 getGenericBrackets :: [String] -> String
 getGenericBrackets [] = ""

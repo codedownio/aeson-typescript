@@ -270,7 +270,7 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci = do
          lift [|$(TH.stringE interfaceName) <> $(return brackets)|]
      | otherwise -> do
          tagField :: [Exp] <- lift $ case sumEncoding options of
-           TaggedObject tagFieldName _ -> (: []) <$> [|TSField False $(TH.stringE tagFieldName) $(TH.stringE [i|"#{constructorNameToUse options ci}"|])|]
+           TaggedObject tagFieldName _ -> (: []) <$> [|TSField False $(TH.stringE tagFieldName) $(TH.stringE [i|"#{constructorNameToUse options ci}"|]) Nothing|]
            _ -> return []
 
          tsFields <- getTSFields
@@ -322,7 +322,14 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci = do
         (AppT (ConT name) t) | name == ''Maybe && not (omitNothingFields options) ->
           ( , ) <$> [|$(getTypeAsStringExp t) <> " | null"|] <*> getOptionalAsBoolExp t
         _ -> ( , ) <$> getTypeAsStringExp typ <*> getOptionalAsBoolExp typ
-      lift $ [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) |]
+
+#if MIN_VERSION_template_haskell(2,18,0)
+      maybeDoc <- lift $ getDoc (DeclDoc (mkName nameString))
+#else
+      let maybeDoc = Nothing
+#endif
+
+      lift $ [| TSField $(return optAsBool) $(TH.stringE nameString) $(return fieldTyp) Nothing |] -- TODO
 
     isSingleRecordConstructor (constructorVariant -> RecordConstructor [x]) = True
     isSingleRecordConstructor _ = False

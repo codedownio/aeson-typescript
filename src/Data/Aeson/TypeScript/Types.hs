@@ -93,9 +93,13 @@ data TSDeclaration = TSInterfaceDeclaration { interfaceName :: String
                    | TSRawDeclaration { text :: String }
   deriving (Show, Eq, Ord)
 
-data TSField = TSField { fieldOptional :: Bool
-                       , fieldName :: String
-                       , fieldType :: String } deriving (Show, Eq, Ord)
+data TSField = TSField
+  { fieldOptional :: Bool
+  , fieldName :: String
+  , fieldType :: String
+  , fieldDoc :: Maybe String
+  -- ^ Haddock documentation for the field, if present
+  } deriving (Show, Eq, Ord)
 
 newtype TSString a = TSString { unpackTSString :: String } deriving Show
 

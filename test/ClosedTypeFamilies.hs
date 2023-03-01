@@ -53,9 +53,9 @@ tests = describe "Closed type families" $ do
     it [i|makes the declaration and types correctly|] $ do
       (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (Simple T))) `shouldBe` ([
         TSInterfaceDeclaration "DeployEnvironment2" [] [
-          TSField False "\"k8s_env\"" "\"k8s\""
-          , TSField False "\"single_node_env\"" "\"single\""
-          , TSField False "T" "void"
+          TSField False "\"k8s_env\"" "\"k8s\"" Nothing
+          , TSField False "\"single_node_env\"" "\"single\"" Nothing
+          , TSField False "T" "void" Nothing
           ]
         , TSTypeAlternatives "ISimple" ["T extends keyof DeployEnvironment2"] ["DeployEnvironment2[T]"]
         , TSTypeAlternatives "Simple" ["T extends keyof DeployEnvironment2"] ["ISimple<T>"]
@@ -66,23 +66,23 @@ tests = describe "Closed type families" $ do
       (getTypeScriptDeclarations (Proxy :: Proxy (UserT T Identity))) `shouldBe` ([
         TSTypeAlternatives "UserT" ["T extends keyof DeployEnvironment"] ["IUser<T>"]
         , TSInterfaceDeclaration "IUser" ["T extends keyof DeployEnvironment"] [
-            TSField False "_userUsername" "string"
-            , TSField False "_userCreatedAt" "number"
-            , TSField False "_userDeployEnvironment" "DeployEnvironment[T]"
+            TSField False "_userUsername" "string" Nothing
+            , TSField False "_userCreatedAt" "number" Nothing
+            , TSField False "_userDeployEnvironment" "DeployEnvironment[T]" Nothing
             ]
         ])
 
     it [i|get the declarations recursively|] $ do
       (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (UserT T Identity))) `shouldBe` ([
         TSInterfaceDeclaration "DeployEnvironment" [] [
-          TSField False "\"k8s_env\"" "\"k8s\""
-          , TSField False "\"single_node_env\"" "\"single\""
-          , TSField False "T" "void"
+          TSField False "\"k8s_env\"" "\"k8s\"" Nothing
+          , TSField False "\"single_node_env\"" "\"single\"" Nothing
+          , TSField False "T" "void" Nothing
           ]
         , TSInterfaceDeclaration "IUser" ["T extends keyof DeployEnvironment"] [
-            TSField False "_userUsername" "string"
-            , TSField False "_userCreatedAt" "number"
-            , TSField False "_userDeployEnvironment" "DeployEnvironment[T]"
+            TSField False "_userUsername" "string" Nothing
+            , TSField False "_userCreatedAt" "number" Nothing
+            , TSField False "_userDeployEnvironment" "DeployEnvironment[T]" Nothing
             ]
         , TSTypeAlternatives "UserT" ["T extends keyof DeployEnvironment"] ["IUser<T>"]
         ])

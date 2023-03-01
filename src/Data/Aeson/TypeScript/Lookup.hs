@@ -46,12 +46,12 @@ getClosedTypeFamilyInterfaceDecl name eqns = do
   fields <- forM eqns $ \case
 #if MIN_VERSION_template_haskell(2,15,0)
     TySynEqn Nothing (AppT (ConT _) (ConT arg)) result -> do
-      [| TSField False (getTypeScriptType (Proxy :: Proxy $(conT arg))) (getTypeScriptType (Proxy :: Proxy $(return result))) |]
+      [| TSField False (getTypeScriptType (Proxy :: Proxy $(conT arg))) (getTypeScriptType (Proxy :: Proxy $(return result))) Nothing |]
     TySynEqn Nothing (AppT (ConT _) (PromotedT arg)) result -> do
-      [| TSField False (getTypeScriptType (Proxy :: Proxy $(promotedT arg))) (getTypeScriptType (Proxy :: Proxy $(return result))) |]
+      [| TSField False (getTypeScriptType (Proxy :: Proxy $(promotedT arg))) (getTypeScriptType (Proxy :: Proxy $(return result))) Nothing |]
 #else
     TySynEqn [ConT arg] result -> do
-      [| TSField False (getTypeScriptType (Proxy :: Proxy $(conT arg))) (getTypeScriptType (Proxy :: Proxy $(return result))) |]
+      [| TSField False (getTypeScriptType (Proxy :: Proxy $(conT arg))) (getTypeScriptType (Proxy :: Proxy $(return result))) Nothing |]
 #endif
     x -> fail [i|aeson-typescript doesn't know yet how to handle this type family equation: '#{x}'|]
 
