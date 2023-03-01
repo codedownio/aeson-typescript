@@ -3,6 +3,7 @@
 module Data.Aeson.TypeScript.Formatting where
 
 import Data.Aeson.TypeScript.Types
+import qualified Data.List as L
 import Data.String.Interpolate
 import qualified Data.Text as T
 
@@ -33,14 +34,14 @@ formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceNa
   [i|#{exportPrefix exportMode}interface #{modifiedInterfaceName}#{getGenericBrackets genericVariables} {
 #{ls}
 }|] where
-      ls = T.intercalate "\n" $ fmap T.pack [indentTo numIndentSpaces (formatTSField member <> ";") | member <- members]
+      ls = T.intercalate "\n" $ [indentTo numIndentSpaces (T.pack (formatTSField member <> ";")) | member <- members]
       modifiedInterfaceName = (\(li, name) -> li <> interfaceNameModifier name) . splitAt 1 $ interfaceName
 
 formatTSDeclaration _ (TSRawDeclaration text) = text
 
--- | TODO: handle multiple lines
-indentTo :: Int -> String -> String
-indentTo numIndentSpaces s = replicate numIndentSpaces ' ' <> s
+indentTo :: Int -> T.Text -> T.Text
+indentTo numIndentSpaces input = T.intercalate "\n" [padding <> line | line <- T.splitOn "\n" input]
+  where padding = T.replicate numIndentSpaces " "
 
 exportPrefix :: ExportMode -> String
 exportPrefix ExportEach = "export "
@@ -69,7 +70,10 @@ formatTSField (TSField optional name typ maybeDoc) = docPrefix <> [i|#{name}#{if
   where
     docPrefix = case maybeDoc of
       Nothing -> ""
-      Just doc -> "/* " <> doc <> " */\n"
+      Just doc | '\n' `L.elem` doc -> "/* " <> (deleteLeadingWhitespace doc) <> " */\n"
+      Just doc -> "// " <> (deleteLeadingWhitespace doc) <> "\n"
+
+    deleteLeadingWhitespace = L.dropWhile (== ' ')
 
 getGenericBrackets :: [String] -> String
 getGenericBrackets [] = ""
