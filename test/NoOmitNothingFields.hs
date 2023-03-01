@@ -35,9 +35,7 @@ allTests = describe "NoOmitNothingFields" $ do
                      , TSInterfaceDeclaration {
                          interfaceName = "IOptional"
                          , interfaceGenericVariables = []
-                         , interfaceMembers = [TSField {fieldOptional = False
-                                                       , fieldName = "optionalInt"
-                                                       , fieldType = "number | null"}]
+                         , interfaceMembers = [TSField False "optionalInt" "number | null" Nothing]
                          }]
 
   tests

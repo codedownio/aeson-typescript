@@ -41,7 +41,9 @@ tests = describe "Basic tests" $ do
         ])
 
     it [i|Works with a unit with constructorTagModifier|] $ do
-      (getTypeScriptDeclarations (Proxy :: Proxy Unit2)) `shouldBe` ([])
+      (getTypeScriptDeclarations (Proxy :: Proxy Unit2)) `shouldBe` ([
+        TSTypeAlternatives "Unit2" [] ["\"foo\""]
+        ])
 
 
 main :: IO ()

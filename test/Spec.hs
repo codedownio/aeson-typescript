@@ -3,8 +3,10 @@ module Main where
 
 import Test.Hspec
 
+import qualified Basic
 import qualified Formatting
 import qualified Generic
+import qualified GetDoc
 import qualified HigherKind
 import qualified ClosedTypeFamilies
 
@@ -24,9 +26,11 @@ import qualified UnwrapUnaryRecords
 
 main :: IO ()
 main = hspec $ parallel $ do
+  Basic.tests
   ClosedTypeFamilies.tests
   Formatting.tests
   Generic.tests
+  GetDoc.tests
   HigherKind.tests
 
   LegalNameSpec.tests

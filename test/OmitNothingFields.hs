@@ -31,9 +31,7 @@ main = hspec $ describe "OmitNothingFields" $ do
                          interfaceName = "Optional"
                          , interfaceGenericVariables = []
                          , interfaceMembers = [
-                             TSField {fieldOptional = True
-                                     , fieldName = "optionalInt"
-                                     , fieldType = "number"}
+                             TSField True "optionalInt" "number" Nothing
                              ]
                          }]
 
