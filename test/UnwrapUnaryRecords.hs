@@ -19,8 +19,8 @@ allTests = describe "UnwrapUnaryRecords" $ do
     let decls = getTypeScriptDeclarations (Proxy :: Proxy OneField)
 
     decls `shouldBe` [
-      TSTypeAlternatives {typeName = "OneField", typeGenericVariables = [], alternativeTypes = ["IOneField"]}
-      ,TSTypeAlternatives {typeName = "IOneField", typeGenericVariables = [], alternativeTypes = ["string"]}
+      TSTypeAlternatives "OneField" [] ["IOneField"] Nothing
+      ,TSTypeAlternatives "IOneField" [] ["string"] Nothing
       ]
 
   tests

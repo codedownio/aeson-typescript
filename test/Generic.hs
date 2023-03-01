@@ -31,30 +31,30 @@ tests = describe "Generic instances" $ do
     (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (Complex String))) `shouldBe` [
       TSInterfaceDeclaration "IProduct" ["T"] [TSField False "tag" "\"Product\"" Nothing, TSField False "contents" "[number, T]" Nothing] Nothing
       ,TSInterfaceDeclaration "IUnary" ["T"] [TSField False "tag" "\"Unary\"" Nothing, TSField False "contents" "number" Nothing] Nothing
-      ,TSTypeAlternatives {typeName = "Complex", typeGenericVariables = ["T"], alternativeTypes = ["IProduct<T>","IUnary<T>"]}
+      ,TSTypeAlternatives "Complex" ["T"] ["IProduct<T>","IUnary<T>"] Nothing
       ]
 
   it [i|Complex2 makes the declaration and types correctly|] $ do
     (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (Complex2 String))) `shouldBe` [
-      TSTypeAlternatives {typeName = "Complex2", typeGenericVariables = ["T"], alternativeTypes = ["IProduct2<T>"]}
-      ,TSTypeAlternatives {typeName = "IProduct2", typeGenericVariables = ["T"], alternativeTypes = ["[number, T]"]}
+      TSTypeAlternatives "Complex2" ["T"] ["IProduct2<T>"] Nothing
+      ,TSTypeAlternatives "IProduct2" ["T"] ["[number, T]"] Nothing
       ]
 
   it [i|Complex3 makes the declaration and types correctly|] $ do
     (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (Complex3 String))) `shouldBe` [
       TSInterfaceDeclaration "IProduct3" ["T"] [TSField False "record3" "T[]" Nothing] Nothing
-      ,TSTypeAlternatives {typeName = "Complex3", typeGenericVariables = ["T"], alternativeTypes = ["IProduct3<T>"]}
+      ,TSTypeAlternatives "Complex3" ["T"] ["IProduct3<T>"] Nothing
       ]
 
     (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (Complex3 Int))) `shouldBe` [
       TSInterfaceDeclaration "IProduct3" ["T"] [TSField False "record3" "T[]" Nothing] Nothing
-      ,TSTypeAlternatives {typeName = "Complex3", typeGenericVariables = ["T"], alternativeTypes = ["IProduct3<T>"]}
+      ,TSTypeAlternatives "Complex3" ["T"] ["IProduct3<T>"] Nothing
       ]
 
   it [i|Complex4 makes the declaration and types correctly|] $ do
     (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (Complex4 String))) `shouldBe` [
       TSInterfaceDeclaration "IProduct4" ["T"] [TSField False "record4" "{[k in string]?: T}" Nothing] Nothing
-      ,TSTypeAlternatives {typeName = "Complex4", typeGenericVariables = ["T"], alternativeTypes = ["IProduct4<T>"]}
+      ,TSTypeAlternatives "Complex4" ["T"] ["IProduct4<T>"] Nothing
       ]
 
 main :: IO ()

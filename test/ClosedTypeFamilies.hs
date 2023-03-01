@@ -44,14 +44,14 @@ tests = describe "Closed type families" $ do
           , TSField False "\"single_node_env\"" "\"single\"" Nothing
           , TSField False "T" "void" Nothing
           ] Nothing
-        , TSTypeAlternatives "ISimple" ["T extends keyof DeployEnvironment2"] ["DeployEnvironment2[T]"]
-        , TSTypeAlternatives "Simple" ["T extends keyof DeployEnvironment2"] ["ISimple<T>"]
+        , TSTypeAlternatives "ISimple" ["T extends keyof DeployEnvironment2"] ["DeployEnvironment2[T]"] Nothing
+        , TSTypeAlternatives "Simple" ["T extends keyof DeployEnvironment2"] ["ISimple<T>"] Nothing
         ])
 
   describe "Complicated Beam-like user type" $ do
     it [i|makes the declaration and types correctly|] $ do
       (getTypeScriptDeclarations (Proxy :: Proxy (UserT T Identity))) `shouldBe` ([
-        TSTypeAlternatives "UserT" ["T extends keyof DeployEnvironment"] ["IUser<T>"]
+        TSTypeAlternatives "UserT" ["T extends keyof DeployEnvironment"] ["IUser<T>"] Nothing
         , TSInterfaceDeclaration "IUser" ["T extends keyof DeployEnvironment"] [
             TSField False "_userUsername" "string" Nothing
             , TSField False "_userCreatedAt" "number" Nothing
@@ -71,7 +71,7 @@ tests = describe "Closed type families" $ do
             , TSField False "_userCreatedAt" "number" Nothing
             , TSField False "_userDeployEnvironment" "DeployEnvironment[T]" Nothing
             ] Nothing
-        , TSTypeAlternatives "UserT" ["T extends keyof DeployEnvironment"] ["IUser<T>"]
+        , TSTypeAlternatives "UserT" ["T extends keyof DeployEnvironment"] ["IUser<T>"] Nothing
         ])
 
 main :: IO ()

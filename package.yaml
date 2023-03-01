@@ -37,18 +37,19 @@ dependencies:
 - transformers
 - unordered-containers
 
+default-extensions:
+- LambdaCase
+- MultiWayIf
+- NamedFieldPuns
+- OverloadedStrings
+- QuasiQuotes
+- RecordWildCards
+- ScopedTypeVariables
+- TupleSections
+- ViewPatterns
+
 library:
   source-dirs: src
-  default-extensions:
-  - LambdaCase
-  - RecordWildCards
-  - NamedFieldPuns
-  - MultiWayIf
-  - TupleSections
-  - QuasiQuotes
-  - OverloadedStrings
-  - ViewPatterns
-  - ScopedTypeVariables
   exposed-modules:
   - Data.Aeson.TypeScript.TH
   - Data.Aeson.TypeScript.Internal
@@ -70,14 +71,10 @@ tests:
     - -fno-warn-unused-top-binds
     - -fno-warn-orphans
     default-extensions:
-    - OverloadedStrings
-    - ScopedTypeVariables
-    - KindSignatures
     - FlexibleContexts
-    - QuasiQuotes
+    - KindSignatures
     - TemplateHaskell
     - TypeFamilies
-    - LambdaCase
     dependencies:
     - aeson-typescript
     - bytestring

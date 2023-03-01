@@ -287,7 +287,8 @@ handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) gene
             _ -> getTypeAsStringExp typ
           alternatives <- lift [|TSTypeAlternatives $(TH.stringE interfaceName)
                                                     $(genericVariablesListExpr True genericVariables)
-                                                    [$(return stringExp)]|]
+                                                    [$(return stringExp)]
+                                                    $(tryGetDoc haddockModifier (constructorName ci))|]
           tell [ExtraDecl alternatives]
 #endif
 
@@ -302,7 +303,8 @@ handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) gene
     tupleEncoding =
       lift [|TSTypeAlternatives $(TH.stringE interfaceName)
                                 $(genericVariablesListExpr True genericVariables)
-                                [getTypeScriptType (Proxy :: Proxy $(return (contentsTupleTypeSubstituted genericVariables ci)))]|]
+                                [getTypeScriptType (Proxy :: Proxy $(return (contentsTupleTypeSubstituted genericVariables ci)))]
+                                $(tryGetDoc haddockModifier (constructorName ci))|]
 
     assembleInterfaceDeclaration members = [|TSInterfaceDeclaration $(TH.stringE interfaceName)
                                                                     $(genericVariablesListExpr True genericVariables)

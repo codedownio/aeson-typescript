@@ -50,14 +50,14 @@ library
       src
   default-extensions:
       LambdaCase
-      RecordWildCards
-      NamedFieldPuns
       MultiWayIf
-      TupleSections
-      QuasiQuotes
+      NamedFieldPuns
       OverloadedStrings
-      ViewPatterns
+      QuasiQuotes
+      RecordWildCards
       ScopedTypeVariables
+      TupleSections
+      ViewPatterns
   build-depends:
       aeson
     , base >=4.7 && <5
@@ -113,14 +113,19 @@ test-suite aeson-typescript-tests
       test
       src
   default-extensions:
+      LambdaCase
+      MultiWayIf
+      NamedFieldPuns
       OverloadedStrings
-      ScopedTypeVariables
-      KindSignatures
-      FlexibleContexts
       QuasiQuotes
+      RecordWildCards
+      ScopedTypeVariables
+      TupleSections
+      ViewPatterns
+      FlexibleContexts
+      KindSignatures
       TemplateHaskell
       TypeFamilies
-      LambdaCase
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N -haddock -fno-warn-unused-top-binds -fno-warn-orphans
   build-depends:
       aeson
