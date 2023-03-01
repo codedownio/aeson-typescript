@@ -11,6 +11,7 @@ module Data.Aeson.TypeScript.Types where
 
 import qualified Data.Aeson as A
 import Data.Aeson.TypeScript.LegalName
+import qualified Data.List as L
 import qualified Data.List.NonEmpty as NonEmpty
 import Data.Proxy
 import Data.String
@@ -203,11 +204,19 @@ allStarConstructors'' = ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "
 
 data ExtraTypeScriptOptions = ExtraTypeScriptOptions {
   typeFamiliesToMapToTypeScript :: [Name]
+
   , keyType :: Maybe String
+
+  -- | Function which is applied to all Haddocks we read in.
+  -- By default, just drops leading whitespace.
+  , haddockModifier :: String -> String
   }
 
 defaultExtraTypeScriptOptions :: ExtraTypeScriptOptions
-defaultExtraTypeScriptOptions = ExtraTypeScriptOptions [] Nothing
+defaultExtraTypeScriptOptions = ExtraTypeScriptOptions [] Nothing deleteLeadingWhitespace
+  where
+    deleteLeadingWhitespace :: String -> String
+    deleteLeadingWhitespace = L.dropWhile (== ' ')
 
 data ExtraDeclOrGenericInfo = ExtraDecl Exp
                             | ExtraGeneric GenericInfo

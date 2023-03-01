@@ -31,14 +31,9 @@ formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVar
     toEnumName = T.replace "\"" ""
 
 formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceName genericVariables members maybeDoc) =
-  docPrefix <> [i|#{exportPrefix exportMode}interface #{modifiedInterfaceName}#{getGenericBrackets genericVariables} {
+  makeDocPrefix maybeDoc <> [i|#{exportPrefix exportMode}interface #{modifiedInterfaceName}#{getGenericBrackets genericVariables} {
 #{ls}
 }|] where
-      docPrefix = case maybeDoc of
-        Nothing -> ""
-        Just doc | '\n' `L.elem` doc -> "/* " <> (deleteLeadingWhitespace doc) <> " */\n"
-        Just doc -> "// " <> (deleteLeadingWhitespace doc) <> "\n"
-
       ls = T.intercalate "\n" $ [indentTo numIndentSpaces (T.pack (formatTSField member <> ";")) | member <- members]
       modifiedInterfaceName = (\(li, name) -> li <> interfaceNameModifier name) . splitAt 1 $ interfaceName
 
@@ -71,15 +66,13 @@ validateFormattingOptions options@FormattingOptions{..} decls
     isPlainSumType ds = (not . any isInterface $ ds) && length ds == 1
 
 formatTSField :: TSField -> String
-formatTSField (TSField optional name typ maybeDoc) = docPrefix <> [i|#{name}#{if optional then ("?" :: String) else ""}: #{typ}|]
-  where
-    docPrefix = case maybeDoc of
-      Nothing -> ""
-      Just doc | '\n' `L.elem` doc -> "/* " <> (deleteLeadingWhitespace doc) <> " */\n"
-      Just doc -> "// " <> (deleteLeadingWhitespace doc) <> "\n"
+formatTSField (TSField optional name typ maybeDoc) = makeDocPrefix maybeDoc <> [i|#{name}#{if optional then ("?" :: String) else ""}: #{typ}|]
 
-deleteLeadingWhitespace :: String -> String
-deleteLeadingWhitespace = L.dropWhile (== ' ')
+makeDocPrefix :: Maybe String -> String
+makeDocPrefix maybeDoc = case maybeDoc of
+  Nothing -> ""
+  Just doc | '\n' `L.elem` doc -> "/* " <> doc <> " */\n"
+  Just doc -> "// " <> doc <> "\n"
 
 getGenericBrackets :: [String] -> String
 getGenericBrackets [] = ""

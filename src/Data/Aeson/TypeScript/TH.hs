@@ -217,7 +217,7 @@ deriveTypeScript' options name extraOptions = do
   let typeVariablePreds :: [Pred] = [AppT (ConT ''TypeScript) x | x <- getDataTypeVars dti]
 
   -- Build the declarations
-  (types, (extraDeclsOrGenericInfosInitial <>) -> extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor options dti genericVariablesAndSuffixes) (datatypeCons dti)
+  (types, (extraDeclsOrGenericInfosInitial <>) -> extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor extraOptions options dti genericVariablesAndSuffixes) (datatypeCons dti)
   typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName (datatypeName dti))
                                           $(genericVariablesListExpr True genericVariablesAndSuffixes)
                                           $(listE $ fmap return types)|]
@@ -244,8 +244,8 @@ deriveTypeScript' options name extraOptions = do
   return (mconcat [x | ExtraTopLevelDecs x <- extraDeclsOrGenericInfos] <> inst)
 
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
-handleConstructor :: Options -> DatatypeInfo -> [(Name, (Suffix, Var))] -> ConstructorInfo -> WriterT [ExtraDeclOrGenericInfo] Q Exp
-handleConstructor options (DatatypeInfo {..}) genericVariables ci = do
+handleConstructor :: ExtraTypeScriptOptions -> Options -> DatatypeInfo -> [(Name, (Suffix, Var))] -> ConstructorInfo -> WriterT [ExtraDeclOrGenericInfo] Q Exp
+handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) genericVariables ci = do
   if | (length datatypeCons == 1) && not (getTagSingleConstructors options) -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
@@ -320,7 +320,9 @@ handleConstructor options (DatatypeInfo {..}) genericVariables ci = do
     tryGetDoc :: Name -> Q Exp
     tryGetDoc n = do
 #if MIN_VERSION_template_haskell(2,18,0)
-      maybeDoc <- nothingOnFail $ getDoc (DeclDoc n)
+      maybeDoc <- nothingOnFail (getDoc (DeclDoc n)) >>= \case
+        Just (Just doc) -> return $ Just $ Just $ haddockModifier doc
+        x -> return x
 #else
       let maybeDoc = Nothing
 #endif
