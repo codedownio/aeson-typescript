@@ -16,6 +16,7 @@ module Data.Aeson.TypeScript.Recursive (
   , getAllParentTypes
   ) where
 
+import Control.Monad
 import Control.Monad.State
 import Control.Monad.Trans.Maybe
 import Control.Monad.Writer
