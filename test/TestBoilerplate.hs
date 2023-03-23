@@ -118,6 +118,7 @@ testDeclarations testName aesonOptions = do
                          <> getTypeScriptDeclarations (Proxy :: Proxy (Complex T))
                          <> getTypeScriptDeclarations (Proxy :: Proxy Optional)
                          <> getTypeScriptDeclarations (Proxy :: Proxy AesonTypes)
+                         <> getTypeScriptDeclarations (Proxy :: Proxy Numbers)
                          |]
 
   tests <- [d|tests :: SpecWith ()
