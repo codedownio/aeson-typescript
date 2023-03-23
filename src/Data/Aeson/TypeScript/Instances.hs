@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE PolyKinds #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- Note: the OverlappingInstances pragma is only here so the overlapping instances in this file
@@ -19,6 +20,7 @@ import Data.Functor.Identity (Identity)
 import Data.Functor.Product (Product)
 import Data.HashMap.Strict
 import Data.HashSet
+import Data.Kind (Type)
 import qualified Data.List as L
 import Data.List.NonEmpty (NonEmpty)
 import Data.Map.Strict
@@ -28,8 +30,8 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Data.Void
 import Data.Word
-import Numeric.Natural (Natural)
 import GHC.Int
+import Numeric.Natural (Natural)
 
 #if !MIN_VERSION_base(4,11,0)
 import Data.Monoid
@@ -139,7 +141,7 @@ instance (TypeScript a, TypeScript b, TypeScript c, TypeScript d) => TypeScript 
                            , (TSType (Proxy :: Proxy d))
                            ]
 
-instance (TypeScript a) => TypeScript (Const a) where
+instance forall a k (b :: k). (Typeable k, Typeable b, TypeScript a) => TypeScript (Const a b) where
   getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
   getParentTypes _ = [TSType (Proxy :: Proxy a)]
 
@@ -147,11 +149,15 @@ instance (TypeScript a) => TypeScript (Identity a) where
   getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
   getParentTypes _ = [TSType (Proxy :: Proxy a)]
 
-instance (Typeable f, Typeable g, Typeable a, TypeScript (f (g a)), TypeScript a) => TypeScript (Compose f g a) where
+instance forall k k1 (f :: k -> Type) (g :: k1 -> k) a. (
+  Typeable k, Typeable k1, Typeable f, Typeable g, Typeable a, TypeScript (f (g a)), TypeScript a
+  ) => TypeScript (Compose f g a) where
   getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy (f (g a)))
   getParentTypes _ = getParentTypes (Proxy :: Proxy (f (g a)))
 
-instance (Typeable f, Typeable g, Typeable a, TypeScript (f a), TypeScript (g a)) => TypeScript (Product f g a) where
+instance forall k (f :: k -> Type) (g :: k -> Type) a. (
+  Typeable k, Typeable f, Typeable g, Typeable a, TypeScript (f a), TypeScript (g a)
+  ) => TypeScript (Product f g a) where
   getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy (f a, g a))
   getParentTypes _ = L.nub [ (TSType (Proxy :: Proxy (f a)))
                            , (TSType (Proxy :: Proxy (g a)))

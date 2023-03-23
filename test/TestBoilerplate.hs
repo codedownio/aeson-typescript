@@ -10,7 +10,9 @@ import Data.Functor.Identity
 import Data.Kind
 import Data.Proxy
 import Data.String.Interpolate
+import Data.Word
 import Language.Haskell.TH hiding (Type)
+import Numeric.Natural (Natural)
 import Test.Hspec
 import Util
 import Util.Aeson
@@ -25,6 +27,13 @@ data TwoConstructor = Con1 { con1String :: String } | Con2 { con2String :: Strin
 data Complex a = Nullary | Unary Int | Product String Char a | Record { testOne :: Int, testTwo :: Bool, testThree :: Complex a} deriving Eq
 data Optional = Optional {optionalInt :: Maybe Int}
 data AesonTypes = AesonTypes { aesonValue :: A.Value, aesonObject :: A.Object }
+data Numbers = Numbers {
+  natural :: Natural
+  , word :: Word
+  , word16 :: Word16
+  , word32 :: Word32
+  , word64 :: Word64
+  }
 
 -- * For testing type families
 
@@ -65,6 +74,7 @@ testDeclarations testName aesonOptions = do
     deriveInstances ''Complex
     deriveInstances ''Optional
     deriveInstances ''AesonTypes
+    deriveInstances ''Numbers
 
   typesAndValues :: Exp <- [e|[(getTypeScriptType (Proxy :: Proxy Unit), A.encode Unit)
 
@@ -94,6 +104,8 @@ testDeclarations testName aesonOptions = do
                                                                                              aesonValue = A.object [("foo" :: A.Key, A.Number 42)]
                                                                                              , aesonObject = aesonFromList [("foo", A.Number 42)]
                                                                                              }))
+
+                              , (getTypeScriptType (Proxy :: Proxy Optional), A.encode (Numbers 42 42 42 42 42))
                               ]|]
 
   declarations :: Exp <- [e|getTypeScriptDeclarations (Proxy :: Proxy Unit)
