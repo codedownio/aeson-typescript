@@ -89,10 +89,9 @@ jobs:
         path: ~/.stack
         key: ${{ runner.os }}-${{ matrix.ghc }}-stack
 
-    # Install TSC
-    - uses: actions/setup-node@v2
+    - uses: actions/setup-node@v3
       with:
-        node-version: '12'
+        node-version: '16'
     - name: Install TSC
       run: |
         npm install -g typescript
