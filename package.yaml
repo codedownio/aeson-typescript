@@ -23,7 +23,14 @@ synopsis:            Generate TypeScript definition files from your ADTs
 # common to point users to the README.md file.
 description:         Please see the README on Github at <https://github.com/codedownio/aeson-typescript#readme>
 
-tested-with: GHC == 9.0.1, GHC == 8.10.4, GHC == 8.10.3, GHC == 8.8.4, GHC == 8.8.3
+tested-with:
+- GHC == 9.6.1
+- GHC == 9.4.4
+- GHC == 9.2.7
+- GHC == 9.0.2
+- GHC == 8.10.7
+- GHC == 8.8.4
+- GHC == 8.6.5
 
 dependencies:
 - aeson
