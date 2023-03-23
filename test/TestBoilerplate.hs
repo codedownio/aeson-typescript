@@ -105,7 +105,7 @@ testDeclarations testName aesonOptions = do
                                                                                              , aesonObject = aesonFromList [("foo", A.Number 42)]
                                                                                              }))
 
-                              , (getTypeScriptType (Proxy :: Proxy Optional), A.encode (Numbers 42 42 42 42 42))
+                              , (getTypeScriptType (Proxy :: Proxy Numbers), A.encode (Numbers 42 42 42 42 42))
                               ]|]
 
   declarations :: Exp <- [e|getTypeScriptDeclarations (Proxy :: Proxy Unit)
