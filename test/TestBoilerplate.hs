@@ -6,8 +6,12 @@ import Control.Monad.Writer.Lazy hiding (Product)
 import qualified Data.Aeson as A
 import Data.Aeson.TH as A
 import Data.Aeson.TypeScript.TH
+import Data.Functor.Compose
+import Data.Functor.Const
 import Data.Functor.Identity
+import Data.Functor.Product
 import Data.Kind
+import Data.List.NonEmpty
 import Data.Proxy
 import Data.String.Interpolate
 import Data.Word
@@ -34,6 +38,17 @@ data Numbers = Numbers {
   , word32 :: Word32
   , word64 :: Word64
   }
+data FancyFunctors = FancyFunctors {
+  nonEmpty :: NonEmpty Int
+  , const :: Const Int Int
+  , product :: Product Identity Identity Int
+  , compose :: Compose Identity Identity Int
+  }
+
+-- * Values
+
+fancyFunctorsValue :: FancyFunctors
+fancyFunctorsValue = FancyFunctors (42 :| []) (Const 42) (Pair 42 42) (Compose 42)
 
 -- * For testing type families
 
@@ -75,6 +90,7 @@ testDeclarations testName aesonOptions = do
     deriveInstances ''Optional
     deriveInstances ''AesonTypes
     deriveInstances ''Numbers
+    deriveInstances ''FancyFunctors
 
   typesAndValues :: Exp <- [e|[(getTypeScriptType (Proxy :: Proxy Unit), A.encode Unit)
 
@@ -106,6 +122,7 @@ testDeclarations testName aesonOptions = do
                                                                                              }))
 
                               , (getTypeScriptType (Proxy :: Proxy Numbers), A.encode (Numbers 42 42 42 42 42))
+                              , (getTypeScriptType (Proxy :: Proxy FancyFunctors), A.encode fancyFunctorsValue)
                               ]|]
 
   declarations :: Exp <- [e|getTypeScriptDeclarations (Proxy :: Proxy Unit)
@@ -119,6 +136,7 @@ testDeclarations testName aesonOptions = do
                          <> getTypeScriptDeclarations (Proxy :: Proxy Optional)
                          <> getTypeScriptDeclarations (Proxy :: Proxy AesonTypes)
                          <> getTypeScriptDeclarations (Proxy :: Proxy Numbers)
+                         <> getTypeScriptDeclarations (Proxy :: Proxy FancyFunctors)
                          |]
 
   tests <- [d|tests :: SpecWith ()
