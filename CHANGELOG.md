@@ -1,7 +1,10 @@
 # Change log
 
 
-## (unreleased)
+## 0.6.0.0
+
+* New word instances: Word, Word16, Word32, Word64
+* New instances from Data.Functor: Compose, Const, Identity, Product
 
 ## 0.5.0.0
 
