@@ -8,8 +8,15 @@ import qualified Data.Aeson.KeyMap as KM
 
 aesonFromList :: [(K.Key, v)] -> KM.KeyMap v
 aesonFromList = KM.fromList
-#else
-import Data.HashMap.Strict as HM
 
+type AesonKey = A.Key
+#else
+import Data.Aeson as A
+import Data.HashMap.Strict as HM
+import Data.Text as T
+
+aesonFromList :: [(T.Text, Value)] -> HM.HashMap Text A.Value
 aesonFromList = HM.fromList
+
+type AesonKey = Text
 #endif
