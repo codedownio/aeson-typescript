@@ -64,7 +64,7 @@ jobs:
       matrix:
         include:
         - ghc: "8.10.7"
-          yaml: "stack-8.10.7"
+          yaml: "stack-8.10.7.yaml"
         - ghc: "9.0.2"
           yaml: "stack-9.0.2.yaml"
         - ghc: "9.2.8"
