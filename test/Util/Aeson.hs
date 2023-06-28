@@ -9,7 +9,7 @@ import qualified Data.Aeson.KeyMap as KM
 aesonFromList :: [(K.Key, v)] -> KM.KeyMap v
 aesonFromList = KM.fromList
 
-type AesonKey = A.Key
+type AesonKey = K.Key
 #else
 import Data.Aeson as A
 import Data.HashMap.Strict as HM
