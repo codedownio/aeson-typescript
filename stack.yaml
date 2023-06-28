@@ -1,8 +1,5 @@
 
-resolver: lts-20.15
+resolver: nightly-2023-06-27
 
 packages:
 - .
-
-# ghc-options:
-#   "$locals": -fwrite-ide-info
