@@ -172,11 +172,11 @@ instance TypeScript A.Value where
   getTypeScriptType _ = "any";
 
 instance (TypeScript a, TypeScript b) => TypeScript (Map a b) where
-  getTypeScriptType _ = "{[k in " ++ getTypeScriptKeyType (Proxy :: Proxy a) ++ "]?: " ++ getTypeScriptType (Proxy :: Proxy b) ++ "}"
+  getTypeScriptType _ = "{[k in " ++ getTypeScriptKeyType (Proxy :: Proxy a) ++ "]: " ++ getTypeScriptType (Proxy :: Proxy b) ++ "}"
   getParentTypes _ = [TSType (Proxy :: Proxy a), TSType (Proxy :: Proxy b)]
 
 instance (TypeScript a, TypeScript b) => TypeScript (HashMap a b) where
-  getTypeScriptType _ = [i|{[k in #{getTypeScriptKeyType (Proxy :: Proxy a)}]?: #{getTypeScriptType (Proxy :: Proxy b)}}|]
+  getTypeScriptType _ = [i|{[k in #{getTypeScriptKeyType (Proxy :: Proxy a)}]: #{getTypeScriptType (Proxy :: Proxy b)}}|]
   getParentTypes _ = L.nub [TSType (Proxy :: Proxy a), TSType (Proxy :: Proxy b)]
 
 #if MIN_VERSION_aeson(2,0,0)
