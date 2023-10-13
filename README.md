@@ -114,6 +114,6 @@ Now you can generate the types by running `stack runhaskell tsdef/Main.hs > type
 
 # See also
 
-If you want a much more opinionated web framework for generating APIs, check out [servant](http://haskell-servant.readthedocs.io/en/stable/). (Although it doesn't seem to support TypeScript client generation at the moment.)
+If you want a more opinionated web framework for generating APIs, check out [servant](http://haskell-servant.readthedocs.io/en/stable/). If you use Servant, you may enjoy [servant-typescript](https://github.com/codedownio/servant-typescript), which is based on `aeson-typescript`! It also has the advantage of magically collecting all the types used in your API, so you don't have to list them out manually.
 
 For another very powerful framework that can generate TypeScript client code based on an API specification, see [Swagger/OpenAPI](https://github.com/swagger-api/swagger-codegen).
