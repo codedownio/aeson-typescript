@@ -42,7 +42,7 @@ formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceNa
       modifiedInterfaceName = (\(li, name) -> li <> interfaceNameModifier name) . splitAt 1 $ interfaceName
 
       formatTSField :: TSField -> String
-      formatTSField (TSField optional name typ maybeDoc) = makeDocPrefix maybeDoc <> [i|#{name}#{if optional then ("?" :: String) else ""}: #{typeNameModifier typ}|]
+      formatTSField (TSField optional name typ maybeDoc) = makeDocPrefix maybeDoc <> [i|#{name}#{if optional then ("?" :: String) else ""}: #{typ}|]
 
 formatTSDeclaration _ (TSRawDeclaration text) = text
 
