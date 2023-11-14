@@ -1,5 +1,8 @@
 # Change log
 
+## Unreleased
+
+* Apply `typeNameModifier` to type names emitted on the RHS of fields within interfaces, for consistency.
 
 ## 0.6.0.0
 

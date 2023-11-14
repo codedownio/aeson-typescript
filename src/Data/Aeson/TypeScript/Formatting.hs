@@ -41,6 +41,9 @@ formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceNa
       ls = T.intercalate "\n" $ [indentTo numIndentSpaces (T.pack (formatTSField member <> ";")) | member <- members]
       modifiedInterfaceName = (\(li, name) -> li <> interfaceNameModifier name) . splitAt 1 $ interfaceName
 
+      formatTSField :: TSField -> String
+      formatTSField (TSField optional name typ maybeDoc) = makeDocPrefix maybeDoc <> [i|#{name}#{if optional then ("?" :: String) else ""}: #{typeNameModifier typ}|]
+
 formatTSDeclaration _ (TSRawDeclaration text) = text
 
 indentTo :: Int -> T.Text -> T.Text
@@ -88,9 +91,6 @@ validateFormattingOptions options@FormattingOptions{..} decls
     -- Plain sum types have only one declaration with multiple alternatives
     -- Units (data U = U) contain two declarations, and thus are invalid
     isPlainSumType ds = (not . any isInterface $ ds) && length ds == 1
-
-formatTSField :: TSField -> String
-formatTSField (TSField optional name typ maybeDoc) = makeDocPrefix maybeDoc <> [i|#{name}#{if optional then ("?" :: String) else ""}: #{typ}|]
 
 makeDocPrefix :: Maybe String -> String
 makeDocPrefix maybeDoc = case maybeDoc of
