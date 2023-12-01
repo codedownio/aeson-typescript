@@ -42,7 +42,7 @@ formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceNa
       modifiedInterfaceName = (\(li, name) -> li <> interfaceNameModifier name) . splitAt 1 $ interfaceName
 
       formatTSField :: TSField -> String
-      formatTSField (TSField optional name typ maybeDoc) = makeDocPrefix maybeDoc <> [i|#{name}#{if optional then ("?" :: String) else ""}: #{typ}|]
+      formatTSField (TSField optional name typ maybeDoc') = makeDocPrefix maybeDoc' <> [i|#{name}#{if optional then ("?" :: String) else ""}: #{typ}|]
 
 formatTSDeclaration _ (TSRawDeclaration text) = text
 
@@ -93,9 +93,11 @@ getGenericBrackets xs = [i|<#{T.intercalate ", " (fmap T.pack xs)}>|]
 noEmitTypeScriptAnnotation :: String
 noEmitTypeScriptAnnotation = "@no-emit-typescript"
 
+isNoEmitTypeScriptField :: TSField -> Bool
 isNoEmitTypeScriptField (TSField {fieldDoc=(Just doc)}) = noEmitTypeScriptAnnotation `L.isInfixOf` doc
 isNoEmitTypeScriptField _ = False
 
+isNoEmitTypeScriptDeclaration :: TSDeclaration -> Bool
 isNoEmitTypeScriptDeclaration (TSInterfaceDeclaration {interfaceDoc=(Just doc)}) = noEmitTypeScriptAnnotation `L.isInfixOf` doc
 isNoEmitTypeScriptDeclaration (TSTypeAlternatives {typeDoc=(Just doc)}) = noEmitTypeScriptAnnotation `L.isInfixOf` doc
 isNoEmitTypeScriptDeclaration _ = False
