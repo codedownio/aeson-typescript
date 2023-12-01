@@ -25,13 +25,13 @@ formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVar
   where
     mainDeclaration = case typeAlternativesFormat of
       Enum -> [i|#{exportPrefix exportMode}enum #{typeNameModifier name} { #{alternativesEnum} }|]
-      EnumWithType -> [i|#{exportPrefix exportMode}enum #{typeNameModifier name} { #{alternativesEnumWithType} }#{enumType}|]
+      EnumWithType -> [i|#{exportPrefix exportMode}enum #{typeNameModifier name}Enum { #{alternativesEnumWithType} }#{enumType}|]
       TypeAlias -> [i|#{exportPrefix exportMode}type #{typeNameModifier name}#{getGenericBrackets genericVariables} = #{alternatives};|]
 
     alternatives = T.intercalate " | " (fmap T.pack names)
     alternativesEnum = T.intercalate ", " $ [toEnumName entry | entry <- T.pack <$> names]
     alternativesEnumWithType = T.intercalate ", " $ [toEnumName entry <> "=" <> entry | entry <- T.pack <$> names]
-    enumType = [i|\n\ntype #{name} = keyof typeof #{typeNameModifier name};|] :: T.Text
+    enumType = [i|\n\ntype #{name} = keyof typeof #{typeNameModifier name}Enum;|] :: T.Text
     toEnumName = T.replace "\"" ""
 
 formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceName genericVariables (filter (not . isNoEmitTypeScriptField) -> members) maybeDoc) =
@@ -57,18 +57,16 @@ exportPrefix ExportNone = ""
 -- | Format a list of TypeScript declarations into a string, suitable for putting directly into a @.d.ts@ file.
 formatTSDeclarations' :: FormattingOptions -> [TSDeclaration] -> String
 formatTSDeclarations' options allDeclarations =
-  declarations & fmap (T.pack . formatTSDeclaration (validateFormattingOptions options declarations))
+  declarations & fmap (T.pack . formatTSDeclaration options)
                & T.intercalate "\n\n"
                & T.unpack
   where
-    removedDeclarations = filter isNoEmitTypeScriptDeclaration allDeclarations
-
-    getDeclarationName :: TSDeclaration -> Maybe String
-    getDeclarationName (TSInterfaceDeclaration {..}) = Just interfaceName
-    getDeclarationName (TSTypeAlternatives {..}) = Just typeName
-    _ = Nothing
-
-    removedDeclarationNames = mapMaybe getDeclarationName removedDeclarations
+    removedDeclarationNames = mapMaybe getDeclarationName (filter isNoEmitTypeScriptDeclaration allDeclarations)
+      where
+        getDeclarationName :: TSDeclaration -> Maybe String
+        getDeclarationName (TSInterfaceDeclaration {..}) = Just interfaceName
+        getDeclarationName (TSTypeAlternatives {..}) = Just typeName
+        _ = Nothing
 
     removeReferencesToRemovedNames :: [String] -> TSDeclaration -> TSDeclaration
     removeReferencesToRemovedNames removedNames decl@(TSTypeAlternatives {..}) = decl { alternativeTypes = [x | x <- alternativeTypes, not (x `L.elem` removedNames)] }
@@ -77,20 +75,6 @@ formatTSDeclarations' options allDeclarations =
     declarations = allDeclarations
                  & filter (not . isNoEmitTypeScriptDeclaration)
                  & fmap (removeReferencesToRemovedNames removedDeclarationNames)
-
-validateFormattingOptions :: FormattingOptions -> [TSDeclaration] -> FormattingOptions
-validateFormattingOptions options@FormattingOptions{..} decls
-  | typeAlternativesFormat == Enum && isPlainSumType decls = options
-  | typeAlternativesFormat == EnumWithType && isPlainSumType decls = options { typeNameModifier = flip (<>) "Enum" }
-  | otherwise = options { typeAlternativesFormat = TypeAlias }
-  where
-    isInterface :: TSDeclaration -> Bool
-    isInterface TSInterfaceDeclaration{} = True
-    isInterface _ = False
-
-    -- Plain sum types have only one declaration with multiple alternatives
-    -- Units (data U = U) contain two declarations, and thus are invalid
-    isPlainSumType ds = (not . any isInterface $ ds) && length ds == 1
 
 makeDocPrefix :: Maybe String -> String
 makeDocPrefix maybeDoc = case maybeDoc of
