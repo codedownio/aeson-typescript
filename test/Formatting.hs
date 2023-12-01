@@ -14,6 +14,12 @@ import Test.Hspec
 data D = S | F deriving (Eq, Show)
 $(deriveTypeScript defaultOptions ''D)
 
+data D2 = S2 | F2 deriving (Eq, Show)
+$(deriveTypeScript defaultOptions ''D2)
+
+data Unit = U deriving (Eq, Show)
+$(deriveTypeScript defaultOptions ''Unit)
+
 data PrimeInType' = PrimeInType
 $(deriveTypeScript defaultOptions ''PrimeInType')
 
@@ -47,10 +53,20 @@ tests = describe "Formatting" $ do
         formatTSDeclarations' defaultFormattingOptions (getTypeScriptDeclarations @D Proxy) `shouldBe`
           [i|type D = "S" | "F";|]
 
-    describe "and the Enum format option is set" $
+    describe "and the Enum format option is set" $ do
       it "should generate a TS Enum" $
         formatTSDeclarations' (defaultFormattingOptions { typeAlternativesFormat = Enum }) (getTypeScriptDeclarations @D Proxy) `shouldBe`
           [i|enum D { S, F }|]
+
+      it "should generate a TS Enum with multiple" $
+        formatTSDeclarations' (defaultFormattingOptions { typeAlternativesFormat = Enum }) (getTypeScriptDeclarations @D Proxy <> getTypeScriptDeclarations @D2 Proxy) `shouldBe`
+          [__i|enum D { S, F }
+
+               enum D2 { S2, F2 }|]
+
+      it "should generate a TS Enum from unit" $
+        formatTSDeclarations' (defaultFormattingOptions { typeAlternativesFormat = Enum }) (getTypeScriptDeclarations @Unit Proxy) `shouldBe`
+          [__i|enum Unit { U }|]
 
     describe "and the EnumWithType format option is set" $
       it "should generate a TS Enum with a type declaration" $
