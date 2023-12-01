@@ -35,6 +35,7 @@ tested-with:
 dependencies:
 - aeson
 - base >= 4.7 && < 5
+- bytestring
 - containers
 - mtl
 - string-interpolate

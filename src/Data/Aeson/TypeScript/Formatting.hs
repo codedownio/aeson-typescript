@@ -2,7 +2,9 @@
 
 module Data.Aeson.TypeScript.Formatting where
 
+import Data.Aeson as A
 import Data.Aeson.TypeScript.Types
+import qualified Data.ByteString.Lazy.Char8 as BL8
 import Data.Function ((&))
 import qualified Data.List as L
 import Data.Maybe
@@ -23,15 +25,31 @@ formatTSDeclaration :: FormattingOptions -> TSDeclaration -> String
 formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVariables names maybeDoc) =
   makeDocPrefix maybeDoc <> mainDeclaration
   where
-    mainDeclaration = case typeAlternativesFormat of
+    mainDeclaration = case chooseTypeAlternativesFormat typeAlternativesFormat of
       Enum -> [i|#{exportPrefix exportMode}enum #{typeNameModifier name} { #{alternativesEnum} }|]
+        where
+          alternativesEnum = T.intercalate ", " $ [toEnumName entry | entry <- T.pack <$> names]
       EnumWithType -> [i|#{exportPrefix exportMode}enum #{typeNameModifier name}Enum { #{alternativesEnumWithType} }#{enumType}|]
+        where
+          alternativesEnumWithType = T.intercalate ", " $ [toEnumName entry <> "=" <> entry | entry <- T.pack <$> names]
+          enumType = [i|\n\ntype #{name} = keyof typeof #{typeNameModifier name}Enum;|] :: T.Text
       TypeAlias -> [i|#{exportPrefix exportMode}type #{typeNameModifier name}#{getGenericBrackets genericVariables} = #{alternatives};|]
+        where
+          alternatives = T.intercalate " | " (fmap T.pack names)
 
-    alternatives = T.intercalate " | " (fmap T.pack names)
-    alternativesEnum = T.intercalate ", " $ [toEnumName entry | entry <- T.pack <$> names]
-    alternativesEnumWithType = T.intercalate ", " $ [toEnumName entry <> "=" <> entry | entry <- T.pack <$> names]
-    enumType = [i|\n\ntype #{name} = keyof typeof #{typeNameModifier name}Enum;|] :: T.Text
+    -- Only allow certain formats if some checks pass
+    chooseTypeAlternativesFormat Enum
+      | all isDoubleQuotedString names = Enum
+      | otherwise = TypeAlias
+    chooseTypeAlternativesFormat EnumWithType
+      | all isDoubleQuotedString names = EnumWithType
+      | otherwise = TypeAlias
+    chooseTypeAlternativesFormat x = x
+
+    isDoubleQuotedString s = case A.eitherDecode (BL8.pack s) of
+      Right (A.String _) -> True
+      _ -> False
+
     toEnumName = T.replace "\"" ""
 
 formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceName genericVariables (filter (not . isNoEmitTypeScriptField) -> members) maybeDoc) =

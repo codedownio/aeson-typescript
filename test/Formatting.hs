@@ -5,7 +5,6 @@ module Formatting (tests) where
 
 import Control.Exception
 import Data.Aeson (defaultOptions)
-import Data.Aeson.TH
 import Data.Aeson.TypeScript.TH
 import Data.Proxy
 import Data.String.Interpolate
@@ -20,7 +19,6 @@ $(deriveTypeScript defaultOptions ''D2)
 
 data Unit = U deriving (Eq, Show)
 $(deriveTypeScript defaultOptions ''Unit)
-$(deriveJSON defaultOptions ''Unit)
 
 data PrimeInType' = PrimeInType
 $(deriveTypeScript defaultOptions ''PrimeInType')
@@ -66,9 +64,11 @@ tests = describe "Formatting" $ do
 
                enum D2 { S2, F2 }|]
 
-      -- it "should generate a TS Enum from unit" $
-      --   formatTSDeclarations' (defaultFormattingOptions { typeAlternativesFormat = Enum }) (getTypeScriptDeclarations @Unit Proxy) `shouldBe`
-      --     [__i|enum Unit { U }|]
+      it "should generate a TS Enum from unit" $
+        formatTSDeclarations' (defaultFormattingOptions { typeAlternativesFormat = Enum }) (getTypeScriptDeclarations @Unit Proxy) `shouldBe`
+          [__i|type Unit = IU;
+
+               type IU = void[];|]
 
     describe "and the EnumWithType format option is set" $
       it "should generate a TS Enum with a type declaration" $
