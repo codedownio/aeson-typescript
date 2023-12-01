@@ -66,7 +66,7 @@ formatTSDeclarations' options allDeclarations =
         getDeclarationName :: TSDeclaration -> Maybe String
         getDeclarationName (TSInterfaceDeclaration {..}) = Just interfaceName
         getDeclarationName (TSTypeAlternatives {..}) = Just typeName
-        _ = Nothing
+        getDeclarationName _ = Nothing
 
     removeReferencesToRemovedNames :: [String] -> TSDeclaration -> TSDeclaration
     removeReferencesToRemovedNames removedNames decl@(TSTypeAlternatives {..}) = decl { alternativeTypes = [x | x <- alternativeTypes, not (x `L.elem` removedNames)] }
