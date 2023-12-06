@@ -4,7 +4,7 @@
 module Formatting (tests) where
 
 import Control.Exception
-import Data.Aeson (defaultOptions)
+import Data.Aeson (SumEncoding(UntaggedValue), defaultOptions, sumEncoding, tagSingleConstructors)
 import Data.Aeson.TypeScript.TH
 import Data.Proxy
 import Data.String.Interpolate
@@ -17,8 +17,13 @@ $(deriveTypeScript defaultOptions ''D)
 data D2 = S2 | F2 deriving (Eq, Show)
 $(deriveTypeScript defaultOptions ''D2)
 
+-- A.encode U --> "[]"
 data Unit = U deriving (Eq, Show)
 $(deriveTypeScript defaultOptions ''Unit)
+
+-- A.encode UTagSingle --> "\"UTagSingle\""
+data UnitTagSingle = UTagSingle deriving (Eq, Show)
+$(deriveTypeScript (defaultOptions { tagSingleConstructors = True, sumEncoding = UntaggedValue }) ''UnitTagSingle)
 
 data PrimeInType' = PrimeInType
 $(deriveTypeScript defaultOptions ''PrimeInType')
@@ -56,24 +61,32 @@ tests = describe "Formatting" $ do
     describe "and the Enum format option is set" $ do
       it "should generate a TS Enum" $
         formatTSDeclarations' (defaultFormattingOptions { typeAlternativesFormat = Enum }) (getTypeScriptDeclarations @D Proxy) `shouldBe`
-          [i|enum D { S, F }|]
+          [i|enum D { S="S", F="F" }|]
 
       it "should generate a TS Enum with multiple" $
         formatTSDeclarations' (defaultFormattingOptions { typeAlternativesFormat = Enum }) (getTypeScriptDeclarations @D Proxy <> getTypeScriptDeclarations @D2 Proxy) `shouldBe`
-          [__i|enum D { S, F }
+          [__i|enum D { S="S", F="F" }
 
-               enum D2 { S2, F2 }|]
+               enum D2 { S2="S2", F2="F2" }|]
 
-      it "should generate a TS Enum from unit" $
+      it "should generate a normal type from Unit, singe tagSingleConstructors=False by default" $
         formatTSDeclarations' (defaultFormattingOptions { typeAlternativesFormat = Enum }) (getTypeScriptDeclarations @Unit Proxy) `shouldBe`
           [__i|type Unit = IU;
 
                type IU = void[];|]
 
-    describe "and the EnumWithType format option is set" $
+      it "should generate a suitable enum from UnitTagSingle" $
+        formatTSDeclarations' (defaultFormattingOptions { typeAlternativesFormat = Enum }) (getTypeScriptDeclarations @UnitTagSingle Proxy) `shouldBe`
+          [__i|enum UnitTagSingle { UTagSingle="UTagSingle" }|]
+
+    describe "and the EnumWithType format option is set" $ do
       it "should generate a TS Enum with a type declaration" $
         formatTSDeclarations' (defaultFormattingOptions { typeAlternativesFormat = EnumWithType }) (getTypeScriptDeclarations @D Proxy) `shouldBe`
           [i|enum DEnum { S="S", F="F" }\n\ntype D = keyof typeof DEnum;|]
+
+      it "should also work for UnitTagSingle" $
+        formatTSDeclarations' (defaultFormattingOptions { typeAlternativesFormat = EnumWithType }) (getTypeScriptDeclarations @UnitTagSingle Proxy) `shouldBe`
+          [i|enum UnitTagSingleEnum { UTagSingle="UTagSingle" }\n\ntype UnitTagSingle = keyof typeof UnitTagSingleEnum;|]
 
   describe "when the name has an apostrophe" $ do
     describe "in the type" $ do

@@ -28,7 +28,7 @@ formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVar
     mainDeclaration = case chooseTypeAlternativesFormat typeAlternativesFormat of
       Enum -> [i|#{exportPrefix exportMode}enum #{typeNameModifier name} { #{alternativesEnum} }|]
         where
-          alternativesEnum = T.intercalate ", " $ [toEnumName entry | entry <- T.pack <$> names]
+          alternativesEnum = T.intercalate ", " $ [toEnumName entry <> "=" <> entry | entry <- T.pack <$> names]
       EnumWithType -> [i|#{exportPrefix exportMode}enum #{typeNameModifier name}Enum { #{alternativesEnumWithType} }#{enumType}|]
         where
           alternativesEnumWithType = T.intercalate ", " $ [toEnumName entry <> "=" <> entry | entry <- T.pack <$> names]
