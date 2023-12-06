@@ -2,7 +2,10 @@
 
 ## Unreleased
 
+## 0.6.1.0
+
 * Fix a bug which caused enum formatting mode to turn off when multiple declarations were provided (#41)
+* Fix some mismatch issues where an enum value doesn't match the desired string.
 
 ## 0.6.0.0
 
