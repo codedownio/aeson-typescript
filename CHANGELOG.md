@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.6.2.0
+
+* Expose generic type constructors `T4` through `T10`. (We only exposed `T`, `T1`, `T2`, and `T3` before.)
+
 ## 0.6.1.0
 
 * Fix a bug which caused enum formatting mode to turn off when multiple declarations were provided (#41)
