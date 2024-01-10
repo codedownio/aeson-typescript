@@ -1,5 +1,5 @@
 name:                aeson-typescript
-version:             0.6.1.0
+version:             0.6.2.0
 github:              "codedownio/aeson-typescript"
 license:             BSD3
 category:            Text, Web, JSON
