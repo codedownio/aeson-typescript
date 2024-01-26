@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* GHC 9.8 support
+
 ## 0.6.2.0
 
 * Expose generic type constructors `T4` through `T10`. (We only exposed `T`, `T1`, `T2`, and `T3` before.)
