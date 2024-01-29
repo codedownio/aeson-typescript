@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.6.3.0
+
 * GHC 9.8 support
 
 ## 0.6.2.0
