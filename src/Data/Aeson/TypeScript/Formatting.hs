@@ -57,7 +57,7 @@ formatTSDeclaration (FormattingOptions {..}) (TSInterfaceDeclaration interfaceNa
 #{ls}
 }|] where
       ls = T.intercalate "\n" $ [indentTo numIndentSpaces (T.pack (formatTSField member <> ";")) | member <- members]
-      modifiedInterfaceName = (\(li, name) -> li <> interfaceNameModifier name) . splitAt 1 $ interfaceName
+      modifiedInterfaceName = interfaceNameModifier interfaceName
 
       formatTSField :: TSField -> String
       formatTSField (TSField optional name typ maybeDoc') = makeDocPrefix maybeDoc' <> [i|#{name}#{if optional then ("?" :: String) else ""}: #{typ}|]
