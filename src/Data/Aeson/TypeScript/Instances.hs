@@ -4,6 +4,7 @@
 {-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- Note: the OverlappingInstances pragma is only here so the overlapping instances in this file
@@ -171,13 +172,18 @@ instance (TypeScript a) => TypeScript (Maybe a) where
 instance TypeScript A.Value where
   getTypeScriptType _ = "any";
 
-instance (TypeScript a, TypeScript b) => TypeScript (Map a b) where
-  getTypeScriptType _ = "{[k in " ++ getTypeScriptKeyType (Proxy :: Proxy a) ++ "]?: " ++ getTypeScriptType (Proxy :: Proxy b) ++ "}"
-  getParentTypes _ = [TSType (Proxy :: Proxy a), TSType (Proxy :: Proxy b)]
+instance (TypeScript a, TypeScript b, A.ToJSONKey a) => TypeScript (Map a b) where
+  getTypeScriptType =
+    let k = getTypeScriptKeyType @a Proxy
+        v = getTypeScriptType @b Proxy
+    in const $ case A.toJSONKey @a of
+      A.ToJSONKeyText{} -> "{[k in " <> k <> "]?: " <> v <> "}"
+      A.ToJSONKeyValue{} -> getTypeScriptType @[(a, b)] Proxy
+  getParentTypes = const $ L.nub [TSType @a Proxy, TSType @b Proxy]
 
-instance (TypeScript a, TypeScript b) => TypeScript (HashMap a b) where
-  getTypeScriptType _ = [i|{[k in #{getTypeScriptKeyType (Proxy :: Proxy a)}]?: #{getTypeScriptType (Proxy :: Proxy b)}}|]
-  getParentTypes _ = L.nub [TSType (Proxy :: Proxy a), TSType (Proxy :: Proxy b)]
+instance (TypeScript a, TypeScript b, A.ToJSONKey a) => TypeScript (HashMap a b) where
+  getTypeScriptType = const $ getTypeScriptType @(Map a b) Proxy
+  getParentTypes = const $ getParentTypes @(Map a b) Proxy
 
 #if MIN_VERSION_aeson(2,0,0)
 instance (TypeScript a) => TypeScript (A.KeyMap a) where
