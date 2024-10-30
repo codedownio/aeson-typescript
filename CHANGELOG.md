@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.6.4.0
+
+* Fix type for maps with non-string keys (#46, fixes #28, thanks @tfausak!)
+
 ## 0.6.3.0
 
 * GHC 9.8 support
