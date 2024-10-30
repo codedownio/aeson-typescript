@@ -30,7 +30,7 @@ deriveTypeScriptLookupType name declNameStr = do
       interfaceDecl <- getClosedTypeFamilyInterfaceDecl name eqns
       return [FunD (mkName declNameStr) [Clause [] (NormalB (ListE [interfaceDecl])) []]]
 
-    _ -> fail [i|Expected a close type family; got #{info}|]
+    _ -> fail [i|Expected a closed type family; got #{info}|]
 
 getClosedTypeFamilyInterfaceDecl :: Name -> [TySynEqn] -> Q Exp
 getClosedTypeFamilyInterfaceDecl name eqns = do
@@ -44,7 +44,7 @@ getClosedTypeFamilyInterfaceDecl name eqns = do
     TySynEqn [ConT arg] result -> do
       [| TSField False (getTypeScriptType (Proxy :: Proxy $(conT arg))) (getTypeScriptType (Proxy :: Proxy $(return result))) Nothing |]
 #endif
-    x -> fail [i|aeson-typescript doesn't know yet how to handle this type family equation: '#{x}'|]
+    x -> fail [i|aeson-typescript doesn't know yet how to handle this type family equation when generating interface declaration: '#{x}'|]
 
   [| TSInterfaceDeclaration $(TH.stringE $ nameBase name) [] (L.sortBy (compare `on` fieldName) $(listE $ fmap return fields)) Nothing |]
 
@@ -56,4 +56,4 @@ getClosedTypeFamilyImage eqns = do
 #else
     TySynEqn [ConT _] result -> return result
 #endif
-    x -> fail [i|aeson-typescript doesn't know yet how to handle this type family equation: '#{x}'|]
+    x -> fail [i|aeson-typescript doesn't know yet how to handle this type family equation when calculating closed type family image: '#{x}'|]
