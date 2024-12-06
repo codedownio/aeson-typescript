@@ -177,8 +177,8 @@ instance (TypeScript a, TypeScript b, A.ToJSONKey a) => TypeScript (Map a b) whe
     let k = getTypeScriptKeyType @a Proxy
         v = getTypeScriptType @b Proxy
     in const $ case A.toJSONKey @a of
-      A.ToJSONKeyText{} -> "{[k in " <> k <> "]?: " <> v <> "}"
-      A.ToJSONKeyValue{} -> getTypeScriptType @[(a, b)] Proxy
+      A.ToJSONKeyText {} -> "{[k in " <> k <> "]: " <> v <> "}"
+      A.ToJSONKeyValue {} -> getTypeScriptType @[(a, b)] Proxy
   getParentTypes = const $ L.nub [TSType @a Proxy, TSType @b Proxy]
 
 instance (TypeScript a, TypeScript b, A.ToJSONKey a) => TypeScript (HashMap a b) where
