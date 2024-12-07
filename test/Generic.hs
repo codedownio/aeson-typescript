@@ -53,7 +53,7 @@ tests = describe "Generic instances" $ do
 
   it [i|Complex4 makes the declaration and types correctly|] $ do
     (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (Complex4 String))) `shouldBe` [
-      TSInterfaceDeclaration "IProduct4" ["T"] [TSField False "record4" "{[k in string]?: T}" Nothing] Nothing
+      TSInterfaceDeclaration "IProduct4" ["T"] [TSField False "record4" "{[k in string]: T}" Nothing] Nothing
       ,TSTypeAlternatives "Complex4" ["T"] ["IProduct4<T>"] Nothing
       ]
 

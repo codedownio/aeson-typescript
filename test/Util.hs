@@ -1,6 +1,11 @@
 {-# LANGUAGE CPP #-}
 
-module Util where
+module Util (
+  testTypeCheck
+  , testTypeCheckDeclarations
+
+  , setTagSingleConstructors
+  ) where
 
 import Control.Monad
 import Data.Aeson as A
@@ -17,10 +22,9 @@ import System.IO.Temp
 import System.Process hiding (cwd)
 
 
-npmInstallScript, yarnInstallScript, localTSC :: String
+npmInstallScript, yarnInstallScript :: String
 npmInstallScript = "test/assets/npm_install.sh"
 yarnInstallScript = "test/assets/yarn_install.sh"
-localTSC = "test/assets/node_modules/.bin/tsc"
 
 isCI :: IO Bool
 isCI = lookupEnv "CI" >>= (return . (== (Just "true")))
@@ -30,8 +34,22 @@ getTSC = isCI >>= \case
   True -> do
     return "tsc" -- Assume it's set up on the path
   False -> do
-    ensureTSCExists
-    return localTSC
+    -- Check for a global tsc
+    findExecutable "tsc" >>= \case
+      Just tsc -> return tsc
+      Nothing -> do
+        let localTSC = "test/assets/node_modules/.bin/tsc"
+
+        doesFileExist localTSC >>= \exists -> unless exists $ void $ do
+          cwd <- getCurrentDirectory
+
+          installScript <- chooseInstallScript
+
+          putStrLn [i|Invoking yarn to install tsc compiler (make sure yarn is installed). CWD is #{cwd}|]
+          (exitCode, stdout, stderr) <- readProcessWithExitCode installScript [] ""
+          when (exitCode /= ExitSuccess) $ putStrLn [i|Error installing yarn: '#{stderr}', '#{stdout}'|]
+
+        return localTSC
 
 testTypeCheck :: forall a. (TypeScript a, ToJSON a) => a -> IO ()
 testTypeCheck obj = withSystemTempDirectory "typescript_test" $ \folder -> do
@@ -83,18 +101,6 @@ testTypeCheckDeclarations tsDeclarations typesAndVals = withSystemTempDirectory 
                Stderr:
                #{serr}
               |]
-
-
-ensureTSCExists :: IO ()
-ensureTSCExists = doesFileExist localTSC >>= \exists -> unless exists $ void $ do
-  cwd <- getCurrentDirectory
-
-  installScript <- chooseInstallScript
-
-  putStrLn [i|Invoking yarn to install tsc compiler (make sure yarn is installed). CWD is #{cwd}|]
-  (exitCode, stdout, stderr) <- readProcessWithExitCode installScript [] ""
-  when (exitCode /= ExitSuccess) $ putStrLn [i|Error installing yarn: '#{stderr}', '#{stdout}'|]
-
 
 -- Between Aeson 1.1.2.0 and 1.2.0.0, tagSingleConstructors was added
 setTagSingleConstructors :: Options -> Options

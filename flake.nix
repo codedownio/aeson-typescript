@@ -25,7 +25,7 @@
 
           devShells.default = pkgs.mkShell {
             buildInputs = with pkgs; [
-              nodejs
+              nodePackages.typescript
             ];
           };
         });
