@@ -1,5 +1,0 @@
-
-resolver: lts-21.20
-
-packages:
-- .

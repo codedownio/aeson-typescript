@@ -16,9 +16,9 @@ jobs:
           - "8.10.7"
           - "9.0.2"
           - "9.2.8"
-          - "9.4.7"
+          - "9.4.8"
           - "9.6.6"
-          - "9.8.1"
+          - "9.8.2"
 
     steps:
     - uses: actions/checkout@v2
@@ -69,12 +69,12 @@ jobs:
           yaml: "stack-9.0.2.yaml"
         - ghc: "9.2.8"
           yaml: "stack-9.2.8.yaml"
-        - ghc: "9.4.7"
-          yaml: "stack-9.4.7.yaml"
+        - ghc: "9.4.8"
+          yaml: "stack-9.4.8.yaml"
         - ghc: "9.6.6"
           yaml: "stack-9.6.6.yaml"
-        - ghc: "9.8.1"
-          yaml: "stack-9.8.1.yaml"
+        - ghc: "9.8.2"
+          yaml: "stack-9.8.2.yaml"
 
     steps:
     - uses: actions/checkout@v3
