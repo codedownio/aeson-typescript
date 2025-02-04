@@ -7,11 +7,12 @@
     inputs.nixpkgs.follows = "nixpkgs";
   };
   inputs.haskellNix.url = "github:input-output-hk/haskell.nix";
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/release-24.11";
+  inputs.nixpkgs.follows = "haskellNix/nixpkgs";
 
   outputs = { self, flake-utils, gitignore, haskellNix, nixpkgs }:
     flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
       let
+        # compiler-nix-name = "ghc966";
         compiler-nix-name = "ghc984";
 
         pkgs = import nixpkgs {
@@ -32,8 +33,10 @@
         flakeWindows = (pkgs.pkgsCross.mingwW64.haskell-nix.hix.project {
           inherit src compiler-nix-name;
           evalSystem = system;
-          projectFileName = "stack.yaml";
-          modules = [];
+          projectFileName = "stack-9.8.4.yaml";
+          modules = [{
+            reinstallableLibGhc = false;
+          }];
         }).flake {};
 
       in

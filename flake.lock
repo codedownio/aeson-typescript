@@ -427,22 +427,6 @@
         "type": "github"
       }
     },
-    "nixpkgs": {
-      "locked": {
-        "lastModified": 1738633836,
-        "narHash": "sha256-WqzHCqLdENH6Y44G997EKc8sIO7DrLQf2NMh1Pm0qn4=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "c55e1940d4dffcfa2b8d4ea15e864c837e514a77",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "release-24.11",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nixpkgs-2003": {
       "locked": {
         "lastModified": 1620055814,
@@ -625,7 +609,10 @@
         "flake-utils": "flake-utils",
         "gitignore": "gitignore",
         "haskellNix": "haskellNix",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": [
+          "haskellNix",
+          "nixpkgs"
+        ]
       }
     },
     "stackage": {
