@@ -1,8 +1,5 @@
 
 resolver: lts-23.7
 
-nix:
-  pure: false
-
 packages:
 - .
