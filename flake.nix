@@ -1,19 +1,50 @@
 {
   description = "aeson-typescript";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/release-24.05";
-  inputs.nixpkgsMaster.url = "github:NixOS/nixpkgs/master";
   inputs.flake-utils.url = "github:numtide/flake-utils";
+  inputs.gitignore = {
+    url = "github:hercules-ci/gitignore.nix";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+  inputs.haskellNix.url = "github:input-output-hk/haskell.nix";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/release-24.11";
 
-  outputs = { self, nixpkgs, nixpkgsMaster, flake-utils }:
+  outputs = { self, flake-utils, gitignore, haskellNix, nixpkgs }:
     flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
       let
-        pkgs = import nixpkgs { inherit system; };
-        pkgsMaster = import nixpkgsMaster { inherit system; };
+        compiler-nix-name = "ghc984";
+
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [haskellNix.overlay];
+          inherit (haskellNix) config;
+        };
+
+        src = gitignore.lib.gitignoreSource ./.;
+
+        flake = (pkgs.haskell-nix.hix.project {
+          inherit src compiler-nix-name;
+          evalSystem = system;
+          projectFileName = "stack.yaml";
+          modules = [];
+        }).flake {};
+
+        flakeWindows = (pkgs.pkgsCross.mingwW64.haskell-nix.hix.project {
+          inherit src compiler-nix-name;
+          evalSystem = system;
+          projectFileName = "stack.yaml";
+          modules = [];
+        }).flake {};
+
       in
         {
           packages = {
-            inherit (pkgsMaster.haskell.packages.ghc966) weeder;
+            inherit (pkgs.haskell.packages.${compiler-nix-name}) weeder;
+
+            inherit flake;
+
+            normal = flake.packages."aeson-typescript:lib:aeson-typescript";
+            windows = flakeWindows.packages."aeson-typescript:lib:aeson-typescript";
 
             test = pkgs.writeShellScriptBin "stack-test" ''
               export NIX_PATH=nixpkgs=${pkgs.path}
