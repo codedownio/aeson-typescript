@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Remove question mark in Data.Map instance
+
 ## 0.6.4.0
 
 * Fix type for maps with non-string keys (#46, fixes #28, thanks @tfausak!)

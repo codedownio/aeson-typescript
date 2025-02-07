@@ -14,6 +14,7 @@
       let
         # compiler-nix-name = "ghc966";
         compiler-nix-name = "ghc984";
+        # compiler-nix-name = "ghc9101";
 
         pkgs = import nixpkgs {
           inherit system;
@@ -33,7 +34,9 @@
         flakeWindows = (pkgs.pkgsCross.mingwW64.haskell-nix.hix.project {
           inherit src compiler-nix-name;
           evalSystem = system;
+          # projectFileName = "stack.yaml";
           projectFileName = "stack-9.8.4.yaml";
+          # projectFileName = "stack-9.10.1.yaml";
           modules = [{
             reinstallableLibGhc = false;
           }];
