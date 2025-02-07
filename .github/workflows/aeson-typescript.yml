@@ -19,6 +19,7 @@ jobs:
           - "9.4.8"
           - "9.6.6"
           - "9.8.4"
+          - "9.10.1"
 
     steps:
     - uses: actions/checkout@v2
@@ -75,6 +76,8 @@ jobs:
           yaml: "stack-9.6.6.yaml"
         - ghc: "9.8.4"
           yaml: "stack-9.8.4.yaml"
+        - ghc: "9.10.1"
+          yaml: "stack-9.10.1.yaml"
 
     steps:
     - uses: actions/checkout@v3
