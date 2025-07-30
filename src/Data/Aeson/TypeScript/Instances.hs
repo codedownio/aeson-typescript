@@ -100,7 +100,7 @@ instance TypeScript Word32 where
 instance TypeScript Word64 where
   getTypeScriptType _ = "number"
 
--- | Helper function to get TypeScript type with proper null handling for optional types
+-- | Get TypeScript type with null handling for optional types
 getTypeScriptTypeWithNull :: forall a. TypeScript a => Proxy a -> String
 getTypeScriptTypeWithNull p = 
   let baseType = getTypeScriptType p
