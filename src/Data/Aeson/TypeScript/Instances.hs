@@ -100,6 +100,14 @@ instance TypeScript Word32 where
 instance TypeScript Word64 where
   getTypeScriptType _ = "number"
 
+-- | Helper function to get TypeScript type with proper null handling for optional types
+getTypeScriptTypeWithNull :: forall a. TypeScript a => Proxy a -> String
+getTypeScriptTypeWithNull p = 
+  let baseType = getTypeScriptType p
+  in if getTypeScriptOptional p 
+     then baseType <> " | null"
+     else baseType
+
 instance {-# OVERLAPPABLE #-} (TypeScript a) => TypeScript [a] where
   getTypeScriptType _ = (getTypeScriptType (Proxy :: Proxy a)) ++ "[]"
   getParentTypes _ = [TSType (Proxy :: Proxy a)]
@@ -122,20 +130,20 @@ instance (TypeScript a, TypeScript b) => TypeScript (Either a b) where
                            ]
 
 instance (TypeScript a, TypeScript b) => TypeScript (a, b) where
-  getTypeScriptType _ = [i|[#{getTypeScriptType (Proxy :: Proxy a)}, #{getTypeScriptType (Proxy :: Proxy b)}]|]
+  getTypeScriptType _ = [i|[#{getTypeScriptTypeWithNull (Proxy :: Proxy a)}, #{getTypeScriptTypeWithNull (Proxy :: Proxy b)}]|]
   getParentTypes _ = L.nub [ (TSType (Proxy :: Proxy a))
                            , (TSType (Proxy :: Proxy b))
                            ]
 
 instance (TypeScript a, TypeScript b, TypeScript c) => TypeScript (a, b, c) where
-  getTypeScriptType _ = [i|[#{getTypeScriptType (Proxy :: Proxy a)}, #{getTypeScriptType (Proxy :: Proxy b)}, #{getTypeScriptType (Proxy :: Proxy c)}]|]
+  getTypeScriptType _ = [i|[#{getTypeScriptTypeWithNull (Proxy :: Proxy a)}, #{getTypeScriptTypeWithNull (Proxy :: Proxy b)}, #{getTypeScriptTypeWithNull (Proxy :: Proxy c)}]|]
   getParentTypes _ = L.nub [ (TSType (Proxy :: Proxy a))
                            , (TSType (Proxy :: Proxy b))
                            , (TSType (Proxy :: Proxy c))
                            ]
 
 instance (TypeScript a, TypeScript b, TypeScript c, TypeScript d) => TypeScript (a, b, c, d) where
-  getTypeScriptType _ = [i|[#{getTypeScriptType (Proxy :: Proxy a)}, #{getTypeScriptType (Proxy :: Proxy b)}, #{getTypeScriptType (Proxy :: Proxy c)}, #{getTypeScriptType (Proxy :: Proxy d)}]|]
+  getTypeScriptType _ = [i|[#{getTypeScriptTypeWithNull (Proxy :: Proxy a)}, #{getTypeScriptTypeWithNull (Proxy :: Proxy b)}, #{getTypeScriptTypeWithNull (Proxy :: Proxy c)}, #{getTypeScriptTypeWithNull (Proxy :: Proxy d)}]|]
   getParentTypes _ = L.nub [ (TSType (Proxy :: Proxy a))
                            , (TSType (Proxy :: Proxy b))
                            , (TSType (Proxy :: Proxy c))
