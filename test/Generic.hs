@@ -66,10 +66,7 @@ tests = describe "Generic instances" $ do
 
   it [i|TestMaybeTuple should handle Maybe in tuples correctly|] $ do
     (getTypeScriptDeclarationsRecursively (Proxy :: Proxy TestMaybeTuple)) `shouldBe` [
-      TSTypeAlternatives "IConWithMaybe" [] ["[string, number[], string[]]"] Nothing  -- This is what currently happens
-      -- The correct output should be: ["[string, number[], string[] | null]"]
-      ,TSTypeAlternatives "ISimpleConstructor" [] ["string"] Nothing
-      ,TSInterfaceDeclaration "IConWithMaybe" [] [TSField False "tag" "\"ConWithMaybe\"" Nothing, TSField False "contents" "IConWithMaybe" Nothing] Nothing
+      TSInterfaceDeclaration "IConWithMaybe" [] [TSField False "tag" "\"ConWithMaybe\"" Nothing, TSField False "contents" "[string, number[], string[] | null]" Nothing] Nothing
       ,TSInterfaceDeclaration "ISimpleConstructor" [] [TSField False "tag" "\"SimpleConstructor\"" Nothing, TSField False "contents" "string" Nothing] Nothing
       ,TSTypeAlternatives "TestMaybeTuple" [] ["IConWithMaybe","ISimpleConstructor"] Nothing
       ]
