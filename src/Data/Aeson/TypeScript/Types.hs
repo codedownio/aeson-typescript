@@ -216,9 +216,9 @@ defaultExtraTypeScriptOptions = ExtraTypeScriptOptions [] Nothing stripStartEach
     stripStartEachLine :: String -> String
     stripStartEachLine s = s
                          & T.pack
-                         & T.splitOn (T.pack "\n")
+                         & T.splitOn "\n"
                          & fmap T.stripStart
-                         & T.intercalate (T.pack "\n")
+                         & T.intercalate "\n"
                          & T.unpack
 
 data ExtraDeclOrGenericInfo = ExtraDecl Exp
