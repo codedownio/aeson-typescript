@@ -25,6 +25,13 @@ $(deriveTypeScript defaultOptions ''Complex3)
 data Complex4 k = Product4 { record4 :: Map Text k }
 $(deriveTypeScript defaultOptions ''Complex4)
 
+-- Test for Maybe inside tuple
+data TestMaybeTuple
+  = ConWithMaybe Text [Int] (Maybe [String])
+  | SimpleConstructor Text
+  deriving (Show, Eq)
+$(deriveTypeScript defaultOptions ''TestMaybeTuple)
+
 tests :: SpecWith ()
 tests = describe "Generic instances" $ do
   it [i|Complex makes the declaration and types correctly|] $ do
@@ -55,6 +62,16 @@ tests = describe "Generic instances" $ do
     (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (Complex4 String))) `shouldBe` [
       TSInterfaceDeclaration "IProduct4" ["T"] [TSField False "record4" "{[k in string]: T}" Nothing] Nothing
       ,TSTypeAlternatives "Complex4" ["T"] ["IProduct4<T>"] Nothing
+      ]
+
+  it [i|TestMaybeTuple should handle Maybe in tuples correctly|] $ do
+    (getTypeScriptDeclarationsRecursively (Proxy :: Proxy TestMaybeTuple)) `shouldBe` [
+      TSTypeAlternatives "IConWithMaybe" [] ["[string, number[], string[]]"] Nothing  -- This is what currently happens
+      -- The correct output should be: ["[string, number[], string[] | null]"]
+      ,TSTypeAlternatives "ISimpleConstructor" [] ["string"] Nothing
+      ,TSInterfaceDeclaration "IConWithMaybe" [] [TSField False "tag" "\"ConWithMaybe\"" Nothing, TSField False "contents" "IConWithMaybe" Nothing] Nothing
+      ,TSInterfaceDeclaration "ISimpleConstructor" [] [TSField False "tag" "\"SimpleConstructor\"" Nothing, TSField False "contents" "string" Nothing] Nothing
+      ,TSTypeAlternatives "TestMaybeTuple" [] ["IConWithMaybe","ISimpleConstructor"] Nothing
       ]
 
 main :: IO ()
