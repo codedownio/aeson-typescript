@@ -4,6 +4,7 @@ module Basic (tests) where
 import Data.Aeson as A
 import Data.Aeson.TypeScript.TH
 import Data.Aeson.TypeScript.Types
+import Data.List.NonEmpty (NonEmpty)
 import Data.Proxy
 import Data.String.Interpolate
 import Prelude hiding (Double)
@@ -22,6 +23,21 @@ deriveTypeScript A.defaultOptions ''Test1
 
 data Test2 = Test2 String [Int] (Maybe String)
 deriveTypeScript A.defaultOptions ''Test2
+
+-- Test case for Maybe types in multi-field tuples
+data PromptKey = PromptKey String deriving (Eq, Show)
+
+$(deriveTypeScript A.defaultOptions ''PromptKey)
+
+newtype ExtraInputPrompt = ExtraInputPrompt String deriving (Eq, Show)
+
+$(deriveTypeScript A.defaultOptions ''ExtraInputPrompt)
+
+data WidgetActionPayload
+  = InfoRequest String [PromptKey] (Maybe (NonEmpty ExtraInputPrompt))
+  deriving (Eq, Show)
+
+$(deriveTypeScript A.defaultOptions ''WidgetActionPayload)
 
 tests :: SpecWith ()
 tests = describe "Basic tests" $ do
@@ -49,6 +65,12 @@ tests = describe "Basic tests" $ do
         , TSTypeAlternatives "ITest2" [] ["[string, number[], string | null]"] Nothing
         ])
 
+    it [i|WidgetActionPayload tuple includes null for Maybe list|] $ do
+      (getTypeScriptDeclarations (Proxy :: Proxy WidgetActionPayload))
+        `shouldBe` ( [ TSTypeAlternatives "WidgetActionPayload" [] ["IInfoRequest"] Nothing,
+                       TSTypeAlternatives "IInfoRequest" [] ["[string, PromptKey[], ExtraInputPrompt[] | null]"] Nothing
+                     ]
+                   )
 
 main :: IO ()
 main = hspec tests

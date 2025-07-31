@@ -308,10 +308,19 @@ handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) gene
     interfaceName = "I" <> (lastNameComponent' $ constructorName ci)
 
     tupleEncoding = do
-      let typ = contentsTupleTypeSubstituted genericVariables ci
-      stringExp <- lift $ case typ of
-        (AppT (ConT name) t) | name == ''Maybe -> [|$(getTypeAsStringExp t) <> " | null"|]
-        _ -> getTypeAsStringExp typ
+      let fields = constructorFields ci
+      stringExp <- lift $ case fields of
+        [] -> [|"void[]"|]
+        [x] -> case mapType genericVariables x of
+          (AppT (ConT name) t) | name == ''Maybe -> [|$(getTypeAsStringExp t) <> " | null"|]
+          mappedType -> getTypeAsStringExp mappedType
+        xs -> do
+          -- Process each field individually to handle Maybe types
+          fieldStrings <- forM (fmap (mapType genericVariables) xs) $ \fieldType -> case fieldType of
+            (AppT (ConT name) t) | name == ''Maybe -> [|$(getTypeAsStringExp t) <> " | null"|]
+            _ -> getTypeAsStringExp fieldType
+          let fieldExps = map return fieldStrings
+          [|"[" <> $(foldr1 (\a b -> [|$a <> ", " <> $b|]) fieldExps) <> "]"|]
 
       lift [|TSTypeAlternatives $(TH.stringE interfaceName)
                                 $(genericVariablesListExpr True genericVariables)
