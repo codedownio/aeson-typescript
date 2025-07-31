@@ -20,6 +20,9 @@ $(deriveTypeScript (A.defaultOptions { A.tagSingleConstructors = True
 data Test1 = Test1 (Maybe Int)
 deriveTypeScript A.defaultOptions ''Test1
 
+data Test2 = Test2 String [Int] (Maybe String)
+deriveTypeScript A.defaultOptions ''Test2
+
 tests :: SpecWith ()
 tests = describe "Basic tests" $ do
   describe "tagSingleConstructors and constructorTagModifier" $ do
@@ -38,6 +41,12 @@ tests = describe "Basic tests" $ do
       (getTypeScriptDeclarations (Proxy :: Proxy Test1)) `shouldBe` ([
         TSTypeAlternatives "Test1" [] ["ITest1"] Nothing
         , TSTypeAlternatives "ITest1" [] ["number | null"] Nothing
+        ])
+
+    it [i|Maybe in multi-field tuple includes null option|] $ do
+      (getTypeScriptDeclarations (Proxy :: Proxy Test2)) `shouldBe` ([
+        TSTypeAlternatives "Test2" [] ["ITest2"] Nothing
+        , TSTypeAlternatives "ITest2" [] ["[string, number[], string | null]"] Nothing
         ])
 
 
