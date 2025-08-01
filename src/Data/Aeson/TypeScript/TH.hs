@@ -289,9 +289,7 @@ handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) gene
 #if MIN_VERSION_aeson(0,10,0)
       | unwrapUnaryRecords options && (isSingleRecordConstructor ci) -> do
           let [typ] = constructorFields ci
-          stringExp <- lift $ case typ of
-            (AppT (ConT name) t) | name == ''Maybe && not (omitNothingFields options) -> [|$(getTypeAsStringExp t) <> " | null"|]
-            _ -> getTypeAsStringExp typ
+          stringExp <- lift $ [|getTypeScriptTypeOrOptionalNull (Proxy :: Proxy $(return typ))|]
           alternatives <- lift [|TSTypeAlternatives $(TH.stringE interfaceName)
                                                     $(genericVariablesListExpr True genericVariables)
                                                     [$(return stringExp)]
@@ -309,9 +307,7 @@ handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) gene
 
     tupleEncoding = do
       let typ = contentsTupleTypeSubstituted genericVariables ci
-      stringExp <- lift $ case typ of
-        (AppT (ConT name) t) | name == ''Maybe -> [|$(getTypeAsStringExp t) <> " | null"|]
-        _ -> getTypeAsStringExp typ
+      stringExp <- lift $ [|getTypeScriptTypeOrOptionalNull (Proxy :: Proxy $(return typ))|]
 
       lift [|TSTypeAlternatives $(TH.stringE interfaceName)
                                 $(genericVariablesListExpr True genericVariables)
