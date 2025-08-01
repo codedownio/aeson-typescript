@@ -12,6 +12,7 @@ import Data.Aeson.TypeScript.Instances ()
 import Data.Aeson.TypeScript.Types
 import qualified Data.List as L
 import Data.Proxy
+import Data.String (IsString)
 import Data.String.Interpolate
 import qualified Data.Text as T
 import Language.Haskell.TH hiding (stringE)
@@ -183,6 +184,7 @@ mapType g (ImplicitParamT x typ) = ImplicitParamT x (mapType g typ)
 #endif
 mapType _ x = x
 
+tryPromote :: (Eq a1, Eq a2, IsString a2) => Type -> [(a1, (a3, a2))] -> a1 -> Type
 tryPromote _ genericVariables (flip L.lookup genericVariables -> Just (_, "")) = ConT ''T
 tryPromote _ genericVariables (flip L.lookup genericVariables -> Just (_, "T")) = ConT ''T
 tryPromote _ genericVariables (flip L.lookup genericVariables -> Just (_, "T1")) = ConT ''T1

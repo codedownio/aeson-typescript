@@ -8,7 +8,6 @@ import Data.Data
 import Data.List (intercalate)
 import qualified Data.List as L
 import Language.Haskell.TH
-import Language.Haskell.TH.Syntax
 
 
 mkTupleInstance :: Int -> Q Dec

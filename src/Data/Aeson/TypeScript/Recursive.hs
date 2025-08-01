@@ -32,7 +32,6 @@ import qualified Data.Set as S
 import Data.String.Interpolate
 import Language.Haskell.TH as TH
 import Language.Haskell.TH.Datatype
-import Language.Haskell.TH.Syntax hiding (lift)
 
 
 getTransitiveClosure :: S.Set TSType -> S.Set TSType

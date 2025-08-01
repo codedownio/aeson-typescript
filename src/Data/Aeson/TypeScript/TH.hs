@@ -322,7 +322,7 @@ handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) gene
     getTSFields :: WriterT [ExtraDeclOrGenericInfo] Q [Exp]
     getTSFields = forM (namesAndTypes options genericVariables ci) $ \(name, nameString, typ) -> do
       (fieldTyp, optAsBool) <- lift $ case typ of
-        (AppT (ConT name) t) | name == ''Maybe && not (omitNothingFields options) ->
+        (AppT (ConT name') t) | name' == ''Maybe && not (omitNothingFields options) ->
           ( , ) <$> [|$(getTypeAsStringExp t) <> " | null"|] <*> getOptionalAsBoolExp t
         _ -> ( , ) <$> getTypeAsStringExp typ <*> getOptionalAsBoolExp typ
 
