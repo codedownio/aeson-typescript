@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.37.0.
+-- This file has been generated from package.yaml by hpack version 0.38.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -46,6 +46,7 @@ library
   other-modules:
       Data.Aeson.TypeScript.Formatting
       Data.Aeson.TypeScript.Instances
+      Data.Aeson.TypeScript.Instances.TupleGen
       Data.Aeson.TypeScript.Lookup
       Data.Aeson.TypeScript.Transform
       Data.Aeson.TypeScript.TypeManipulation
@@ -107,6 +108,7 @@ test-suite aeson-typescript-tests
       Util.Aeson
       Data.Aeson.TypeScript.Formatting
       Data.Aeson.TypeScript.Instances
+      Data.Aeson.TypeScript.Instances.TupleGen
       Data.Aeson.TypeScript.Internal
       Data.Aeson.TypeScript.LegalName
       Data.Aeson.TypeScript.Lookup

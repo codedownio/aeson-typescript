@@ -13,6 +13,7 @@
 module Data.Aeson.TypeScript.Instances where
 
 import qualified Data.Aeson as A
+import Data.Aeson.TypeScript.Instances.TupleGen
 import Data.Aeson.TypeScript.Types
 import Data.Data
 import Data.Functor.Compose (Compose)
@@ -121,26 +122,8 @@ instance (TypeScript a, TypeScript b) => TypeScript (Either a b) where
                            , (TSType (Proxy :: Proxy b))
                            ]
 
-instance (TypeScript a, TypeScript b) => TypeScript (a, b) where
-  getTypeScriptType _ = [i|[#{getTypeScriptType (Proxy :: Proxy a)}, #{getTypeScriptType (Proxy :: Proxy b)}]|]
-  getParentTypes _ = L.nub [ (TSType (Proxy :: Proxy a))
-                           , (TSType (Proxy :: Proxy b))
-                           ]
-
-instance (TypeScript a, TypeScript b, TypeScript c) => TypeScript (a, b, c) where
-  getTypeScriptType _ = [i|[#{getTypeScriptType (Proxy :: Proxy a)}, #{getTypeScriptType (Proxy :: Proxy b)}, #{getTypeScriptType (Proxy :: Proxy c)}]|]
-  getParentTypes _ = L.nub [ (TSType (Proxy :: Proxy a))
-                           , (TSType (Proxy :: Proxy b))
-                           , (TSType (Proxy :: Proxy c))
-                           ]
-
-instance (TypeScript a, TypeScript b, TypeScript c, TypeScript d) => TypeScript (a, b, c, d) where
-  getTypeScriptType _ = [i|[#{getTypeScriptType (Proxy :: Proxy a)}, #{getTypeScriptType (Proxy :: Proxy b)}, #{getTypeScriptType (Proxy :: Proxy c)}, #{getTypeScriptType (Proxy :: Proxy d)}]|]
-  getParentTypes _ = L.nub [ (TSType (Proxy :: Proxy a))
-                           , (TSType (Proxy :: Proxy b))
-                           , (TSType (Proxy :: Proxy c))
-                           , (TSType (Proxy :: Proxy d))
-                           ]
+-- Derive instance TypeScript (a, b), instance TypeScript (a, b, c), etc. up to size 10
+mkTupleInstances 10
 
 instance forall a k (b :: k). (Typeable k, Typeable b, TypeScript a) => TypeScript (Const a b) where
   getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
