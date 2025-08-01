@@ -70,6 +70,12 @@ class (Typeable a) => TypeScript a where
   -- ^ Special flag to indicate whether this type corresponds to a template variable.
   isGenericVariable _ = False
 
+
+getTypeScriptTypeOrOptionalNull :: TypeScript a => Proxy a -> String
+getTypeScriptTypeOrOptionalNull proxy = getTypeScriptType proxy <> extra
+  where
+    extra = if getTypeScriptOptional proxy then " | null" else ""
+
 -- | An existential wrapper for any TypeScript instance.
 data TSType = forall a. (Typeable a, TypeScript a) => TSType { unTSType :: Proxy a }
 
