@@ -83,12 +83,12 @@ getTypeAsStringExp typ = [|getTypeScriptType (Proxy :: Proxy $(return typ))|]
 getOptionalAsBoolExp :: Type -> Q Exp
 getOptionalAsBoolExp typ = [|getTypeScriptOptional (Proxy :: Proxy $(return typ))|]
 
--- | Helper to apply a type constructor to a list of type args
+-- | Apply a type constructor to a list of type args
 applyToArgsT :: Type -> [Type] -> Type
 applyToArgsT constructor [] = constructor
 applyToArgsT constructor (x:xs) = applyToArgsT (AppT constructor x) xs
 
--- | Helper to apply a function a list of args
+-- | Apply a function to a list of args
 applyToArgsE :: Exp -> [Exp] -> Exp
 applyToArgsE f [] = f
 applyToArgsE f (x:xs) = applyToArgsE (AppE f x) xs
