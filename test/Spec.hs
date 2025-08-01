@@ -5,11 +5,12 @@ module Main where
 import Test.Hspec
 
 import qualified Basic
+import qualified ClosedTypeFamilies
 import qualified Formatting
 import qualified Generic
 import qualified GetDoc
 import qualified HigherKind
-import qualified ClosedTypeFamilies
+import qualified MaybeTuples
 
 import qualified LegalNameSpec
 import qualified NoOmitNothingFields
@@ -35,6 +36,7 @@ main = hspec $ parallel $ do
   GetDoc.tests
 #endif
   HigherKind.tests
+  MaybeTuples.tests
 
   LegalNameSpec.tests
   NoOmitNothingFields.allTests

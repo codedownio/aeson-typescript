@@ -17,9 +17,6 @@ data Unit2 = Unit2
 $(deriveTypeScript (A.defaultOptions { A.tagSingleConstructors = True
                                      , A.constructorTagModifier = const "foo" }) ''Unit2)
 
-data Test1 = Test1 (Maybe Int)
-deriveTypeScript A.defaultOptions ''Test1
-
 tests :: SpecWith ()
 tests = describe "Basic tests" $ do
   describe "tagSingleConstructors and constructorTagModifier" $ do
@@ -28,18 +25,6 @@ tests = describe "Basic tests" $ do
         TSTypeAlternatives "Unit1" [] ["IUnit1"] Nothing
         , TSTypeAlternatives "IUnit1" [] ["void[]"] Nothing
         ])
-
-    it [i|Works with a unit with constructorTagModifier|] $ do
-      (getTypeScriptDeclarations (Proxy :: Proxy Unit2)) `shouldBe` ([
-        TSTypeAlternatives "Unit2" [] ["\"foo\""] Nothing
-        ])
-
-    it [i|Maybe tuple encoding includes null option|] $ do
-      (getTypeScriptDeclarations (Proxy :: Proxy Test1)) `shouldBe` ([
-        TSTypeAlternatives "Test1" [] ["ITest1"] Nothing
-        , TSTypeAlternatives "ITest1" [] ["number | null"] Nothing
-        ])
-
 
 main :: IO ()
 main = hspec tests

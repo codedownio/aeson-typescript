@@ -89,6 +89,7 @@ test-suite aeson-typescript-tests
       GetDoc
       HigherKind
       LegalNameSpec
+      MaybeTuples
       NoOmitNothingFields
       ObjectWithSingleFieldNoTagSingleConstructors
       ObjectWithSingleFieldTagSingleConstructors
