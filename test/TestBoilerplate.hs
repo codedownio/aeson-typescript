@@ -29,7 +29,9 @@ data TwoField = TwoField { doubleInt :: Int, doubleString :: String }
 data Hybrid = HybridSimple Int | HybridRecord { hybridString :: String }
 data TwoConstructor = Con1 { con1String :: String } | Con2 { con2String :: String, con2Int :: Int }
 data Complex a = Nullary | Unary Int | Product String Char a | Record { testOne :: Int, testTwo :: Bool, testThree :: Complex a} deriving Eq
-data Optional = Optional {optionalInt :: Maybe Int}
+data OptionalRecord = OptionalRecord {optionalInt :: Maybe Int}
+data OptionalTuple1 = OptionalTuple1 (Maybe Int)
+data OptionalTuple2 = OptionalTuple2 String (Maybe Int)
 data AesonTypes = AesonTypes { aesonValue :: A.Value, aesonObject :: A.Object }
 data Numbers = Numbers {
   natural :: Natural
@@ -87,7 +89,9 @@ testDeclarations testName aesonOptions = do
     deriveInstances ''Hybrid
     deriveInstances ''TwoConstructor
     deriveInstances ''Complex
-    deriveInstances ''Optional
+    deriveInstances ''OptionalRecord
+    deriveInstances ''OptionalTuple1
+    deriveInstances ''OptionalTuple2
     deriveInstances ''AesonTypes
     deriveInstances ''Numbers
     deriveInstances ''FancyFunctors
@@ -113,8 +117,14 @@ testDeclarations testName aesonOptions = do
                               , (getTypeScriptType (Proxy :: Proxy (Complex Int)), A.encode (Product "asdf" 'g' 42 :: Complex Int))
                               , (getTypeScriptType (Proxy :: Proxy (Complex Int)), A.encode ((Record { testOne = 3, testTwo = True, testThree = Product "test" 'A' 123}) :: Complex Int))
 
-                              , (getTypeScriptType (Proxy :: Proxy Optional), A.encode (Optional { optionalInt = Nothing }))
-                              , (getTypeScriptType (Proxy :: Proxy Optional), A.encode (Optional { optionalInt = Just 1 }))
+                              , (getTypeScriptType (Proxy :: Proxy OptionalRecord), A.encode (OptionalRecord { optionalInt = Nothing }))
+                              , (getTypeScriptType (Proxy :: Proxy OptionalRecord), A.encode (OptionalRecord { optionalInt = Just 1 }))
+
+                              , (getTypeScriptType (Proxy :: Proxy OptionalTuple1), A.encode (OptionalTuple1 Nothing))
+                              , (getTypeScriptType (Proxy :: Proxy OptionalTuple1), A.encode (OptionalTuple1 (Just 1)))
+
+                              , (getTypeScriptType (Proxy :: Proxy OptionalTuple2), A.encode (OptionalTuple2 "asdf" Nothing))
+                              , (getTypeScriptType (Proxy :: Proxy OptionalTuple2), A.encode (OptionalTuple2 "asdf" (Just 1)))
 
                               , (getTypeScriptType (Proxy :: Proxy AesonTypes), A.encode (AesonTypes {
                                                                                              aesonValue = A.object [("foo" :: AesonKey, A.Number 42)]
@@ -133,7 +143,9 @@ testDeclarations testName aesonOptions = do
                          <> getTypeScriptDeclarations (Proxy :: Proxy Hybrid)
                          <> getTypeScriptDeclarations (Proxy :: Proxy TwoConstructor)
                          <> getTypeScriptDeclarations (Proxy :: Proxy (Complex T))
-                         <> getTypeScriptDeclarations (Proxy :: Proxy Optional)
+                         <> getTypeScriptDeclarations (Proxy :: Proxy OptionalRecord)
+                         <> getTypeScriptDeclarations (Proxy :: Proxy OptionalTuple1)
+                         <> getTypeScriptDeclarations (Proxy :: Proxy OptionalTuple2)
                          <> getTypeScriptDeclarations (Proxy :: Proxy AesonTypes)
                          <> getTypeScriptDeclarations (Proxy :: Proxy Numbers)
                          <> getTypeScriptDeclarations (Proxy :: Proxy FancyFunctors)

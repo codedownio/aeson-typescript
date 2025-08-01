@@ -13,10 +13,10 @@ $(testDeclarations "OmitNothingFields" (A.defaultOptions {omitNothingFields=True
 main :: IO ()
 main = hspec $ describe "OmitNothingFields" $ do
   it "encodes as expected" $ do
-    let decls = getTypeScriptDeclarations (Proxy :: Proxy Optional)
+    let decls = getTypeScriptDeclarations (Proxy :: Proxy OptionalRecord)
 
     decls `shouldBe` [TSInterfaceDeclaration {
-                         interfaceName = "Optional"
+                         interfaceName = "OptionalRecord"
                          , interfaceGenericVariables = []
                          , interfaceMembers = [
                              TSField True "optionalInt" "number" Nothing

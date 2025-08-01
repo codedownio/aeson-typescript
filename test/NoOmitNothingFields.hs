@@ -13,9 +13,9 @@ $(testDeclarations "NoOmitNothingFields" (A.defaultOptions {omitNothingFields = 
 allTests :: SpecWith ()
 allTests = describe "NoOmitNothingFields" $ do
   it "encodes as expected" $ do
-    let decls = getTypeScriptDeclarations (Proxy :: Proxy Optional)
+    let decls = getTypeScriptDeclarations (Proxy :: Proxy OptionalRecord)
 
-    decls `shouldBe` [TSTypeAlternatives "Optional" [] ["IOptional"] Nothing
-                     , TSInterfaceDeclaration "IOptional" [] [TSField False "optionalInt" "number | null" Nothing] Nothing]
+    decls `shouldBe` [TSTypeAlternatives "OptionalRecord" [] ["IOptionalRecord"] Nothing
+                     , TSInterfaceDeclaration "IOptionalRecord" [] [TSField False "optionalInt" "number | null" Nothing] Nothing]
 
   tests
