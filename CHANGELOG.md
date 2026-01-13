@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Remove question mark in Data.Map instance
+* Fix @no-emit-typescript not working for nullary constructors in simple enums
 
 ## 0.6.4.0
 

@@ -50,6 +50,13 @@ data NormalConstructors =
   | Con2 Int
 $(deriveTypeScript defaultOptions ''NormalConstructors)
 
+data SimpleEnum =
+  EnumA
+  | -- | @no-emit-typescript
+    EnumB
+  | EnumC
+$(deriveTypeScript defaultOptions ''SimpleEnum)
+
 tests :: Spec
 tests = describe "Formatting" $ do
   describe "when given a Sum Type" $ do
@@ -104,6 +111,9 @@ tests = describe "Formatting" $ do
 
     it [i|works on normal constructors|] $ do
       formatTSDeclarations' defaultFormattingOptions (getTypeScriptDeclarations @NormalConstructors Proxy) `shouldBe` [i|type NormalConstructors = ICon2;\n\ninterface ICon2 {\n  tag: "Con2";\n  contents: number;\n}|]
+
+    it [i|works on nullary constructors in simple enums|] $ do
+      formatTSDeclarations' defaultFormattingOptions (getTypeScriptDeclarations @SimpleEnum Proxy) `shouldBe` [i|type SimpleEnum = "EnumA" | "EnumC";|]
 #endif
 
 main :: IO ()

@@ -248,7 +248,7 @@ handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) gene
   if | (length datatypeCons == 1) && not (getTagSingleConstructors options) -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
-         lift [|$(TH.stringE interfaceName) <> $(return brackets)|]
+         lift [|TSAlternativeType ($(TH.stringE interfaceName) <> $(return brackets)) Nothing|]
      | allConstructorsAreNullary datatypeCons && allNullaryToStringTag options -> stringEncoding
 
      -- With UntaggedValue, nullary constructors are encoded as strings
@@ -258,15 +258,15 @@ handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) gene
      | isObjectWithSingleField $ sumEncoding options -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
-         lift [|"{" <> $(TH.stringE $ show $ constructorNameToUse options ci) <> ": " <> $(TH.stringE interfaceName) <> $(return brackets) <> "}"|]
+         lift [|TSAlternativeType ("{" <> $(TH.stringE $ show $ constructorNameToUse options ci) <> ": " <> $(TH.stringE interfaceName) <> $(return brackets) <> "}") Nothing|]
      | isTwoElemArray $ sumEncoding options -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
-         lift [|"[" <> $(TH.stringE $ show $ constructorNameToUse options ci) <> ", " <> $(TH.stringE interfaceName) <> $(return brackets) <> "]"|]
+         lift [|TSAlternativeType ("[" <> $(TH.stringE $ show $ constructorNameToUse options ci) <> ", " <> $(TH.stringE interfaceName) <> $(return brackets) <> "]") Nothing|]
      | isUntaggedValue $ sumEncoding options -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
-         lift [|$(TH.stringE interfaceName) <> $(return brackets)|]
+         lift [|TSAlternativeType ($(TH.stringE interfaceName) <> $(return brackets)) Nothing|]
      | otherwise -> do
          tagField :: [Exp] <- lift $ case sumEncoding options of
            TaggedObject tagFieldName _ -> (: []) <$> [|TSField False $(TH.stringE tagFieldName) $(TH.stringE [i|"#{constructorNameToUse options ci}"|]) Nothing|]
@@ -276,10 +276,13 @@ handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) gene
          decl <- lift $ assembleInterfaceDeclaration (ListE (tagField ++ tsFields))
          tell [ExtraDecl decl]
          brackets <- lift $ getBracketsExpression False genericVariables
-         lift [|$(TH.stringE interfaceName) <> $(return brackets)|]
+         lift [|TSAlternativeType ($(TH.stringE interfaceName) <> $(return brackets)) Nothing|]
 
   where
-    stringEncoding = lift $ TH.stringE [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|]
+    stringEncoding = do
+      let tagName = [i|"#{(constructorTagModifier options) $ getTypeName (constructorName ci)}"|]
+      lift [| TSAlternativeType $(TH.stringE tagName)
+                                $(tryGetDoc haddockModifier (constructorName ci)) |]
 
     writeSingleConstructorEncoding = if
       | constructorVariant ci == NormalConstructor -> do
@@ -292,7 +295,7 @@ handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) gene
           stringExp <- lift $ [|getTypeScriptTypeOrOptionalNull (Proxy :: Proxy $(return typ))|]
           alternatives <- lift [|TSTypeAlternatives $(TH.stringE interfaceName)
                                                     $(genericVariablesListExpr True genericVariables)
-                                                    [$(return stringExp)]
+                                                    [TSAlternativeType $(return stringExp) Nothing]
                                                     $(tryGetDoc haddockModifier (constructorName ci))|]
           tell [ExtraDecl alternatives]
 #endif
@@ -311,7 +314,7 @@ handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) gene
 
       lift [|TSTypeAlternatives $(TH.stringE interfaceName)
                                 $(genericVariablesListExpr True genericVariables)
-                                [$(return stringExp)]
+                                [TSAlternativeType $(return stringExp) Nothing]
                                 $(tryGetDoc haddockModifier (constructorName ci))|]
 
     assembleInterfaceDeclaration members = [|TSInterfaceDeclaration $(TH.stringE interfaceName)

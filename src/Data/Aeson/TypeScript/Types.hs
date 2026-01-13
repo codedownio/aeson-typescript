@@ -94,10 +94,22 @@ data TSDeclaration = TSInterfaceDeclaration { interfaceName :: String
                                             , interfaceDoc :: Maybe String }
                    | TSTypeAlternatives { typeName :: String
                                         , typeGenericVariables :: [String]
-                                        , alternativeTypes :: [String]
+                                        , alternativeTypes :: [TSAlternativeType]
                                         , typeDoc :: Maybe String }
                    | TSRawDeclaration { text :: String }
   deriving (Show, Eq, Ord)
+
+data TSAlternativeType = TSAlternativeType {
+  -- | The type name/expression for this alternative
+  alternativeTypeName :: String
+  -- | Haddock documentation for this alternative
+  , alternativeTypeDoc :: Maybe String
+  } deriving (Show, Eq, Ord)
+
+-- | Allows constructing 'TSAlternativeType' from string literals.
+-- This keeps test code clean by allowing plain strings instead of full constructors.
+instance IsString TSAlternativeType where
+  fromString s = TSAlternativeType s Nothing
 
 data TSField = TSField
   { fieldOptional :: Bool
