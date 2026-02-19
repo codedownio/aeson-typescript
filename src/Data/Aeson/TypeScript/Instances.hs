@@ -123,7 +123,7 @@ instance (TypeScript a, TypeScript b) => TypeScript (Either a b) where
                            ]
 
 -- Derive instance TypeScript (a, b), instance TypeScript (a, b, c), etc. up to size 10
-mkTupleInstances 10
+mkTupleInstances 9
 
 instance forall a k (b :: k). (Typeable k, Typeable b, TypeScript a) => TypeScript (Const a b) where
   getTypeScriptType _ = getTypeScriptType (Proxy :: Proxy a)
