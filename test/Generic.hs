@@ -31,7 +31,7 @@ tests = describe "Generic instances" $ do
     (getTypeScriptDeclarationsRecursively (Proxy :: Proxy (Complex String))) `shouldBe` [
       TSInterfaceDeclaration "IProduct" ["T"] [TSField False "tag" "\"Product\"" Nothing, TSField False "contents" "[number, T]" Nothing] Nothing
       ,TSInterfaceDeclaration "IUnary" ["T"] [TSField False "tag" "\"Unary\"" Nothing, TSField False "contents" "number" Nothing] Nothing
-      ,TSTypeAlternatives "Complex" ["T"] ["IProduct<T>","IUnary<T>"] Nothing
+      ,TSTypeAlternatives "Complex" ["T"] ["IProduct<T>", "IUnary<T>"] Nothing
       ]
 
   it [i|Complex2 makes the declaration and types correctly|] $ do

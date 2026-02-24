@@ -22,7 +22,7 @@ formatTSDeclarations = formatTSDeclarations' defaultFormattingOptions
 
 -- | Format a single TypeScript declaration. This version accepts a FormattingOptions object in case you want more control over the output.
 formatTSDeclaration :: FormattingOptions -> TSDeclaration -> String
-formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVariables names maybeDoc) =
+formatTSDeclaration (FormattingOptions {..}) (TSTypeAlternatives name genericVariables ((fmap alternativeTypeName . filter (not . isNoEmitTypeScriptAlternative)) -> names) maybeDoc) =
   makeDocPrefix maybeDoc <> mainDeclaration
   where
     mainDeclaration = case chooseTypeAlternativesFormat typeAlternativesFormat of
@@ -87,7 +87,7 @@ formatTSDeclarations' options allDeclarations =
         getDeclarationName _ = Nothing
 
     removeReferencesToRemovedNames :: [String] -> TSDeclaration -> TSDeclaration
-    removeReferencesToRemovedNames removedNames decl@(TSTypeAlternatives {..}) = decl { alternativeTypes = [x | x <- alternativeTypes, not (x `L.elem` removedNames)] }
+    removeReferencesToRemovedNames removedNames decl@(TSTypeAlternatives {..}) = decl { alternativeTypes = [x | x <- alternativeTypes, not (alternativeTypeName x `L.elem` removedNames)] }
     removeReferencesToRemovedNames _ x = x
 
     declarations = allDeclarations
@@ -119,3 +119,7 @@ isNoEmitTypeScriptDeclaration :: TSDeclaration -> Bool
 isNoEmitTypeScriptDeclaration (TSInterfaceDeclaration {interfaceDoc=(Just doc)}) = noEmitTypeScriptAnnotation `L.isInfixOf` doc
 isNoEmitTypeScriptDeclaration (TSTypeAlternatives {typeDoc=(Just doc)}) = noEmitTypeScriptAnnotation `L.isInfixOf` doc
 isNoEmitTypeScriptDeclaration _ = False
+
+isNoEmitTypeScriptAlternative :: TSAlternativeType -> Bool
+isNoEmitTypeScriptAlternative (TSAlternativeType _ (Just doc)) = noEmitTypeScriptAnnotation `L.isInfixOf` doc
+isNoEmitTypeScriptAlternative _ = False
