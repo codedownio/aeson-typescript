@@ -56,6 +56,6 @@ hasFreeTypeVariable (ImplicitParamT _ typ) = hasFreeTypeVariable typ
 hasFreeTypeVariable _ = False
 
 unifyGenericVariable :: [GenericInfo] -> String
-unifyGenericVariable genericInfos = case [nameBase name | GenericInfo _ (TypeFamilyKey name) <- genericInfos] of
+unifyGenericVariable genericInfos = case L.nub [nameBase name | GenericInfo _ (TypeFamilyKey name) <- genericInfos] of
   [] -> ""
-  names -> " extends keyof " <> (L.intercalate " & " names)
+  names -> " extends " <> (L.intercalate " & " ["keyof " <> n | n <- names])

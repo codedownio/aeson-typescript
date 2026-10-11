@@ -66,6 +66,12 @@ class (Typeable a) => TypeScript a where
   -- ^ Get the types that this type depends on. This is useful for generating transitive closures of necessary types.
   getParentTypes _ = []
 
+  getTypeScriptNameSuffix :: Proxy a -> String
+  -- ^ Fragment appended to the names generated for a type instantiated at this one, for
+  -- type variables listed in 'nameSuffixTypeVariables'. A phantom tag that selects field
+  -- shapes has no TypeScript type of its own, so this is separate from 'getTypeScriptType'.
+  getTypeScriptNameSuffix _ = ""
+
   isGenericVariable :: Proxy a -> Bool
   -- ^ Special flag to indicate whether this type corresponds to a template variable.
   isGenericVariable _ = False
@@ -214,10 +220,21 @@ data ExtraTypeScriptOptions = ExtraTypeScriptOptions {
   -- | Function which is applied to all Haddocks we read in.
   -- By default, just drops leading whitespace from each line.
   , haddockModifier :: String -> String
+
+  -- | Type variables, named as they are in the declaration, whose instantiated TypeScript
+  -- type is appended to the generated interface and type names. A type whose field shapes
+  -- depend on a higher-kinded variable produces different declarations for each
+  -- instantiation; naming it here keeps those declarations from sharing a name.
+  , nameSuffixTypeVariables :: [String]
+
+  -- | Type families the generated generic variable must be a key of, on top of the ones
+  -- found in the fields. A field whose own type takes the variable and constrains it
+  -- leaves no type family application here to find, so that constraint goes here.
+  , extraGenericVariableConstraints :: [Name]
   }
 
 defaultExtraTypeScriptOptions :: ExtraTypeScriptOptions
-defaultExtraTypeScriptOptions = ExtraTypeScriptOptions [] Nothing stripStartEachLine
+defaultExtraTypeScriptOptions = ExtraTypeScriptOptions [] Nothing stripStartEachLine [] []
   where
     stripStartEachLine :: String -> String
     stripStartEachLine s = s

@@ -10,6 +10,7 @@ import qualified Formatting
 import qualified Generic
 import qualified GetDoc
 import qualified HigherKind
+import qualified InstantiationNames
 import qualified MaybeTuples
 
 import qualified LegalNameSpec
@@ -36,6 +37,7 @@ main = hspec $ parallel $ do
   GetDoc.tests
 #endif
   HigherKind.tests
+  InstantiationNames.tests
   MaybeTuples.tests
 
   LegalNameSpec.tests
