@@ -12,6 +12,7 @@ module Data.Aeson.TypeScript.TypeManipulation (
 
 import Control.Monad.Writer
 import Data.Aeson.TypeScript.Types
+import Data.Aeson.TypeScript.Util (splitAppsT, typeFamilyTableName)
 import qualified Data.List as L
 import Language.Haskell.TH
 
@@ -21,16 +22,15 @@ import Data.Monoid
 
 
 searchForConstraints :: ExtraTypeScriptOptions -> Type -> Name -> WriterT [GenericInfo] Q ()
-searchForConstraints eo@(ExtraTypeScriptOptions {..}) (AppT (ConT name) typ) var
-  | typ == VarT var && (name `L.elem` typeFamiliesToMapToTypeScript) = lift (reify name) >>= \case
-      FamilyI (ClosedTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _) _) _ -> do
-        tell [GenericInfo var (TypeFamilyKey typeFamilyName)]
-        searchForConstraints eo typ var
-      FamilyI (OpenTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _)) _ -> do
-        tell [GenericInfo var (TypeFamilyKey typeFamilyName)]
-        searchForConstraints eo typ var
-      _ -> searchForConstraints eo typ var
-  | otherwise = searchForConstraints eo typ var
+searchForConstraints eo@(ExtraTypeScriptOptions {..}) typ var
+  | (ConT name, VarT keyVar : trailing) <- splitAppsT typ
+  , keyVar == var
+  , name `L.elem` typeFamiliesToMapToTypeScript = lift (reify name) >>= \case
+      FamilyI (ClosedTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _) _) _ ->
+        tell [GenericInfo var (TypeFamilyKey (typeFamilyTableName typeFamilyName trailing))]
+      FamilyI (OpenTypeFamilyD (TypeFamilyHead typeFamilyName _ _ _)) _ ->
+        tell [GenericInfo var (TypeFamilyKey (typeFamilyTableName typeFamilyName trailing))]
+      _ -> return ()
 searchForConstraints eo (AppT typ1 typ2) var = searchForConstraints eo typ1 var >> searchForConstraints eo typ2 var
 searchForConstraints eo (SigT typ _) var = searchForConstraints eo typ var
 searchForConstraints eo (InfixT typ1 _ typ2) var = searchForConstraints eo typ1 var >> searchForConstraints eo typ2 var
@@ -56,6 +56,6 @@ hasFreeTypeVariable (ImplicitParamT _ typ) = hasFreeTypeVariable typ
 hasFreeTypeVariable _ = False
 
 unifyGenericVariable :: [GenericInfo] -> String
-unifyGenericVariable genericInfos = case [nameBase name | GenericInfo _ (TypeFamilyKey name) <- genericInfos] of
+unifyGenericVariable genericInfos = case L.nub [name | GenericInfo _ (TypeFamilyKey name) <- genericInfos] of
   [] -> ""
-  names -> " extends keyof " <> (L.intercalate " & " names)
+  names -> " extends " <> (L.intercalate " & " ["keyof " <> n | n <- names])

@@ -183,9 +183,18 @@ deriveTypeScript' options name extraOptions = do
   datatypeInfo' <- reifyDatatype name
   assertExtensionsTurnedOn datatypeInfo'
 
-  -- Figure out what the generic variables are
+  -- Figure out what the generic variables are. A variable of kind * is one; so is one that
+  -- keys a mapped type family in some field, whatever its kind, since the family application
+  -- becomes an indexed access on it.
+  let fieldTypes = mconcat [constructorFields ci | ci <- datatypeCons datatypeInfo']
+  let keysAMappedFamily n = or [True | typ <- fieldTypes
+                                     , (ConT famName, VarT keyVar : _) <- [splitAppsT typ]
+                                     , keyVar == n
+                                     , famName `L.elem` typeFamiliesToMapToTypeScript extraOptions]
   let eligibleGenericVars = catMaybes $ flip fmap (getDataTypeVars datatypeInfo') $ \case
         SigT (VarT n) StarT -> Just n
+        SigT (VarT n) _ | keysAMappedFamily n -> Just n
+        VarT n | keysAMappedFamily n -> Just n
         _ -> Nothing
   let varsAndTVars = case eligibleGenericVars of
         [] -> []

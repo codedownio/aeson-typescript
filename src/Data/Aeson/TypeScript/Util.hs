@@ -169,6 +169,33 @@ contentsTupleTypeSubstituted genericVariables ci = let fields = constructorField
     [x] -> mapType genericVariables x
     xs -> applyToArgsT (ConT $ tupleTypeName (L.length xs)) (fmap (mapType genericVariables) xs)
 
+-- | Split a type application into its head and arguments.
+splitAppsT :: Type -> (Type, [Type])
+splitAppsT = go []
+  where
+    go acc (AppT f x) = go (x : acc) f
+    go acc (SigT t _) = go acc t
+    go acc (ParensT t) = go acc t
+    go acc t = (t, acc)
+
+-- | Name for the lookup interface a mapped type family produces. A family applied to its key
+-- alone keeps the family's own name; one applied to further arguments gets them appended, so
+-- that two use sites of the same family don't share a table.
+typeFamilyTableName :: Name -> [Type] -> String
+typeFamilyTableName famName trailingArgs = nameBase famName <> concatMap typeNameFragment trailingArgs
+
+typeNameFragment :: Type -> String
+typeNameFragment (ConT n) = nameBase n
+typeNameFragment (VarT n) = nameBase n
+typeNameFragment (PromotedT n) = nameBase n
+typeNameFragment (SigT t _) = typeNameFragment t
+typeNameFragment (ParensT t) = typeNameFragment t
+typeNameFragment (AppT f x) = typeNameFragment f <> typeNameFragment x
+typeNameFragment ListT = "List"
+typeNameFragment (TupleT 0) = "Unit"
+typeNameFragment (TupleT n) = "Tuple" <> show n
+typeNameFragment _ = ""
+
 mapType :: [(Name, (Suffix, Var))] -> Type -> Type
 mapType g x@(VarT name) = tryPromote x g name
 mapType g x@(ConT name) = tryPromote x g name

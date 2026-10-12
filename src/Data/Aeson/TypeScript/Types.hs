@@ -250,5 +250,5 @@ data GenericInfo = GenericInfo Name GenericInfoExtra
   deriving Show
 
 data GenericInfoExtra = NormalStar
-                      | TypeFamilyKey Name
+                      | TypeFamilyKey String
   deriving Show
