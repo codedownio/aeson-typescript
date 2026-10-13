@@ -30,7 +30,7 @@ jobs:
           ghc: 9.0.2
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v7
 
     - uses: haskell-actions/setup@v2
       id: setup-haskell-cabal
@@ -43,7 +43,7 @@ jobs:
       run: |
         cabal freeze
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@v6
       name: Cache ~/.cabal/store
       with:
         path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
@@ -90,7 +90,7 @@ jobs:
           yaml: "stack-9.12.4.yaml"
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v7
 
     - uses: haskell-actions/setup@v2
       name: Setup Haskell Stack
@@ -99,7 +99,7 @@ jobs:
         enable-stack: true
         stack-version: "latest"
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@v6
       name: Cache ~/.stack
       with:
         path: ~/.stack
