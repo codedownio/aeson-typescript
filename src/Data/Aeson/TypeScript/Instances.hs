@@ -113,7 +113,7 @@ instance {-# OVERLAPPING #-} TypeScript [Char] where
   getTypeScriptType _ = "string"
 
 instance (TypeScript a, TypeScript b) => TypeScript (Either a b) where
-  getTypeScriptType _ = [i|Either<#{getTypeScriptType (Proxy :: Proxy a)}, #{getTypeScriptType (Proxy :: Proxy b)}>|]
+  getTypeScriptType _ = [i|Either<#{getTypeScriptType @a Proxy}, #{getTypeScriptType @b Proxy}>|]
   getTypeScriptDeclarations _ = [TSTypeAlternatives "Either" ["T1", "T2"] ["Left<T1>", "Right<T2>"] Nothing
                                , TSInterfaceDeclaration "Left" ["T"] [TSField False "Left" "T" Nothing] Nothing
                                , TSInterfaceDeclaration "Right" ["T"] [TSField False "Right" "T" Nothing] Nothing
@@ -170,7 +170,7 @@ instance (TypeScript a, TypeScript b, A.ToJSONKey a) => TypeScript (HashMap a b)
 
 #if MIN_VERSION_aeson(2,0,0)
 instance (TypeScript a) => TypeScript (A.KeyMap a) where
-  getTypeScriptType _ = [i|{[k: string]: #{getTypeScriptType (Proxy :: Proxy a)}}|]
+  getTypeScriptType _ = [i|{[k: string]: #{getTypeScriptType @a Proxy}}|]
   getParentTypes _ = L.nub [TSType (Proxy :: Proxy a)]
 #endif
 
