@@ -66,6 +66,12 @@ class (Typeable a) => TypeScript a where
   -- ^ Get the types that this type depends on. This is useful for generating transitive closures of necessary types.
   getParentTypes _ = []
 
+  getTypeScriptNameSuffix :: Proxy a -> String
+  -- ^ Fragment appended to the names generated for a type instantiated at this one, for
+  -- type variables listed in 'nameSuffixTypeVariables'. A phantom tag that selects field
+  -- shapes has no TypeScript type of its own, so this is separate from 'getTypeScriptType'.
+  getTypeScriptNameSuffix _ = ""
+
   isGenericVariable :: Proxy a -> Bool
   -- ^ Special flag to indicate whether this type corresponds to a template variable.
   isGenericVariable _ = False
@@ -226,10 +232,17 @@ data ExtraTypeScriptOptions = ExtraTypeScriptOptions {
   -- | Function which is applied to all Haddocks we read in.
   -- By default, just drops leading whitespace from each line.
   , haddockModifier :: String -> String
+
+  -- | Type variables, named as they are in the declaration, whose instantiated
+  -- 'getTypeScriptNameSuffix' is appended to the generated names. A record whose field shapes
+  -- switch on a higher-kinded variable produces different declarations per instantiation;
+  -- naming it here stops those declarations sharing a name. Use this when the switch cannot
+  -- be tabulated -- when the choice types are not closed, say.
+  , nameSuffixTypeVariables :: [String]
   }
 
 defaultExtraTypeScriptOptions :: ExtraTypeScriptOptions
-defaultExtraTypeScriptOptions = ExtraTypeScriptOptions [] Nothing stripStartEachLine
+defaultExtraTypeScriptOptions = ExtraTypeScriptOptions [] Nothing stripStartEachLine []
   where
     stripStartEachLine :: String -> String
     stripStartEachLine s = s

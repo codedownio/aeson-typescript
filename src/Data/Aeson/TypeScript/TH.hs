@@ -126,6 +126,7 @@ module Data.Aeson.TypeScript.TH (
   , defaultExtraTypeScriptOptions
   , keyType
   , typeFamiliesToMapToTypeScript
+  , nameSuffixTypeVariables
   , ExtraTypeScriptOptions
 
   -- * Convenience tools
@@ -225,7 +226,7 @@ deriveTypeScript' options name extraOptions = do
 
   -- Build the declarations
   (types, (extraDeclsOrGenericInfosInitial <>) -> extraDeclsOrGenericInfos) <- runWriterT $ mapM (handleConstructor extraOptions options dti genericVariablesAndSuffixes) (datatypeCons dti)
-  typeDeclaration <- [|TSTypeAlternatives $(TH.stringE $ getTypeName (datatypeName dti))
+  typeDeclaration <- [|TSTypeAlternatives ($(TH.stringE $ getTypeName (datatypeName dti)) <> $(nameSuffixExp extraOptions dti))
                                           $(genericVariablesListExpr True genericVariablesAndSuffixes)
                                           $(listE $ fmap return types)
                                           $(tryGetDoc (haddockModifier extraOptions) (datatypeName dti))|]
@@ -235,7 +236,7 @@ deriveTypeScript' options name extraOptions = do
   -- Couldn't figure out how to put the constraints for "instance TypeScript..." in the quasiquote above without
   -- introducing () when the constraints are empty, which causes "illegal tuple constraint" unless the user enables ConstraintKinds.
   -- So, just use our mkInstance function
-  getTypeScriptTypeExp <- [|$(TH.stringE $ getTypeName (datatypeName dti)) <> $(getBracketsExpressionAllTypesNoSuffix genericVariablesAndSuffixes)|]
+  getTypeScriptTypeExp <- [|$(TH.stringE $ getTypeName (datatypeName dti)) <> $(nameSuffixExp extraOptions dti) <> $(getBracketsExpressionAllTypesNoSuffix genericVariablesAndSuffixes)|]
   getParentTypesExp <- listE [ [|TSType (Proxy :: Proxy $(return t))|]
                              | t <- (mconcat $ fmap constructorFields (datatypeCons datatypeInfo')) <> [x | ExtraParentType x <- extraDeclsOrGenericInfos]]
   let predicates = L.nub (constructorPreds <> constructorPreds' <> typeVariablePreds <> [x | ExtraConstraint x <- extraDeclsOrGenericInfos])
@@ -251,13 +252,29 @@ deriveTypeScript' options name extraOptions = do
                  ] <> keyTypeDecl)]
   return (mconcat [x | ExtraTopLevelDecs x <- extraDeclsOrGenericInfos] <> inst)
 
+-- | Expression for the string appended to every name this type generates. Empty unless
+-- 'nameSuffixTypeVariables' picks out type variables, in which case it's their
+-- 'getTypeScriptNameSuffix', resolved where the instance is used rather than here.
+nameSuffixExp :: ExtraTypeScriptOptions -> DatatypeInfo -> Q Exp
+nameSuffixExp (ExtraTypeScriptOptions {nameSuffixTypeVariables}) dti = case suffixVars of
+  [] -> [|""|]
+  vars -> foldr1 (\x y -> [|$(x) <> $(y)|]) [[|getTypeScriptNameSuffix (Proxy :: Proxy $(return v))|] | v <- vars]
+  where
+    suffixVars = [v | v <- getDataTypeVars dti
+                    , Just n <- [typeVariableName v]
+                    , nameBase n `L.elem` nameSuffixTypeVariables]
+
+    typeVariableName (SigT t _) = typeVariableName t
+    typeVariableName (VarT n) = Just n
+    typeVariableName _ = Nothing
+
 -- | Return a string to go in the top-level type declaration, plus an optional expression containing a declaration
 handleConstructor :: ExtraTypeScriptOptions -> Options -> DatatypeInfo -> [(Name, (Suffix, Var))] -> ConstructorInfo -> WriterT [ExtraDeclOrGenericInfo] Q Exp
-handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) genericVariables ci = do
+handleConstructor eo@(ExtraTypeScriptOptions {..}) options dti@(DatatypeInfo {..}) genericVariables ci = do
   if | (length datatypeCons == 1) && not (getTagSingleConstructors options) -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
-         lift [|TSAlternativeType ($(TH.stringE interfaceName) <> $(return brackets)) Nothing|]
+         lift [|TSAlternativeType ($(interfaceNameExp) <> $(return brackets)) Nothing|]
      | allConstructorsAreNullary datatypeCons && allNullaryToStringTag options -> stringEncoding
 
      -- With UntaggedValue, nullary constructors are encoded as strings
@@ -267,15 +284,15 @@ handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) gene
      | isObjectWithSingleField $ sumEncoding options -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
-         lift [|TSAlternativeType ("{" <> $(TH.stringE $ show $ constructorNameToUse options ci) <> ": " <> $(TH.stringE interfaceName) <> $(return brackets) <> "}") Nothing|]
+         lift [|TSAlternativeType ("{" <> $(TH.stringE $ show $ constructorNameToUse options ci) <> ": " <> $(interfaceNameExp) <> $(return brackets) <> "}") Nothing|]
      | isTwoElemArray $ sumEncoding options -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
-         lift [|TSAlternativeType ("[" <> $(TH.stringE $ show $ constructorNameToUse options ci) <> ", " <> $(TH.stringE interfaceName) <> $(return brackets) <> "]") Nothing|]
+         lift [|TSAlternativeType ("[" <> $(TH.stringE $ show $ constructorNameToUse options ci) <> ", " <> $(interfaceNameExp) <> $(return brackets) <> "]") Nothing|]
      | isUntaggedValue $ sumEncoding options -> do
          writeSingleConstructorEncoding
          brackets <- lift $ getBracketsExpression False genericVariables
-         lift [|TSAlternativeType ($(TH.stringE interfaceName) <> $(return brackets)) Nothing|]
+         lift [|TSAlternativeType ($(interfaceNameExp) <> $(return brackets)) Nothing|]
      | otherwise -> do
          tagField :: [Exp] <- lift $ case sumEncoding options of
            TaggedObject tagFieldName _ -> (: []) <$> [|TSField False $(TH.stringE tagFieldName) $(TH.stringE [i|"#{constructorNameToUse options ci}"|]) Nothing|]
@@ -285,7 +302,7 @@ handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) gene
          decl <- lift $ assembleInterfaceDeclaration (ListE (tagField ++ tsFields))
          tell [ExtraDecl decl]
          brackets <- lift $ getBracketsExpression False genericVariables
-         lift [|TSAlternativeType ($(TH.stringE interfaceName) <> $(return brackets)) Nothing|]
+         lift [|TSAlternativeType ($(interfaceNameExp) <> $(return brackets)) Nothing|]
 
   where
     stringEncoding = do
@@ -302,7 +319,7 @@ handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) gene
       | unwrapUnaryRecords options && (isSingleRecordConstructor ci) -> do
           let [typ] = constructorFields ci
           stringExp <- lift $ [|getTypeScriptTypeOrOptionalNull (Proxy :: Proxy $(return typ))|]
-          alternatives <- lift [|TSTypeAlternatives $(TH.stringE interfaceName)
+          alternatives <- lift [|TSTypeAlternatives $(interfaceNameExp)
                                                     $(genericVariablesListExpr True genericVariables)
                                                     [TSAlternativeType $(return stringExp) Nothing]
                                                     $(tryGetDoc haddockModifier (constructorName ci))|]
@@ -315,18 +332,21 @@ handleConstructor (ExtraTypeScriptOptions {..}) options (DatatypeInfo {..}) gene
           tell [ExtraDecl decl]
 
     -- * Type declaration to use
+    interfaceNameExp :: Q Exp
+    interfaceNameExp = [|$(TH.stringE interfaceName) <> $(nameSuffixExp eo dti)|]
+
     interfaceName = "I" <> (lastNameComponent' $ constructorName ci)
 
     tupleEncoding = do
       let typ = contentsTupleTypeSubstituted genericVariables ci
       stringExp <- lift $ [|getTypeScriptTypeOrOptionalNull (Proxy :: Proxy $(return typ))|]
 
-      lift [|TSTypeAlternatives $(TH.stringE interfaceName)
+      lift [|TSTypeAlternatives $(interfaceNameExp)
                                 $(genericVariablesListExpr True genericVariables)
                                 [TSAlternativeType $(return stringExp) Nothing]
                                 $(tryGetDoc haddockModifier (constructorName ci))|]
 
-    assembleInterfaceDeclaration members = [|TSInterfaceDeclaration $(TH.stringE interfaceName)
+    assembleInterfaceDeclaration members = [|TSInterfaceDeclaration $(interfaceNameExp)
                                                                     $(genericVariablesListExpr True genericVariables)
                                                                     $(return members)
                                                                     $(tryGetDoc haddockModifier (constructorName ci))|]

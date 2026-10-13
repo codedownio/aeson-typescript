@@ -39,6 +39,24 @@ data TwoSited f = TwoSited {
 $(deriveTypeScript' A.defaultOptions ''TwoSited (defaultExtraTypeScriptOptions { typeFamiliesToMapToTypeScript = [''Chosen] }))
 
 
+-- A switch whose choice type is not closed: it mentions the record's other variable, so the
+-- family cannot be tabulated and the instantiations are named apart instead.
+type family Picked (f :: Type -> Type) x where
+  Picked Plain x = String
+  Picked Rich x = x
+
+data Plain (x :: Type)
+instance TypeScript Plain where getTypeScriptType _ = "any"
+
+data Rich (x :: Type)
+instance TypeScript Rich where
+  getTypeScriptType _ = "any"
+  getTypeScriptNameSuffix _ = "Rich"
+
+data Holder a f = Holder { holderThing :: Picked f [a] }
+$(deriveTypeScript' A.defaultOptions ''Holder (defaultExtraTypeScriptOptions { nameSuffixTypeVariables = ["f"] }))
+
+
 tests :: SpecWith ()
 tests = describe "Use-site type family image" $ do
   it [i|makes one generic declaration, indexed on the mode|] $ do
@@ -75,6 +93,24 @@ tests = describe "Use-site type family image" $ do
           , TSField False "twoSitedSecond" "ChosenCharInt[T]" Nothing
           ] Nothing
       ])
+
+
+  describe "nameSuffixTypeVariables" $ do
+    it [i|leaves the names alone for a tag with no suffix|] $ do
+      (getTypeScriptDeclarations (Proxy :: Proxy (Holder T Plain))) `shouldBe` ([
+        TSTypeAlternatives "Holder" ["T"] ["IHolder<T>"] Nothing
+        , TSInterfaceDeclaration "IHolder" ["T"] [TSField False "holderThing" "string" Nothing] Nothing
+        ])
+
+      (getTypeScriptType (Proxy :: Proxy (Holder T Plain))) `shouldBe` "Holder<T>"
+
+    it [i|names the other instantiation apart, where no table is possible|] $ do
+      (getTypeScriptDeclarations (Proxy :: Proxy (Holder T Rich))) `shouldBe` ([
+        TSTypeAlternatives "HolderRich" ["T"] ["IHolderRich<T>"] Nothing
+        , TSInterfaceDeclaration "IHolderRich" ["T"] [TSField False "holderThing" "T[]" Nothing] Nothing
+        ])
+
+      (getTypeScriptType (Proxy :: Proxy (Holder T Rich))) `shouldBe` "HolderRich<T>"
 
 
 main :: IO ()
