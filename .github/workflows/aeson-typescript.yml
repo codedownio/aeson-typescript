@@ -20,7 +20,7 @@ jobs:
           - "9.6.7"
           - "9.8.4"
           - "9.10.2"
-          - "9.12.2"
+          - "9.12.4"
         exclude:
         # These don't work on GitHub CI anymore because they need llvm@13, which became
         # disabled on 12/31/2024
@@ -49,9 +49,9 @@ jobs:
         path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
         key: ${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}
 
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v7
       with:
-        node-version: '16'
+        node-version: '24'
     - name: Install TSC
       run: |
         npm install -g typescript
@@ -86,8 +86,8 @@ jobs:
           yaml: "stack-9.8.4.yaml"
         - ghc: "9.10.2"
           yaml: "stack-9.10.2.yaml"
-        - ghc: "9.12.2"
-          yaml: "stack-9.12.2.yaml"
+        - ghc: "9.12.4"
+          yaml: "stack-9.12.4.yaml"
 
     steps:
     - uses: actions/checkout@v3
@@ -105,9 +105,9 @@ jobs:
         path: ~/.stack
         key: ${{ runner.os }}-${{ matrix.ghc }}-${{ matrix.yaml }}
 
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v7
       with:
-        node-version: '16'
+        node-version: '24'
     - name: Install TSC
       run: |
         npm install -g typescript

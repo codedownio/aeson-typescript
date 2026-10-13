@@ -1,5 +1,5 @@
 
-resolver: nightly-2025-07-31
+resolver: nightly-2026-10-12
 
 nix:
   enable: false

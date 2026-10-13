@@ -8,7 +8,7 @@
   };
   inputs.haskellNix.url = "github:input-output-hk/haskell.nix";
   inputs.nixpkgs.follows = "haskellNix/nixpkgs";
-  inputs.nixpkgsMaster.url = "github:NixOS/nixpkgs/master";
+  inputs.nixpkgsMaster.url = "github:NixOS/nixpkgs/release-26.05";
 
   outputs = { self, flake-utils, gitignore, haskellNix, nixpkgs, nixpkgsMaster }:
     flake-utils.lib.eachDefaultSystem (system:
@@ -66,10 +66,10 @@
           };
 
           devShells.default = pkgs.mkShell {
-            buildInputs = with pkgs; [
-              pkgs.nodePackages.typescript
-              pkgsMaster.haskell.compiler.ghc9122
-              (pkgsMaster.haskell-language-server.override { supportedGhcVersions = ["9122"]; })
+            buildInputs = [
+              pkgs.typescript
+              pkgsMaster.haskell.compiler.ghc9124
+              # (pkgsMaster.haskell-language-server.override { supportedGhcVersions = ["9124"]; })
             ];
           };
         });
