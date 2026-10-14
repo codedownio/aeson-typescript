@@ -35,6 +35,7 @@ $(deriveTypeScript' A.defaultOptions ''Switched (defaultExtraTypeScriptOptions {
 data TwoSited f = TwoSited {
   twoSitedFirst :: Chosen f Int Bool
   , twoSitedSecond :: Chosen f Char Int
+  , twoSitedThird :: Chosen f Char Int
   }
 $(deriveTypeScript' A.defaultOptions ''TwoSited (defaultExtraTypeScriptOptions { typeFamiliesToMapToTypeScript = [''Chosen] }))
 
@@ -73,6 +74,7 @@ tests = describe "Use-site type family image" $ do
       , TSInterfaceDeclaration "ITwoSited" ["T extends keyof ChosenIntBool & keyof ChosenCharInt"] [
           TSField False "twoSitedFirst" "ChosenIntBool[T]" Nothing
           , TSField False "twoSitedSecond" "ChosenCharInt[T]" Nothing
+          , TSField False "twoSitedThird" "ChosenCharInt[T]" Nothing
           ] Nothing
       ])
 
