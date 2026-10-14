@@ -24,6 +24,7 @@ import qualified TwoElemArrayTagSingleConstructors
 import qualified UntaggedNoTagSingleConstructors
 import qualified UntaggedTagSingleConstructors
 import qualified UnwrapUnaryRecords
+import qualified UseSiteFamilyImage
 
 
 main :: IO ()
@@ -50,3 +51,4 @@ main = hspec $ parallel $ do
   UntaggedNoTagSingleConstructors.tests
   UntaggedTagSingleConstructors.tests
   UnwrapUnaryRecords.allTests
+  UseSiteFamilyImage.tests

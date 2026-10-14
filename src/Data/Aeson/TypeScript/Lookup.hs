@@ -1,10 +1,16 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE TemplateHaskell #-}
 
-module Data.Aeson.TypeScript.Lookup where
+module Data.Aeson.TypeScript.Lookup (
+  deriveTypeScriptLookupType
+
+  , getClosedTypeFamilyImage
+  , getClosedTypeFamilyInterfaceDecl'
+  )
+  where
 
 import Control.Monad
 import Data.Aeson.TypeScript.Instances ()
@@ -14,6 +20,7 @@ import qualified Data.List as L
 import Data.Proxy
 import Data.String.Interpolate
 import Language.Haskell.TH hiding (stringE)
+import Language.Haskell.TH.Datatype.TyVarBndr ()
 import qualified Language.Haskell.TH.Lib as TH
 
 
@@ -33,7 +40,10 @@ deriveTypeScriptLookupType name declNameStr = do
     _ -> fail [i|Expected a closed type family; got #{info}|]
 
 getClosedTypeFamilyInterfaceDecl :: Name -> [TySynEqn] -> Q Exp
-getClosedTypeFamilyInterfaceDecl name eqns = do
+getClosedTypeFamilyInterfaceDecl name eqns = getClosedTypeFamilyInterfaceDecl' (nameBase name) eqns
+
+getClosedTypeFamilyInterfaceDecl' :: String -> [TySynEqn] -> Q Exp
+getClosedTypeFamilyInterfaceDecl' name eqns = do
   fields <- forM eqns $ \case
 #if MIN_VERSION_template_haskell(2,15,0)
     TySynEqn Nothing (AppT (ConT _) (ConT arg)) result -> do
@@ -46,7 +56,7 @@ getClosedTypeFamilyInterfaceDecl name eqns = do
 #endif
     x -> fail [i|aeson-typescript doesn't know yet how to handle this type family equation when generating interface declaration: '#{x}'|]
 
-  [| TSInterfaceDeclaration $(TH.stringE $ nameBase name) [] (L.sortBy (compare `on` fieldName) $(listE $ fmap return fields)) Nothing |]
+  [| TSInterfaceDeclaration $(TH.stringE name) [] (L.sortBy (compare `on` fieldName) $(listE $ fmap return fields)) Nothing |]
 
 getClosedTypeFamilyImage :: [TySynEqn] -> Q [Type]
 getClosedTypeFamilyImage eqns = do
