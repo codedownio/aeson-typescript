@@ -1,8 +1,8 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Data.Aeson.TypeScript.Util where
 
@@ -178,23 +178,21 @@ splitAppsT = go []
     go acc (ParensT t) = go acc t
     go acc t = (t, acc)
 
--- | Name for the lookup interface a mapped type family produces. A family applied to its key
--- alone keeps the family's own name; one applied to further arguments gets them appended, so
--- that two use sites of the same family don't share a table.
+-- | Name for the lookup interface a mapped type family produces
 typeFamilyTableName :: Name -> [Type] -> String
 typeFamilyTableName famName trailingArgs = nameBase famName <> concatMap typeNameFragment trailingArgs
-
-typeNameFragment :: Type -> String
-typeNameFragment (ConT n) = nameBase n
-typeNameFragment (VarT n) = nameBase n
-typeNameFragment (PromotedT n) = nameBase n
-typeNameFragment (SigT t _) = typeNameFragment t
-typeNameFragment (ParensT t) = typeNameFragment t
-typeNameFragment (AppT f x) = typeNameFragment f <> typeNameFragment x
-typeNameFragment ListT = "List"
-typeNameFragment (TupleT 0) = "Unit"
-typeNameFragment (TupleT n) = "Tuple" <> show n
-typeNameFragment _ = ""
+  where
+    typeNameFragment :: Type -> String
+    typeNameFragment (ConT n) = nameBase n
+    typeNameFragment (VarT n) = nameBase n
+    typeNameFragment (PromotedT n) = nameBase n
+    typeNameFragment (SigT t _) = typeNameFragment t
+    typeNameFragment (ParensT t) = typeNameFragment t
+    typeNameFragment (AppT f x) = typeNameFragment f <> typeNameFragment x
+    typeNameFragment ListT = "List"
+    typeNameFragment (TupleT 0) = "Unit"
+    typeNameFragment (TupleT n) = "Tuple" <> show n
+    typeNameFragment _ = ""
 
 mapType :: [(Name, (Suffix, Var))] -> Type -> Type
 mapType g x@(VarT name) = tryPromote x g name
